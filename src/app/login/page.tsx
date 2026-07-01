@@ -4,6 +4,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  getFirstValidationError,
+  validateRequiredEmail,
+  validateRequiredText,
+} from "@/lib/validation";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,11 +44,20 @@ export default function LoginPage() {
     checkSession();
   }, [router]);
 
+  function validateForm() {
+    return getFirstValidationError([
+      validateRequiredEmail(email, "Staff email"),
+      validateRequiredText(password, "Password"),
+    ]);
+  }
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
-      setMessage("Enter your staff email and password.");
+    const validationError = validateForm();
+
+    if (validationError) {
+      setMessage(validationError);
       return;
     }
 
@@ -110,12 +124,12 @@ export default function LoginPage() {
           </h1>
 
           <p className="mt-5 text-sm leading-7 text-slate-300">
-            Public intake remains open to clients, while internal staff tools
-            are controlled through Supabase Auth.
+            Staff email and password are required before accessing the protected
+            workspace.
           </p>
         </aside>
 
-        <form onSubmit={handleLogin} className="premium-card">
+        <form onSubmit={handleLogin} noValidate className="premium-card">
           <div className="border-b border-slate-100 pb-6">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
               Staff Login
@@ -126,15 +140,16 @@ export default function LoginPage() {
             </h2>
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Use the staff account created inside Supabase Authentication.
+              Enter a valid staff email address and password to continue.
             </p>
           </div>
 
           <div className="mt-6 grid gap-5">
             <label className="input-label">
-              Staff email
+              Staff email *
               <input
                 type="email"
+                required
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -142,14 +157,14 @@ export default function LoginPage() {
                 }}
                 placeholder="staff@example.com"
                 className="input-field"
-                required
               />
             </label>
 
             <label className="input-label">
-              Password
+              Password *
               <input
                 type="password"
+                required
                 value={password}
                 onChange={(event) => {
                   setPassword(event.target.value);
@@ -157,7 +172,6 @@ export default function LoginPage() {
                 }}
                 placeholder="Enter password"
                 className="input-field"
-                required
               />
             </label>
           </div>

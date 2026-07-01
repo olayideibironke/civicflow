@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
+import {
+  cleanPhoneDigits,
+  formatPhoneInput,
+  getFirstValidationError,
+  validateRequiredEmail,
+  validateRequiredPhone,
+  validateRequiredText,
+} from "@/lib/validation";
 
 type Organization = {
   id: string;
@@ -88,9 +96,7 @@ export default function NewCasePage() {
         .single();
 
       if (error || !data) {
-        setLoadError(
-          error?.message ?? "Unable to load the demo organization."
-        );
+        setLoadError(error?.message ?? "Unable to load the demo organization.");
         return;
       }
 
@@ -103,10 +109,24 @@ export default function NewCasePage() {
   function updateField(field: keyof CaseFormState, value: string) {
     setFormState((currentState) => ({
       ...currentState,
-      [field]: value,
+      [field]: field === "phone" ? formatPhoneInput(value) : value,
     }));
 
     setFormError("");
+  }
+
+  function validateForm() {
+    return getFirstValidationError([
+      validateRequiredText(formState.firstName, "First name"),
+      validateRequiredText(formState.lastName, "Last name"),
+      validateRequiredEmail(formState.email),
+      validateRequiredPhone(formState.phone),
+      validateRequiredText(formState.serviceCategory, "Service category"),
+      validateRequiredText(formState.priority, "Priority"),
+      validateRequiredText(formState.status, "Initial status"),
+      validateRequiredText(formState.assignedTo, "Assigned staff"),
+      validateRequiredText(formState.summary, "Case summary"),
+    ]);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -117,13 +137,10 @@ export default function NewCasePage() {
       return;
     }
 
-    if (!formState.firstName.trim() || !formState.lastName.trim()) {
-      setFormError("Client first name and last name are required.");
-      return;
-    }
+    const validationError = validateForm();
 
-    if (!formState.summary.trim()) {
-      setFormError("Case summary is required.");
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
@@ -152,8 +169,8 @@ export default function NewCasePage() {
         case_number: nextCaseNumber,
         client_first_name: formState.firstName.trim(),
         client_last_name: formState.lastName.trim(),
-        client_email: formState.email.trim() || null,
-        client_phone: formState.phone.trim() || null,
+        client_email: formState.email.trim(),
+        client_phone: cleanPhoneDigits(formState.phone),
         service_category: formState.serviceCategory,
         priority: formState.priority,
         status: formState.status,
@@ -166,9 +183,7 @@ export default function NewCasePage() {
 
     if (createCaseError || !createdCase) {
       setSaving(false);
-      setFormError(
-        createCaseError?.message ?? "Unable to create the case."
-      );
+      setFormError(createCaseError?.message ?? "Unable to create the case.");
       return;
     }
 
@@ -233,13 +248,13 @@ export default function NewCasePage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                Create a real Supabase case record when staff receives a request
-                by phone, email, walk-in, referral, or another internal channel.
+                Staff-created cases require complete client information before a
+                new case record can be saved.
               </p>
             </div>
 
-            <div className="w-fit rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-black text-blue-700">
-              Supabase connected
+            <div className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700">
+              Required fields enforced
             </div>
           </div>
 
@@ -251,7 +266,7 @@ export default function NewCasePage() {
         </section>
 
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-          <form onSubmit={handleSubmit} className="premium-card">
+          <form onSubmit={handleSubmit} noValidate className="premium-card">
             <div className="border-b border-slate-100 pb-6">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
                 Case Details
@@ -262,14 +277,14 @@ export default function NewCasePage() {
               </h2>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Submitting this form now creates a real case, document checklist,
-                and activity event in Supabase.
+                Required fields, valid email, and a 10-digit phone number must
+                be provided before staff can create a case.
               </p>
             </div>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <label className="input-label">
-                First name
+                First name *
                 <input
                   required
                   value={formState.firstName}
@@ -282,7 +297,7 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Last name
+                Last name *
                 <input
                   required
                   value={formState.lastName}
@@ -295,9 +310,10 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Email address
+                Email address *
                 <input
                   type="email"
+                  required
                   value={formState.email}
                   onChange={(event) => updateField("email", event.target.value)}
                   placeholder="angela@example.org"
@@ -306,18 +322,21 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Phone number
+                Phone number *
                 <input
+                  required
+                  inputMode="numeric"
                   value={formState.phone}
                   onChange={(event) => updateField("phone", event.target.value)}
-                  placeholder="(555) 123-4567"
+                  placeholder="202-555-0198"
                   className="input-field"
                 />
               </label>
 
               <label className="input-label">
-                Service category
+                Service category *
                 <select
+                  required
                   value={formState.serviceCategory}
                   onChange={(event) =>
                     updateField("serviceCategory", event.target.value)
@@ -333,8 +352,9 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Priority
+                Priority *
                 <select
+                  required
                   value={formState.priority}
                   onChange={(event) =>
                     updateField("priority", event.target.value)
@@ -349,10 +369,13 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Initial status
+                Initial status *
                 <select
+                  required
                   value={formState.status}
-                  onChange={(event) => updateField("status", event.target.value)}
+                  onChange={(event) =>
+                    updateField("status", event.target.value)
+                  }
                   className="input-field"
                 >
                   <option>New Intake</option>
@@ -363,8 +386,9 @@ export default function NewCasePage() {
               </label>
 
               <label className="input-label">
-                Assigned staff
+                Assigned staff *
                 <select
+                  required
                   value={formState.assignedTo}
                   onChange={(event) =>
                     updateField("assignedTo", event.target.value)
@@ -381,7 +405,7 @@ export default function NewCasePage() {
             </div>
 
             <label className="input-label mt-6">
-              Case summary
+              Case summary *
               <textarea
                 required
                 value={formState.summary}
@@ -411,8 +435,8 @@ export default function NewCasePage() {
 
             <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                After creation, you’ll return to the case queue and see the new
-                Supabase record.
+                After creation, the new validated case appears in the staff case
+                queue.
               </p>
 
               <button
@@ -432,16 +456,17 @@ export default function NewCasePage() {
           <aside className="space-y-6">
             <div className="premium-dark">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-100">
-                Workflow Purpose
+                Validation Rule
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
-                Internal cases now become real records.
+                No incomplete records.
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                This is the first true staff-side creation workflow. It writes to
-                the cases, case_documents, and case_activity tables.
+                Staff cannot create a case unless all required fields are
+                complete, email is valid, and phone number contains exactly 10
+                digits.
               </p>
             </div>
 
@@ -456,7 +481,9 @@ export default function NewCasePage() {
 
               <div className="mt-6 space-y-3">
                 {[
-                  "Client contact information",
+                  "First and last name",
+                  "Valid email address",
+                  "10-digit phone number",
                   "Service category",
                   "Priority level",
                   "Initial case summary",

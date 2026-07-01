@@ -33,13 +33,13 @@ const navigationItems = [
 ];
 
 function getInitials(email: string) {
-  const firstLetter = email.trim().charAt(0).toUpperCase();
+  const cleanEmail = email.trim();
 
-  if (!firstLetter) {
+  if (!cleanEmail) {
     return "CF";
   }
 
-  return firstLetter;
+  return cleanEmail.charAt(0).toUpperCase();
 }
 
 export default function AppShell({ children }: AppShellProps) {
@@ -51,14 +51,14 @@ export default function AppShell({ children }: AppShellProps) {
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
 
-    async function checkSession() {
+    async function verifyStaffSession() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!mounted) {
+      if (!active) {
         return;
       }
 
@@ -72,12 +72,16 @@ export default function AppShell({ children }: AppShellProps) {
       setCheckingSession(false);
     }
 
-    checkSession();
+    verifyStaffSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session) {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) {
+        return;
+      }
+
+      if (!session) {
         const redirectTo = encodeURIComponent(pathname || "/app");
         router.replace(`/login?redirectTo=${redirectTo}`);
         return;
@@ -88,7 +92,7 @@ export default function AppShell({ children }: AppShellProps) {
     });
 
     return () => {
-      mounted = false;
+      active = false;
       subscription.unsubscribe();
     };
   }, [pathname, router]);
@@ -153,7 +157,7 @@ export default function AppShell({ children }: AppShellProps) {
               <div className="mt-5 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                 <p className="text-sm font-bold text-slate-200">
-                  Demo organization online
+                  Staff workspace protected
                 </p>
               </div>
             </div>
