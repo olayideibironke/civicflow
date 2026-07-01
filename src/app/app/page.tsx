@@ -1,85 +1,238 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import { supabase } from "@/lib/supabase";
 
-const metrics = [
-  {
-    label: "Open cases",
-    value: "24",
-    detail: "8 require staff follow-up",
-  },
-  {
-    label: "New intakes",
-    value: "11",
-    detail: "Submitted this week",
-  },
-  {
-    label: "Missing documents",
-    value: "17",
-    detail: "Across active cases",
-  },
-  {
-    label: "Completed",
-    value: "38",
-    detail: "Closed this month",
-  },
-];
+type CivicCase = {
+  id: string;
+  organization_id: string;
+  case_number: string;
+  client_first_name: string;
+  client_last_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  service_category: string;
+  priority: string;
+  status: string;
+  assigned_to: string;
+  summary: string | null;
+  source: string;
+  decision_outcome: string | null;
+  decision_note: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
-const workflowCards = [
-  {
-    title: "Public intake",
-    description:
-      "Collect service requests, client information, and document placeholders through a branded public form.",
-    href: "/intake",
-    action: "Open intake",
-  },
-  {
-    title: "Case queue",
-    description:
-      "Review submitted cases, filter by status, assign staff, and prioritize work across the organization.",
-    href: "/app/cases",
-    action: "View cases",
-  },
-  {
-    title: "Reports",
-    description:
-      "Track workload, open cases, document gaps, completion activity, and service workflow performance.",
-    href: "/app/reports",
-    action: "View reports",
-  },
-];
+type CaseDocument = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  file_name: string | null;
+  file_path: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
-const recentCases = [
-  {
-    id: "CF-1001",
-    client: "Angela Brooks",
-    status: "In Review",
-    owner: "Maya Johnson",
-    updated: "Today · 10:04 AM",
-  },
-  {
-    id: "CF-1002",
-    client: "Marcus Hill",
-    status: "New Intake",
-    owner: "Unassigned",
-    updated: "Today · 9:42 AM",
-  },
-  {
-    id: "CF-1003",
-    client: "Nadia Spencer",
-    status: "Waiting on Client",
-    owner: "Daniel Reeves",
-    updated: "Yesterday · 4:18 PM",
-  },
-];
+function getCaseHref(caseNumber: string) {
+  return `/app/cases/${caseNumber.toLowerCase()}`;
+}
 
-const workload = [
-  ["Eligibility Review", "9 active cases"],
-  ["Document Processing", "6 active cases"],
-  ["Benefits Navigation", "5 active cases"],
-  ["Referral Requests", "4 active cases"],
-];
+function formatUpdatedAt(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function isOpenCase(caseItem: CivicCase) {
+  return caseItem.status !== "Completed";
+}
 
 export default function AppDashboardPage() {
+  const [cases, setCases] = useState<CivicCase[]>([]);
+  const [documents, setDocuments] = useState<CaseDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      setLoading(true);
+      setLoadError("");
+
+      const { data: loadedCases, error: casesError } = await supabase
+        .from("cases")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (casesError) {
+        setLoadError(casesError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: loadedDocuments, error: documentsError } = await supabase
+        .from("case_documents")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (documentsError) {
+        setLoadError(documentsError.message);
+        setLoading(false);
+        return;
+      }
+
+      setCases((loadedCases ?? []) as CivicCase[]);
+      setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+      setLoading(false);
+    }
+
+    loadDashboardData();
+  }, []);
+
+  const openCases = useMemo(() => cases.filter(isOpenCase), [cases]);
+
+  const newIntakes = useMemo(
+    () => cases.filter((caseItem) => caseItem.status === "New Intake"),
+    [cases]
+  );
+
+  const completedCases = useMemo(
+    () => cases.filter((caseItem) => caseItem.status === "Completed"),
+    [cases]
+  );
+
+  const unassignedCases = useMemo(
+    () => cases.filter((caseItem) => caseItem.assigned_to === "Unassigned"),
+    [cases]
+  );
+
+  const missingDocuments = useMemo(
+    () => documents.filter((document) => document.status !== "Received"),
+    [documents]
+  );
+
+  const casesWithDocumentGaps = useMemo(() => {
+    return new Set(missingDocuments.map((document) => document.case_id));
+  }, [missingDocuments]);
+
+  const recentCases = useMemo(() => cases.slice(0, 5), [cases]);
+
+  const workload = useMemo(() => {
+    const activeCounts = openCases.reduce<Record<string, number>>(
+      (accumulator, caseItem) => {
+        if (!accumulator[caseItem.service_category]) {
+          accumulator[caseItem.service_category] = 0;
+        }
+
+        accumulator[caseItem.service_category] += 1;
+        return accumulator;
+      },
+      {}
+    );
+
+    return Object.entries(activeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [openCases]);
+
+  const metrics = [
+    {
+      label: "Open cases",
+      value: openCases.length.toString(),
+      detail: `${unassignedCases.length} unassigned`,
+    },
+    {
+      label: "New intakes",
+      value: newIntakes.length.toString(),
+      detail: "Awaiting first staff action",
+    },
+    {
+      label: "Missing documents",
+      value: missingDocuments.length.toString(),
+      detail: `${casesWithDocumentGaps.size} case${
+        casesWithDocumentGaps.size === 1 ? "" : "s"
+      } affected`,
+    },
+    {
+      label: "Completed",
+      value: completedCases.length.toString(),
+      detail: "Closed case records",
+    },
+  ];
+
+  const workflowCards = [
+    {
+      title: "Public intake",
+      description:
+        "Collect service requests, client information, and document placeholders through a branded public form.",
+      href: "/intake",
+      action: "Open intake",
+    },
+    {
+      title: "Case queue",
+      description:
+        "Review submitted cases, filter by status, assign staff, and prioritize work across the organization.",
+      href: "/app/cases",
+      action: "View cases",
+    },
+    {
+      title: "Reports",
+      description:
+        "Track workload, open cases, document gaps, completion activity, and service workflow performance.",
+      href: "/app/reports",
+      action: "View reports",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+            Loading Dashboard
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Connecting dashboard to Supabase...
+          </h1>
+
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            CivicFlow is loading real cases, documents, and workload metrics
+            from your database.
+          </p>
+        </section>
+      </AppShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+            Supabase Error
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Dashboard could not be loaded.
+          </h1>
+
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            {loadError}
+          </p>
+        </section>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       <div className="space-y-6">
@@ -91,14 +244,13 @@ export default function AppDashboardPage() {
               </p>
 
               <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
-                A premium workspace for intake, cases, documents, and service
+                Real-time workspace for intake, cases, documents, and service
                 workflows.
               </h1>
 
               <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-                CivicFlow gives organizations a clean operating layer for
-                receiving requests, tracking cases, assigning staff, managing
-                document requirements, and reporting on service delivery.
+                This dashboard is now connected to Supabase and reflects real
+                case records created through staff workflows and public intake.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -124,27 +276,32 @@ export default function AppDashboardPage() {
               </p>
 
               <h2 className="mt-4 text-3xl font-black tracking-tight text-white">
-                Work is moving.
+                Supabase is live.
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                This demo dashboard shows the type of operational view CivicFlow
-                can provide once connected to Supabase data.
+                CivicFlow now has a working data loop: public intake, staff case
+                creation, case queue, dynamic case pages, document review, and
+                completion status.
               </p>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-3xl bg-white/10 p-5">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                    SLA Risk
+                    Cases with Gaps
                   </p>
-                  <p className="mt-2 text-2xl font-black text-white">3</p>
+                  <p className="mt-2 text-2xl font-black text-white">
+                    {casesWithDocumentGaps.size}
+                  </p>
                 </div>
 
                 <div className="rounded-3xl bg-white/10 p-5">
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
                     Unassigned
                   </p>
-                  <p className="mt-2 text-2xl font-black text-white">5</p>
+                  <p className="mt-2 text-2xl font-black text-white">
+                    {unassignedCases.length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -183,13 +340,13 @@ export default function AppDashboardPage() {
                   </h2>
 
                   <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                    These modules represent the first CivicFlow product loop:
-                    intake to case review to reporting.
+                    These modules now sit on top of the CivicFlow Supabase case
+                    management foundation.
                   </p>
                 </div>
 
-                <span className="w-fit rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-black text-blue-700">
-                  MVP buildout
+                <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700">
+                  Database connected
                 </span>
               </div>
 
@@ -238,36 +395,49 @@ export default function AppDashboardPage() {
 
               <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
                 <div className="divide-y divide-slate-100">
-                  {recentCases.map((caseItem) => (
-                    <Link
-                      key={caseItem.id}
-                      href="/app/cases/case-1001"
-                      className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 md:grid-cols-[0.7fr_1fr_0.8fr_0.8fr] md:items-center"
-                    >
-                      <div>
-                        <p className="text-sm font-black text-slate-950">
-                          {caseItem.id}
+                  {recentCases.length > 0 ? (
+                    recentCases.map((caseItem) => (
+                      <Link
+                        key={caseItem.id}
+                        href={getCaseHref(caseItem.case_number)}
+                        className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 md:grid-cols-[0.7fr_1fr_0.8fr_0.8fr] md:items-center"
+                      >
+                        <div>
+                          <p className="text-sm font-black text-slate-950">
+                            {caseItem.case_number}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {caseItem.client_first_name}{" "}
+                            {caseItem.client_last_name}
+                          </p>
+                        </div>
+
+                        <div>
+                          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-700">
+                            {caseItem.status}
+                          </span>
+                        </div>
+
+                        <p className="text-sm font-black text-slate-700">
+                          {caseItem.assigned_to}
                         </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {caseItem.client}
+
+                        <p className="text-sm font-semibold text-slate-500">
+                          {formatUpdatedAt(caseItem.updated_at)}
                         </p>
-                      </div>
-
-                      <div>
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-700">
-                          {caseItem.status}
-                        </span>
-                      </div>
-
-                      <p className="text-sm font-black text-slate-700">
-                        {caseItem.owner}
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-5 py-10 text-center">
+                      <p className="text-base font-black text-slate-950">
+                        No cases yet
                       </p>
-
-                      <p className="text-sm font-semibold text-slate-500">
-                        {caseItem.updated}
+                      <p className="mt-2 text-sm text-slate-500">
+                        Create a case or submit public intake to populate the
+                        dashboard.
                       </p>
-                    </Link>
-                  ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -284,15 +454,30 @@ export default function AppDashboardPage() {
               </h2>
 
               <div className="mt-6 space-y-3">
-                {workload.map(([name, count]) => (
-                  <div
-                    key={name}
-                    className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4"
-                  >
-                    <p className="text-sm font-black text-slate-950">{name}</p>
-                    <p className="text-sm font-bold text-slate-500">{count}</p>
+                {workload.length > 0 ? (
+                  workload.map(([name, count]) => (
+                    <div
+                      key={name}
+                      className="flex items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4"
+                    >
+                      <p className="text-sm font-black text-slate-950">
+                        {name}
+                      </p>
+                      <p className="text-sm font-bold text-slate-500">
+                        {count} active
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                    <p className="text-sm font-black text-slate-950">
+                      No active service queues
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Completed cases are no longer counted as active workload.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -302,13 +487,13 @@ export default function AppDashboardPage() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
-                Supabase-ready structure
+                Reports should be next.
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                Once the front-end screens are stable, CivicFlow can move into
-                database tables for organizations, profiles, cases, notes,
-                documents, statuses, and activity logs.
+                The dashboard is now database-backed. Next, the reports page can
+                calculate real workload, completion, document gaps, and service
+                distribution from Supabase.
               </p>
             </div>
           </aside>
