@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import { supabase } from "@/lib/supabase";
 
 type CaseStatus =
   | "New Intake"
@@ -15,79 +16,48 @@ type CasePriority = "Low" | "Medium" | "High" | "Urgent";
 
 type CivicCase = {
   id: string;
-  client: string;
-  email: string;
-  service: string;
-  status: CaseStatus;
-  priority: CasePriority;
-  assignedTo: string;
-  updated: string;
-  missingDocs: number;
-  href: string;
+  organization_id: string;
+  case_number: string;
+  client_first_name: string;
+  client_last_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  service_category: string;
+  priority: string;
+  status: string;
+  assigned_to: string;
+  summary: string | null;
+  source: string;
+  decision_outcome: string | null;
+  decision_note: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
-const cases: CivicCase[] = [
-  {
-    id: "CF-1001",
-    client: "Angela Brooks",
-    email: "angela.brooks@example.org",
-    service: "Eligibility Review",
-    status: "In Review",
-    priority: "Medium",
-    assignedTo: "Maya Johnson",
-    updated: "Today · 10:04 AM",
-    missingDocs: 2,
-    href: "/app/cases/case-1001",
-  },
-  {
-    id: "CF-1002",
-    client: "Marcus Hill",
-    email: "marcus.hill@example.org",
-    service: "Document Processing",
-    status: "New Intake",
-    priority: "High",
-    assignedTo: "Unassigned",
-    updated: "Today · 9:42 AM",
-    missingDocs: 3,
-    href: "/app/cases/case-1001",
-  },
-  {
-    id: "CF-1003",
-    client: "Nadia Spencer",
-    email: "nadia.spencer@example.org",
-    service: "Benefits Navigation",
-    status: "Waiting on Client",
-    priority: "Medium",
-    assignedTo: "Daniel Reeves",
-    updated: "Yesterday · 4:18 PM",
-    missingDocs: 1,
-    href: "/app/cases/case-1001",
-  },
-  {
-    id: "CF-1004",
-    client: "Robert Ellis",
-    email: "robert.ellis@example.org",
-    service: "Referral Request",
-    status: "Assigned",
-    priority: "Low",
-    assignedTo: "Aisha Carter",
-    updated: "Yesterday · 2:51 PM",
-    missingDocs: 0,
-    href: "/app/cases/case-1001",
-  },
-  {
-    id: "CF-1005",
-    client: "Grace Morgan",
-    email: "grace.morgan@example.org",
-    service: "General Case Support",
-    status: "Completed",
-    priority: "Low",
-    assignedTo: "Eligibility Review Team",
-    updated: "Jun 29 · 11:20 AM",
-    missingDocs: 0,
-    href: "/app/cases/case-1001",
-  },
-];
+type CaseDocument = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  file_name: string | null;
+  file_path: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const filters = [
+  "All",
+  "New Intake",
+  "In Review",
+  "Assigned",
+  "Waiting on Client",
+  "Completed",
+] as const;
+
+type FilterValue = (typeof filters)[number];
 
 const statusStyles: Record<CaseStatus, string> = {
   "New Intake": "border-blue-200 bg-blue-50 text-blue-700",
@@ -104,47 +74,179 @@ const priorityStyles: Record<CasePriority, string> = {
   Urgent: "bg-rose-50 text-rose-700",
 };
 
-const filters = [
-  "All",
-  "New Intake",
-  "In Review",
-  "Assigned",
-  "Waiting on Client",
-  "Completed",
-] as const;
+function normalizeStatus(value: string): CaseStatus {
+  if (
+    value === "New Intake" ||
+    value === "In Review" ||
+    value === "Assigned" ||
+    value === "Waiting on Client" ||
+    value === "Completed"
+  ) {
+    return value;
+  }
 
-type FilterValue = (typeof filters)[number];
+  return "New Intake";
+}
+
+function normalizePriority(value: string): CasePriority {
+  if (
+    value === "Low" ||
+    value === "Medium" ||
+    value === "High" ||
+    value === "Urgent"
+  ) {
+    return value;
+  }
+
+  return "Medium";
+}
+
+function formatUpdatedAt(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getCaseHref(caseNumber: string) {
+  return `/app/cases/${caseNumber.toLowerCase()}`;
+}
 
 export default function CasesPage() {
+  const [cases, setCases] = useState<CivicCase[]>([]);
+  const [documents, setDocuments] = useState<CaseDocument[]>([]);
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterValue>("All");
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    async function loadCases() {
+      setLoading(true);
+      setLoadError("");
+
+      const { data: loadedCases, error: casesError } = await supabase
+        .from("cases")
+        .select("*")
+        .order("updated_at", { ascending: false });
+
+      if (casesError) {
+        setLoadError(casesError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: loadedDocuments, error: documentsError } = await supabase
+        .from("case_documents")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (documentsError) {
+        setLoadError(documentsError.message);
+        setLoading(false);
+        return;
+      }
+
+      setCases((loadedCases ?? []) as CivicCase[]);
+      setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+      setLoading(false);
+    }
+
+    loadCases();
+  }, []);
+
+  const documentsByCaseId = useMemo(() => {
+    return documents.reduce<Record<string, CaseDocument[]>>(
+      (accumulator, document) => {
+        if (!accumulator[document.case_id]) {
+          accumulator[document.case_id] = [];
+        }
+
+        accumulator[document.case_id].push(document);
+        return accumulator;
+      },
+      {}
+    );
+  }, [documents]);
 
   const filteredCases = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return cases.filter((caseItem) => {
-      const matchesFilter =
-        activeFilter === "All" || caseItem.status === activeFilter;
+      const status = normalizeStatus(caseItem.status);
+
+      const matchesFilter = activeFilter === "All" || status === activeFilter;
+
+      const clientName =
+        `${caseItem.client_first_name} ${caseItem.client_last_name}`.toLowerCase();
 
       const matchesSearch =
         normalizedQuery.length === 0 ||
-        caseItem.id.toLowerCase().includes(normalizedQuery) ||
-        caseItem.client.toLowerCase().includes(normalizedQuery) ||
-        caseItem.email.toLowerCase().includes(normalizedQuery) ||
-        caseItem.service.toLowerCase().includes(normalizedQuery) ||
-        caseItem.assignedTo.toLowerCase().includes(normalizedQuery);
+        caseItem.case_number.toLowerCase().includes(normalizedQuery) ||
+        clientName.includes(normalizedQuery) ||
+        (caseItem.client_email ?? "").toLowerCase().includes(normalizedQuery) ||
+        caseItem.service_category.toLowerCase().includes(normalizedQuery) ||
+        caseItem.assigned_to.toLowerCase().includes(normalizedQuery);
 
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, query]);
+  }, [activeFilter, cases, query]);
 
-  const openCases = cases.filter((caseItem) => caseItem.status !== "Completed");
+  const openCases = cases.filter(
+    (caseItem) => normalizeStatus(caseItem.status) !== "Completed"
+  );
+
   const unassignedCases = cases.filter(
-    (caseItem) => caseItem.assignedTo === "Unassigned"
+    (caseItem) => caseItem.assigned_to === "Unassigned"
   );
-  const missingDocumentCases = cases.filter(
-    (caseItem) => caseItem.missingDocs > 0
+
+  const missingDocumentCaseIds = new Set(
+    documents
+      .filter((document) => document.status !== "Received")
+      .map((document) => document.case_id)
   );
+
+  if (loading) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+            Loading Cases
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Connecting to Supabase...
+          </h1>
+
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            CivicFlow is loading real case records from your Supabase database.
+          </p>
+        </section>
+      </AppShell>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+            Supabase Error
+          </p>
+
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Cases could not be loaded.
+          </h1>
+
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            {loadError}
+          </p>
+        </section>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -161,8 +263,8 @@ export default function CasesPage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                Manage intake submissions, staff assignments, workflow status,
-                missing documents, and case movement from one clean queue.
+                This queue is connected to Supabase and displays real case
+                records, assignment status, document gaps, and workflow movement.
               </p>
             </div>
 
@@ -186,7 +288,7 @@ export default function CasesPage() {
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
-            ["Total cases", cases.length.toString(), "All demo records"],
+            ["Total cases", cases.length.toString(), "Supabase records"],
             ["Open cases", openCases.length.toString(), "Not yet completed"],
             [
               "Unassigned",
@@ -195,7 +297,7 @@ export default function CasesPage() {
             ],
             [
               "Missing docs",
-              missingDocumentCases.length.toString(),
+              missingDocumentCaseIds.size.toString(),
               "Require follow-up",
             ],
           ].map(([label, value, detail]) => (
@@ -203,9 +305,11 @@ export default function CasesPage() {
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
                 {label}
               </p>
+
               <p className="mt-4 text-4xl font-black tracking-tight text-slate-950">
                 {value}
               </p>
+
               <p className="mt-2 text-sm leading-6 text-slate-500">{detail}</p>
             </div>
           ))}
@@ -217,6 +321,7 @@ export default function CasesPage() {
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
                 Search and Filter
               </p>
+
               <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
                 Staff working queue
               </h2>
@@ -264,73 +369,84 @@ export default function CasesPage() {
             </div>
 
             <div className="divide-y divide-slate-100">
-              {filteredCases.map((caseItem) => (
-                <Link
-                  key={caseItem.id}
-                  href={caseItem.href}
-                  className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 xl:grid-cols-[1.1fr_1.1fr_0.8fr_0.9fr_0.8fr_0.6fr] xl:items-center"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-base font-black text-slate-950">
-                        {caseItem.id}
+              {filteredCases.map((caseItem) => {
+                const status = normalizeStatus(caseItem.status);
+                const priority = normalizePriority(caseItem.priority);
+                const caseDocuments = documentsByCaseId[caseItem.id] ?? [];
+                const missingDocs = caseDocuments.filter(
+                  (document) => document.status !== "Received"
+                ).length;
+
+                return (
+                  <Link
+                    key={caseItem.id}
+                    href={getCaseHref(caseItem.case_number)}
+                    className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 xl:grid-cols-[1.1fr_1.1fr_0.8fr_0.9fr_0.8fr_0.6fr] xl:items-center"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-base font-black text-slate-950">
+                          {caseItem.case_number}
+                        </p>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-black ${priorityStyles[priority]}`}
+                        >
+                          {priority}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm font-black text-slate-700">
+                        {caseItem.client_first_name} {caseItem.client_last_name}
                       </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        {caseItem.client_email ?? "No email on file"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-black text-slate-900">
+                        {caseItem.service_category}
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        {missingDocs === 0
+                          ? "Documents complete"
+                          : `${missingDocs} missing document${
+                              missingDocs === 1 ? "" : "s"
+                            }`}
+                      </p>
+                    </div>
+
+                    <div>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-black ${priorityStyles[caseItem.priority]}`}
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusStyles[status]}`}
                       >
-                        {caseItem.priority}
+                        {status}
                       </span>
                     </div>
 
-                    <p className="mt-2 text-sm font-black text-slate-700">
-                      {caseItem.client}
-                    </p>
+                    <div>
+                      <p className="text-sm font-black text-slate-900">
+                        {caseItem.assigned_to}
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-sm text-slate-500">
-                      {caseItem.email}
-                    </p>
-                  </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">
+                        {formatUpdatedAt(caseItem.updated_at)}
+                      </p>
+                    </div>
 
-                  <div>
-                    <p className="text-sm font-black text-slate-900">
-                      {caseItem.service}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {caseItem.missingDocs === 0
-                        ? "Documents complete"
-                        : `${caseItem.missingDocs} missing document${
-                            caseItem.missingDocs === 1 ? "" : "s"
-                          }`}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span
-                      className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusStyles[caseItem.status]}`}
-                    >
-                      {caseItem.status}
-                    </span>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-black text-slate-900">
-                      {caseItem.assignedTo}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500">
-                      {caseItem.updated}
-                    </p>
-                  </div>
-
-                  <div className="xl:text-right">
-                    <span className="inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-xs font-black text-white">
-                      View case
-                    </span>
-                  </div>
-                </Link>
-              ))}
+                    <div className="xl:text-right">
+                      <span className="inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-xs font-black text-white">
+                        View case
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
 
             {filteredCases.length === 0 ? (
@@ -338,6 +454,7 @@ export default function CasesPage() {
                 <p className="text-lg font-black text-slate-950">
                   No cases found
                 </p>
+
                 <p className="mt-2 text-sm text-slate-500">
                   Try another search term or status filter.
                 </p>

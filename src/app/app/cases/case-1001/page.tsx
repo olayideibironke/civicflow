@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -9,6 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import { supabase } from "@/lib/supabase";
 
 type CaseStatus =
   | "New Intake"
@@ -21,18 +23,48 @@ type DocumentStatus = "Received" | "Missing" | "Needs Review";
 
 type DecisionOutcome = "Approved" | "Denied" | "Referred" | "Withdrawn";
 
-type DocumentItem = {
+type CivicCase = {
   id: string;
-  name: string;
-  description: string;
-  status: DocumentStatus;
-  fileName?: string;
+  organization_id: string;
+  case_number: string;
+  client_first_name: string;
+  client_last_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  service_category: string;
+  priority: string;
+  status: string;
+  assigned_to: string;
+  summary: string | null;
+  source: string;
+  decision_outcome: string | null;
+  decision_note: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
-type ActivityItem = {
+type CaseDocument = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  name: string;
+  description: string | null;
+  status: string;
+  file_name: string | null;
+  file_path: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type CaseActivity = {
+  id: string;
+  case_id: string;
+  organization_id: string;
   title: string;
   detail: string;
-  time: string;
+  created_by: string | null;
+  created_at: string;
 };
 
 const statusOptions: CaseStatus[] = [
@@ -64,75 +96,11 @@ const documentStatusStyles: Record<DocumentStatus, string> = {
   "Needs Review": "border-amber-200 bg-amber-50 text-amber-700",
 };
 
-const initialDocuments: DocumentItem[] = [
-  {
-    id: "doc-1",
-    name: "Photo identification",
-    description: "Government-issued ID or equivalent verification document.",
-    status: "Received",
-    fileName: "photo-id.pdf",
-  },
-  {
-    id: "doc-2",
-    name: "Proof of address",
-    description: "Utility bill, lease, official mail, or another address record.",
-    status: "Received",
-    fileName: "proof-of-address.pdf",
-  },
-  {
-    id: "doc-3",
-    name: "Program eligibility form",
-    description: "Signed client intake or eligibility questionnaire.",
-    status: "Missing",
-  },
-  {
-    id: "doc-4",
-    name: "Supporting records",
-    description: "Additional records requested by the assigned staff member.",
-    status: "Missing",
-  },
-];
-
-const initialActivityFeed: ActivityItem[] = [
-  {
-    title: "Case created",
-    detail: "Public intake submission created case CF-1001.",
-    time: "Today · 9:12 AM",
-  },
-  {
-    title: "Initial document review",
-    detail: "Two documents were marked ready for staff review.",
-    time: "Today · 9:26 AM",
-  },
-  {
-    title: "Routed to review team",
-    detail: "Case moved into the Eligibility Review queue.",
-    time: "Today · 10:04 AM",
-  },
-];
-
-const summaryCards = [
-  {
-    label: "Client",
-    value: "Angela Brooks",
-    detail: "angela.brooks@example.org",
-  },
-  {
-    label: "Service Type",
-    value: "Eligibility Review",
-    detail: "Document verification",
-  },
-  {
-    label: "Priority",
-    value: "Medium",
-    detail: "Response target: 3 business days",
-  },
-  {
-    label: "Created",
-    value: "Jun 30, 2026",
-    detail: "Public intake submission",
-  },
-];
+function savedButtonClass(isSaved: boolean) {
+  return isSaved
+    ? "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-300 px-5 text-sm font-black text-slate-600 shadow-none"
+    : "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800";
+}
 
 function formatFileSize(size: number) {
   if (size < 1024) {
@@ -146,25 +114,66 @@ function formatFileSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function savedButtonClass(isSaved: boolean) {
-  return isSaved
-    ? "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-300 px-5 text-sm font-black text-slate-600 shadow-none"
-    : "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800";
+function normalizeCaseStatus(value: string): CaseStatus {
+  if (statusOptions.includes(value as CaseStatus)) {
+    return value as CaseStatus;
+  }
+
+  return "New Intake";
+}
+
+function normalizeDocumentStatus(value: string): DocumentStatus {
+  if (value === "Received" || value === "Missing" || value === "Needs Review") {
+    return value;
+  }
+
+  return "Missing";
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatActivityTime(value: string) {
+  const createdAt = new Date(value);
+  const now = new Date();
+  const differenceInMinutes = Math.floor(
+    (now.getTime() - createdAt.getTime()) / 60000
+  );
+
+  if (differenceInMinutes < 2) {
+    return "Just now";
+  }
+
+  if (differenceInMinutes < 60) {
+    return `${differenceInMinutes} minutes ago`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(createdAt);
 }
 
 export default function CaseDetailPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  const [caseRecord, setCaseRecord] = useState<CivicCase | null>(null);
   const [status, setStatus] = useState<CaseStatus>("In Review");
   const [assignedTo, setAssignedTo] = useState("Maya Johnson");
-  const [documents, setDocuments] = useState<DocumentItem[]>(initialDocuments);
-  const [activityFeed, setActivityFeed] =
-    useState<ActivityItem[]>(initialActivityFeed);
+  const [documents, setDocuments] = useState<CaseDocument[]>([]);
+  const [activityFeed, setActivityFeed] = useState<CaseActivity[]>([]);
 
-  const [internalNote, setInternalNote] = useState(
-    "Client appears eligible for initial review. Missing signed eligibility form before final decision."
-  );
-
+  const [internalNote, setInternalNote] = useState("");
   const [caseSaved, setCaseSaved] = useState(false);
   const [workflowSaved, setWorkflowSaved] = useState(false);
   const [noteSaved, setNoteSaved] = useState(false);
@@ -208,24 +217,138 @@ export default function CaseDetailPage() {
 
   const missingDocuments = documents.length - completedDocuments;
   const caseReadyForDecision =
-    missingDocuments === 0 && documentsNeedingReview === 0;
+    documents.length > 0 &&
+    missingDocuments === 0 &&
+    documentsNeedingReview === 0;
 
-  const completionPercent = Math.round(
-    (completedDocuments / documents.length) * 100
-  );
+  const completionPercent =
+    documents.length === 0
+      ? 0
+      : Math.round((completedDocuments / documents.length) * 100);
 
   const selectedDocument = useMemo(
     () => documents.find((document) => document.id === selectedDocumentId),
     [documents, selectedDocumentId]
   );
 
-  function addActivity(title: string, detail: string) {
-    setActivityFeed((currentActivity) => [
+  const summaryCards = useMemo(() => {
+    if (!caseRecord) {
+      return [];
+    }
+
+    return [
       {
+        label: "Client",
+        value: `${caseRecord.client_first_name} ${caseRecord.client_last_name}`,
+        detail: caseRecord.client_email ?? "No email on file",
+      },
+      {
+        label: "Service Type",
+        value: caseRecord.service_category,
+        detail: "Document verification",
+      },
+      {
+        label: "Priority",
+        value: caseRecord.priority,
+        detail: "Response target: 3 business days",
+      },
+      {
+        label: "Created",
+        value: formatDate(caseRecord.created_at),
+        detail: caseRecord.source,
+      },
+    ];
+  }, [caseRecord]);
+
+  useEffect(() => {
+    async function loadCaseData() {
+      setLoading(true);
+      setLoadError("");
+
+      const { data: loadedCase, error: caseError } = await supabase
+        .from("cases")
+        .select("*")
+        .eq("case_number", "CF-1001")
+        .single();
+
+      if (caseError || !loadedCase) {
+        setLoadError(
+          caseError?.message ?? "Unable to load case CF-1001 from Supabase."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const { data: loadedDocuments, error: documentsError } = await supabase
+        .from("case_documents")
+        .select("*")
+        .eq("case_id", loadedCase.id)
+        .order("created_at", { ascending: true });
+
+      if (documentsError) {
+        setLoadError(documentsError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: loadedActivity, error: activityError } = await supabase
+        .from("case_activity")
+        .select("*")
+        .eq("case_id", loadedCase.id)
+        .order("created_at", { ascending: false });
+
+      if (activityError) {
+        setLoadError(activityError.message);
+        setLoading(false);
+        return;
+      }
+
+      const normalizedStatus = normalizeCaseStatus(loadedCase.status);
+
+      setCaseRecord(loadedCase as CivicCase);
+      setStatus(normalizedStatus);
+      setAssignedTo(loadedCase.assigned_to);
+      setInternalNote(loadedCase.summary ?? "");
+      setDecisionOutcome(
+        (loadedCase.decision_outcome as DecisionOutcome | null) ?? "Approved"
+      );
+      setDecisionNote(
+        loadedCase.decision_note ??
+          "All required documents have been reviewed. Case is ready for final decision."
+      );
+      setCaseCompleted(normalizedStatus === "Completed");
+      setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+      setActivityFeed((loadedActivity ?? []) as CaseActivity[]);
+      setLoading(false);
+    }
+
+    loadCaseData();
+  }, []);
+
+  async function addActivity(title: string, detail: string) {
+    if (!caseRecord) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("case_activity")
+      .insert({
+        case_id: caseRecord.id,
+        organization_id: caseRecord.organization_id,
         title,
         detail,
-        time: "Just now",
-      },
+        created_by: "Demo Staff",
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      setCaseMessage(error.message);
+      return;
+    }
+
+    setActivityFeed((currentActivity) => [
+      data as CaseActivity,
       ...currentActivity,
     ]);
   }
@@ -261,25 +384,42 @@ export default function CaseDetailPage() {
     setUploadError("");
   }
 
-  function handleUploadSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleUploadSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!caseRecord) {
+      setUploadError("Case data is not ready yet.");
+      return;
+    }
 
     if (!selectedFileName) {
       setUploadError("Please select a file from your computer first.");
       return;
     }
 
-    const newDocument: DocumentItem = {
-      id: `doc-${Date.now()}`,
-      name: documentName.trim(),
-      description: documentDescription.trim(),
-      status: "Needs Review",
-      fileName: selectedFileName,
-    };
+    const { data, error } = await supabase
+      .from("case_documents")
+      .insert({
+        case_id: caseRecord.id,
+        organization_id: caseRecord.organization_id,
+        name: documentName.trim(),
+        description: documentDescription.trim(),
+        status: "Needs Review",
+        file_name: selectedFileName,
+      })
+      .select("*")
+      .single();
 
-    setDocuments((currentDocuments) => [newDocument, ...currentDocuments]);
+    if (error) {
+      setUploadError(error.message);
+      return;
+    }
 
-    addActivity(
+    const newDocument = data as CaseDocument;
+
+    setDocuments((currentDocuments) => [...currentDocuments, newDocument]);
+
+    await addActivity(
       "Document uploaded",
       `${selectedFileName} was attached as ${newDocument.name} and marked for staff review.`
     );
@@ -289,23 +429,38 @@ export default function CaseDetailPage() {
     setCaseCompleted(false);
     setUploadModalOpen(false);
     resetUploadForm();
-    setCaseMessage("Document selected and added to case activity.");
+    setCaseMessage("Document selected and added to Supabase case activity.");
   }
 
-  function updateDocumentStatus(nextStatus: DocumentStatus) {
+  async function updateDocumentStatus(nextStatus: DocumentStatus) {
     if (!selectedDocument) {
       return;
     }
 
+    const { data, error } = await supabase
+      .from("case_documents")
+      .update({
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", selectedDocument.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setCaseMessage(error.message);
+      return;
+    }
+
+    const updatedDocument = data as CaseDocument;
+
     setDocuments((currentDocuments) =>
       currentDocuments.map((document) =>
-        document.id === selectedDocument.id
-          ? { ...document, status: nextStatus }
-          : document
+        document.id === updatedDocument.id ? updatedDocument : document
       )
     );
 
-    addActivity(
+    await addActivity(
       "Document status updated",
       `${selectedDocument.name} was marked as ${nextStatus}. ${reviewNote}`
     );
@@ -317,31 +472,107 @@ export default function CaseDetailPage() {
     setCaseMessage(`${selectedDocument.name} marked as ${nextStatus}.`);
   }
 
-  function handleCaseSave() {
+  async function handleCaseSave() {
+    if (!caseRecord) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("cases")
+      .update({
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", caseRecord.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setCaseMessage(error.message);
+      return;
+    }
+
+    setCaseRecord(data as CivicCase);
     setCaseSaved(true);
-    setCaseMessage("Case saved successfully.");
-    addActivity(
-      "Case saved",
-      `Case CF-1001 was saved by ${assignedTo}.`
-    );
+    setCaseMessage("Case saved successfully in Supabase.");
+
+    await addActivity("Case saved", `Case ${caseRecord.case_number} was saved.`);
   }
 
-  function handleWorkflowSave() {
+  async function handleWorkflowSave() {
+    if (!caseRecord) {
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("cases")
+      .update({
+        status,
+        assigned_to: assignedTo,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", caseRecord.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setWorkflowMessage(error.message);
+      return;
+    }
+
+    setCaseRecord(data as CivicCase);
     setWorkflowSaved(true);
-    setWorkflowMessage("Workflow status and assignment saved.");
-    addActivity(
+    setWorkflowMessage("Workflow status and assignment saved in Supabase.");
+
+    await addActivity(
       "Workflow updated",
       `Case status is now ${status}. Assigned owner is ${assignedTo}.`
     );
   }
 
-  function handleNoteSave() {
+  async function handleNoteSave() {
+    if (!caseRecord) {
+      return;
+    }
+
+    const { error: noteError } = await supabase.from("case_notes").insert({
+      case_id: caseRecord.id,
+      organization_id: caseRecord.organization_id,
+      note: internalNote,
+      created_by: assignedTo,
+    });
+
+    if (noteError) {
+      setNoteMessage(noteError.message);
+      return;
+    }
+
+    const { data, error: caseError } = await supabase
+      .from("cases")
+      .update({
+        summary: internalNote,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", caseRecord.id)
+      .select("*")
+      .single();
+
+    if (caseError) {
+      setNoteMessage(caseError.message);
+      return;
+    }
+
+    setCaseRecord(data as CivicCase);
     setNoteSaved(true);
-    setNoteMessage("Internal staff note saved.");
-    addActivity("Staff note saved", "Internal note was updated by staff.");
+    setNoteMessage("Internal staff note saved in Supabase.");
+
+    await addActivity("Staff note saved", "Internal note was updated by staff.");
   }
 
-  function handleCompleteCase() {
+  async function handleCompleteCase() {
+    if (!caseRecord) {
+      return;
+    }
+
     if (!caseReadyForDecision) {
       setDecisionMessage(
         "Complete all document review items before closing the case."
@@ -349,16 +580,71 @@ export default function CaseDetailPage() {
       return;
     }
 
+    const { data, error } = await supabase
+      .from("cases")
+      .update({
+        status: "Completed",
+        decision_outcome: decisionOutcome,
+        decision_note: decisionNote,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", caseRecord.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setDecisionMessage(error.message);
+      return;
+    }
+
+    setCaseRecord(data as CivicCase);
     setStatus("Completed");
     setCaseCompleted(true);
     setWorkflowSaved(false);
     setCaseSaved(false);
-
     setDecisionMessage(`Case completed with outcome: ${decisionOutcome}.`);
 
-    addActivity(
+    await addActivity(
       "Case completed",
       `Final outcome: ${decisionOutcome}. ${decisionNote}`
+    );
+  }
+
+  if (loading) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+            Loading Case
+          </p>
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Connecting to Supabase...
+          </h1>
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            CivicFlow is loading the case record, documents, and activity
+            timeline from the database.
+          </p>
+        </section>
+      </AppShell>
+    );
+  }
+
+  if (loadError || !caseRecord) {
+    return (
+      <AppShell>
+        <section className="premium-card">
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+            Supabase Error
+          </p>
+          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            Case could not be loaded.
+          </h1>
+          <p className="mt-3 text-base leading-7 text-slate-600">
+            {loadError || "No case record was found."}
+          </p>
+        </section>
+      </AppShell>
     );
   }
 
@@ -384,13 +670,12 @@ export default function CaseDetailPage() {
               </div>
 
               <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-                Case CF-1001
+                Case {caseRecord.case_number}
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                A staff-ready case workspace for managing client information,
-                assignment, document requirements, notes, status movement, and
-                case history.
+                This case workspace is now connected to Supabase for case data,
+                document records, notes, workflow updates, and activity history.
               </p>
             </div>
 
@@ -407,7 +692,7 @@ export default function CaseDetailPage() {
                 type="button"
                 onClick={handleCaseSave}
                 disabled={caseSaved}
-                className={caseSaved ? savedButtonClass(true) : savedButtonClass(false)}
+                className={savedButtonClass(caseSaved)}
               >
                 {caseSaved ? "Saved" : "Save case"}
               </button>
@@ -454,7 +739,7 @@ export default function CaseDetailPage() {
 
                   <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                     Move the case through review, assign staff ownership, and
-                    keep the service workflow organized.
+                    save the workflow directly to Supabase.
                   </p>
                 </div>
 
@@ -533,7 +818,8 @@ export default function CaseDetailPage() {
                   </h2>
 
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Click any document to review it and update its status.
+                    Click any document to review it and update its Supabase
+                    status.
                   </p>
                 </div>
 
@@ -550,50 +836,54 @@ export default function CaseDetailPage() {
               </div>
 
               <div className="mt-6 grid gap-3">
-                {documents.map((document) => (
-                  <button
-                    type="button"
-                    key={document.id}
-                    onClick={() => setSelectedDocumentId(document.id)}
-                    className="flex w-full items-start gap-4 rounded-3xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:bg-slate-50"
-                  >
-                    <span
-                      className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black ${
-                        document.status === "Received"
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : document.status === "Needs Review"
-                            ? "border-amber-200 bg-amber-50 text-amber-700"
-                            : "border-slate-200 bg-white text-transparent"
-                      }`}
+                {documents.map((document) => {
+                  const documentStatus = normalizeDocumentStatus(document.status);
+
+                  return (
+                    <button
+                      type="button"
+                      key={document.id}
+                      onClick={() => setSelectedDocumentId(document.id)}
+                      className="flex w-full items-start gap-4 rounded-3xl border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:bg-slate-50"
                     >
-                      {document.status === "Needs Review" ? "!" : "✓"}
-                    </span>
-
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="block text-base font-black text-slate-950">
-                          {document.name}
-                        </span>
-
-                        <span
-                          className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${documentStatusStyles[document.status]}`}
-                        >
-                          {document.status}
-                        </span>
+                      <span
+                        className={`mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm font-black ${
+                          documentStatus === "Received"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : documentStatus === "Needs Review"
+                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              : "border-slate-200 bg-white text-transparent"
+                        }`}
+                      >
+                        {documentStatus === "Needs Review" ? "!" : "✓"}
                       </span>
 
-                      <span className="mt-2 block text-sm leading-6 text-slate-500">
-                        {document.description}
-                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <span className="block text-base font-black text-slate-950">
+                            {document.name}
+                          </span>
 
-                      {document.fileName ? (
-                        <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                          Attached file: {document.fileName}
+                          <span
+                            className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${documentStatusStyles[documentStatus]}`}
+                          >
+                            {documentStatus}
+                          </span>
                         </span>
-                      ) : null}
-                    </span>
-                  </button>
-                ))}
+
+                        <span className="mt-2 block text-sm leading-6 text-slate-500">
+                          {document.description}
+                        </span>
+
+                        {document.file_name ? (
+                          <span className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                            Attached file: {document.file_name}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -790,8 +1080,8 @@ export default function CaseDetailPage() {
               </h2>
 
               <div className="mt-6 space-y-5">
-                {activityFeed.map((item, index) => (
-                  <div key={`${item.title}-${index}`} className="relative pl-6">
+                {activityFeed.map((item) => (
+                  <div key={item.id} className="relative pl-6">
                     <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-slate-950" />
 
                     <p className="text-sm font-black text-slate-950">
@@ -803,7 +1093,7 @@ export default function CaseDetailPage() {
                     </p>
 
                     <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                      {item.time}
+                      {formatActivityTime(item.created_at)}
                     </p>
                   </div>
                 ))}
@@ -826,8 +1116,8 @@ export default function CaseDetailPage() {
                   </h2>
 
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Select a file from your computer, classify it, and add it to
-                    the case checklist.
+                    Select a file from your computer, classify it, and save the
+                    document record to Supabase.
                   </p>
                 </div>
 
@@ -855,8 +1145,8 @@ export default function CaseDetailPage() {
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Choose a PDF, image, Word document, or spreadsheet from your
-                    device.
+                    This step saves file metadata now. Supabase Storage will
+                    store the actual file contents in the next phase.
                   </p>
 
                   <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -950,8 +1240,8 @@ export default function CaseDetailPage() {
                   </h2>
 
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    Review the attached document, update the status, and record
-                    the action in the case timeline.
+                    Review the document record, update the status, and save the
+                    activity to Supabase.
                   </p>
                 </div>
 
@@ -978,15 +1268,19 @@ export default function CaseDetailPage() {
                     </div>
 
                     <span
-                      className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${documentStatusStyles[selectedDocument.status]}`}
+                      className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${
+                        documentStatusStyles[
+                          normalizeDocumentStatus(selectedDocument.status)
+                        ]
+                      }`}
                     >
-                      {selectedDocument.status}
+                      {normalizeDocumentStatus(selectedDocument.status)}
                     </span>
                   </div>
 
-                  {selectedDocument.fileName ? (
+                  {selectedDocument.file_name ? (
                     <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700">
-                      Attached file: {selectedDocument.fileName}
+                      Attached file: {selectedDocument.file_name}
                     </div>
                   ) : (
                     <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
