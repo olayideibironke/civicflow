@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
@@ -124,9 +131,29 @@ function savedButtonClass(isSaved: boolean) {
     : "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800";
 }
 
+function formatFileSize(size: number) {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function sanitizeFileName(fileName: string) {
+  return fileName
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function DynamicCaseDetailPage() {
   const params = useParams();
   const routeCaseNumber = normalizeCaseNumber(String(params.caseNumber ?? ""));
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -146,6 +173,20 @@ export default function DynamicCaseDetailPage() {
   );
   const [caseCompleted, setCaseCompleted] = useState(false);
   const [decisionMessage, setDecisionMessage] = useState("");
+
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadTargetId, setUploadTargetId] = useState("new");
+  const [uploadDocumentName, setUploadDocumentName] = useState(
+    "Supporting records"
+  );
+  const [uploadDescription, setUploadDescription] = useState(
+    "Document uploaded by staff for case review."
+  );
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFileLabel, setSelectedFileLabel] = useState("No file selected");
+  const [uploadMessage, setUploadMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState("");
 
   const completedDocuments = useMemo(
     () => documents.filter((document) => document.status === "Received").length,
@@ -286,6 +327,192 @@ export default function DynamicCaseDetailPage() {
       data as CaseActivity,
       ...currentActivity,
     ]);
+  }
+
+  function resetUploadForm() {
+    setUploadTargetId("new");
+    setUploadDocumentName("Supporting records");
+    setUploadDescription("Document uploaded by staff for case review.");
+    setSelectedFile(null);
+    setSelectedFileLabel("No file selected");
+    setUploadMessage("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function openUploadModal() {
+    const firstIncompleteDocument =
+      documents.find((document) => document.status !== "Received") ??
+      documents[0];
+
+    if (firstIncompleteDocument) {
+      setUploadTargetId(firstIncompleteDocument.id);
+      setUploadDocumentName(firstIncompleteDocument.name);
+      setUploadDescription(
+        firstIncompleteDocument.description ??
+          "Document uploaded by staff for case review."
+      );
+    } else {
+      resetUploadForm();
+    }
+
+    setUploadModalOpen(true);
+  }
+
+  function closeUploadModal() {
+    setUploadModalOpen(false);
+    resetUploadForm();
+  }
+
+  function handleUploadTargetChange(value: string) {
+    setUploadTargetId(value);
+
+    if (value === "new") {
+      setUploadDocumentName("Supporting records");
+      setUploadDescription("Document uploaded by staff for case review.");
+      return;
+    }
+
+    const selectedDocument = documents.find((document) => document.id === value);
+
+    if (selectedDocument) {
+      setUploadDocumentName(selectedDocument.name);
+      setUploadDescription(
+        selectedDocument.description ??
+          "Document uploaded by staff for case review."
+      );
+    }
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setSelectedFile(null);
+      setSelectedFileLabel("No file selected");
+      return;
+    }
+
+    setSelectedFile(file);
+    setSelectedFileLabel(`${file.name} · ${formatFileSize(file.size)}`);
+    setUploadMessage("");
+  }
+
+  async function handleStorageUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!caseRecord) {
+      setUploadMessage("Case data is not ready yet.");
+      return;
+    }
+
+    if (!selectedFile) {
+      setUploadMessage("Please select a file from your computer first.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadMessage("");
+
+    const safeFileName = sanitizeFileName(selectedFile.name);
+    const filePath = `${caseRecord.organization_id}/${caseRecord.case_number}/${Date.now()}-${safeFileName}`;
+
+    const { error: storageError } = await supabase.storage
+      .from("case-documents")
+      .upload(filePath, selectedFile, {
+        cacheControl: "3600",
+        contentType: selectedFile.type || undefined,
+        upsert: false,
+      });
+
+    if (storageError) {
+      setUploading(false);
+      setUploadMessage(storageError.message);
+      return;
+    }
+
+    if (uploadTargetId === "new") {
+      const { data, error } = await supabase
+        .from("case_documents")
+        .insert({
+          case_id: caseRecord.id,
+          organization_id: caseRecord.organization_id,
+          name: uploadDocumentName.trim(),
+          description: uploadDescription.trim(),
+          status: "Needs Review",
+          file_name: selectedFile.name,
+          file_path: filePath,
+        })
+        .select("*")
+        .single();
+
+      if (error) {
+        setUploading(false);
+        setUploadMessage(error.message);
+        return;
+      }
+
+      setDocuments((currentDocuments) => [
+        ...currentDocuments,
+        data as CaseDocument,
+      ]);
+    } else {
+      const { data, error } = await supabase
+        .from("case_documents")
+        .update({
+          description: uploadDescription.trim(),
+          status: "Needs Review",
+          file_name: selectedFile.name,
+          file_path: filePath,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", uploadTargetId)
+        .select("*")
+        .single();
+
+      if (error) {
+        setUploading(false);
+        setUploadMessage(error.message);
+        return;
+      }
+
+      setDocuments((currentDocuments) =>
+        currentDocuments.map((document) =>
+          document.id === uploadTargetId ? (data as CaseDocument) : document
+        )
+      );
+    }
+
+    await addActivity(
+      "Document uploaded",
+      `${selectedFile.name} was uploaded to Supabase Storage and marked for review.`
+    );
+
+    setCaseCompleted(false);
+    setUploading(false);
+    setUploadModalOpen(false);
+    resetUploadForm();
+  }
+
+  async function handleDownloadDocument(document: CaseDocument) {
+    if (!document.file_path) {
+      setDownloadMessage("This document has no stored file attached yet.");
+      return;
+    }
+
+    const { data, error } = await supabase.storage
+      .from("case-documents")
+      .createSignedUrl(document.file_path, 60);
+
+    if (error || !data?.signedUrl) {
+      setDownloadMessage(error?.message ?? "Unable to create download link.");
+      return;
+    }
+
+    setDownloadMessage("");
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
   async function updateDocumentStatus(
@@ -454,11 +681,34 @@ export default function DynamicCaseDetailPage() {
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                This dynamic case page loads the selected Supabase case record,
-                its required documents, and its activity timeline.
+                This case page now supports real Supabase Storage uploads,
+                document metadata, signed file downloads, and workflow activity.
               </p>
             </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
+              <button
+                type="button"
+                onClick={openUploadModal}
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                Upload document
+              </button>
+
+              <Link
+                href="/app/reports"
+                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+              >
+                View reports
+              </Link>
+            </div>
           </div>
+
+          {downloadMessage ? (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
+              {downloadMessage}
+            </div>
+          ) : null}
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -554,7 +804,8 @@ export default function DynamicCaseDetailPage() {
                   </h2>
 
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Mark each required document as received after review.
+                    Upload real files, review documents, and download stored
+                    files from Supabase Storage.
                   </p>
                 </div>
 
@@ -587,6 +838,26 @@ export default function DynamicCaseDetailPage() {
                           <p className="mt-2 text-sm leading-6 text-slate-500">
                             {document.description}
                           </p>
+
+                          {document.file_name ? (
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                                File: {document.file_name}
+                              </span>
+
+                              {document.file_path ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleDownloadDocument(document)
+                                  }
+                                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  Download
+                                </button>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
 
                         <span
@@ -790,6 +1061,138 @@ export default function DynamicCaseDetailPage() {
             </div>
           </aside>
         </section>
+
+        {uploadModalOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-5 py-8 backdrop-blur-sm">
+            <div className="w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-5 border-b border-slate-100 pb-5">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                    Storage Upload
+                  </p>
+
+                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                    Upload document file
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Select a file from your computer and store it in Supabase
+                    Storage for this case.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeUploadModal}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-lg font-black text-slate-500 transition hover:bg-slate-50"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleStorageUpload} className="mt-6 space-y-5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                />
+
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                  <p className="text-base font-black text-slate-950">
+                    File from computer
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Files are stored in the private case-documents bucket and
+                    downloaded through signed links.
+                  </p>
+
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                    >
+                      Select file
+                    </button>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-500">
+                      {selectedFileLabel}
+                    </div>
+                  </div>
+                </div>
+
+                <label className="input-label">
+                  Attach to checklist item
+                  <select
+                    value={uploadTargetId}
+                    onChange={(event) =>
+                      handleUploadTargetChange(event.target.value)
+                    }
+                    className="input-field"
+                  >
+                    {documents.map((document) => (
+                      <option key={document.id} value={document.id}>
+                        {document.name}
+                      </option>
+                    ))}
+                    <option value="new">Add as new document record</option>
+                  </select>
+                </label>
+
+                {uploadTargetId === "new" ? (
+                  <label className="input-label">
+                    Document name
+                    <input
+                      value={uploadDocumentName}
+                      onChange={(event) =>
+                        setUploadDocumentName(event.target.value)
+                      }
+                      className="input-field"
+                    />
+                  </label>
+                ) : null}
+
+                <label className="input-label">
+                  Description
+                  <textarea
+                    value={uploadDescription}
+                    onChange={(event) => setUploadDescription(event.target.value)}
+                    rows={4}
+                    required
+                    className="input-field resize-y leading-7"
+                  />
+                </label>
+
+                {uploadMessage ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
+                    {uploadMessage}
+                  </div>
+                ) : null}
+
+                <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={closeUploadModal}
+                    className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className={savedButtonClass(uploading)}
+                  >
+                    {uploading ? "Uploading..." : "Upload file"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
       </div>
     </AppShell>
   );
