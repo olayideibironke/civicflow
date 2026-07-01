@@ -1,6 +1,19 @@
 import Link from "next/link";
 
-export default function IntakeSuccessPage() {
+type IntakeSuccessPageProps = {
+  searchParams?: Promise<{
+    case?: string;
+    client?: string;
+  }>;
+};
+
+export default async function IntakeSuccessPage({
+  searchParams,
+}: IntakeSuccessPageProps) {
+  const params = await searchParams;
+  const caseNumber = params?.case ?? "New case";
+  const clientName = params?.client ?? "Client";
+
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)] px-6 py-8">
       <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
@@ -18,15 +31,17 @@ export default function IntakeSuccessPage() {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">
-            A staff member can now review the intake, verify documents, assign
-            ownership, and move the case through the CivicFlow workflow.
+            CivicFlow created case <strong>{caseNumber}</strong> for{" "}
+            <strong>{clientName}</strong>. A staff member can now review the
+            intake, verify documents, assign ownership, and move the case
+            through the workflow.
           </p>
 
           <div className="mx-auto mt-8 grid max-w-3xl gap-4 md:grid-cols-3">
             {[
-              ["Step 1", "Intake review"],
-              ["Step 2", "Staff assignment"],
-              ["Step 3", "Case decision"],
+              ["Step 1", "Intake saved"],
+              ["Step 2", "Case created"],
+              ["Step 3", "Staff review"],
             ].map(([step, label]) => (
               <div key={step} className="soft-panel p-5">
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
@@ -48,10 +63,10 @@ export default function IntakeSuccessPage() {
             </Link>
 
             <Link
-              href="/app/cases/case-1001"
+              href="/app/cases"
               className="rounded-2xl bg-slate-950 px-6 py-3 text-center text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
             >
-              View demo case
+              View case queue
             </Link>
           </div>
         </div>
