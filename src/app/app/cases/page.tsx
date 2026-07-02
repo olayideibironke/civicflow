@@ -5,16 +5,7 @@ import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 
-type CaseStatus =
-  | "New Intake"
-  | "In Review"
-  | "Assigned"
-  | "Waiting on Client"
-  | "Completed";
-
-type CasePriority = "Low" | "Medium" | "High" | "Urgent";
-
-type CivicCase = {
+type CaseRecord = {
   id: string;
   organization_id: string;
   case_number: string;
@@ -48,79 +39,160 @@ type CaseDocument = {
   updated_at: string;
 };
 
-const filters = [
-  "All",
+type CaseNote = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  note: string | null;
+  note_type: string | null;
+  follow_up_required: boolean | null;
+  follow_up_date: string | null;
+  follow_up_completed: boolean | null;
+  follow_up_completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type AttentionFilter =
+  | "All Cases"
+  | "Open Follow-ups"
+  | "Overdue Follow-ups"
+  | "Document Gaps"
+  | "Unassigned";
+
+const statusOptions = [
+  "All Statuses",
   "New Intake",
   "In Review",
   "Assigned",
   "Waiting on Client",
   "Completed",
-] as const;
+];
 
-type FilterValue = (typeof filters)[number];
+const priorityOptions = ["All Priorities", "Low", "Medium", "High", "Urgent"];
 
-const statusStyles: Record<CaseStatus, string> = {
-  "New Intake": "border-blue-200 bg-blue-50 text-blue-700",
-  "In Review": "border-amber-200 bg-amber-50 text-amber-700",
-  Assigned: "border-purple-200 bg-purple-50 text-purple-700",
-  "Waiting on Client": "border-orange-200 bg-orange-50 text-orange-700",
-  Completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
-};
-
-const priorityStyles: Record<CasePriority, string> = {
-  Low: "bg-slate-100 text-slate-600",
-  Medium: "bg-blue-50 text-blue-700",
-  High: "bg-amber-50 text-amber-700",
-  Urgent: "bg-rose-50 text-rose-700",
-};
-
-function normalizeStatus(value: string): CaseStatus {
-  if (
-    value === "New Intake" ||
-    value === "In Review" ||
-    value === "Assigned" ||
-    value === "Waiting on Client" ||
-    value === "Completed"
-  ) {
-    return value;
-  }
-
-  return "New Intake";
-}
-
-function normalizePriority(value: string): CasePriority {
-  if (
-    value === "Low" ||
-    value === "Medium" ||
-    value === "High" ||
-    value === "Urgent"
-  ) {
-    return value;
-  }
-
-  return "Medium";
-}
-
-function formatUpdatedAt(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
+const attentionOptions: AttentionFilter[] = [
+  "All Cases",
+  "Open Follow-ups",
+  "Overdue Follow-ups",
+  "Document Gaps",
+  "Unassigned",
+];
 
 function getCaseHref(caseNumber: string) {
   return `/app/cases/${caseNumber.toLowerCase()}`;
 }
 
+function isCompletedCase(caseItem: CaseRecord) {
+  return caseItem.status === "Completed" || Boolean(caseItem.completed_at);
+}
+
+function getTodayDateInput() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastDue(dateValue: string | null) {
+  if (!dateValue) {
+    return false;
+  }
+
+  return dateValue < getTodayDateInput();
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getStatusStyle(status: string) {
+  if (status === "Completed") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (status === "Waiting on Client") {
+    return "border-orange-200 bg-orange-50 text-orange-700";
+  }
+
+  if (status === "In Review") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (status === "Assigned") {
+    return "border-purple-200 bg-purple-50 text-purple-700";
+  }
+
+  return "border-blue-200 bg-blue-50 text-blue-700";
+}
+
+function getPriorityStyle(priority: string) {
+  if (priority === "Urgent" || priority === "High") {
+    return "border-rose-200 bg-rose-50 text-rose-700";
+  }
+
+  if (priority === "Medium") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  return "border-slate-200 bg-white text-slate-500";
+}
+
+function MetricCard({
+  label,
+  value,
+  detail,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  tone?: "default" | "rose" | "amber" | "emerald";
+}) {
+  const valueClass =
+    tone === "rose"
+      ? "text-rose-700"
+      : tone === "amber"
+        ? "text-amber-700"
+        : tone === "emerald"
+          ? "text-emerald-700"
+          : "text-slate-950";
+
+  return (
+    <div className="premium-card">
+      <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+        {label}
+      </p>
+
+      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
+        {value}
+      </p>
+
+      <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+        {detail}
+      </p>
+    </div>
+  );
+}
+
 export default function CasesPage() {
-  const [cases, setCases] = useState<CivicCase[]>([]);
+  const [cases, setCases] = useState<CaseRecord[]>([]);
   const [documents, setDocuments] = useState<CaseDocument[]>([]);
-  const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterValue>("All");
+  const [notes, setNotes] = useState<CaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
+  const [priorityFilter, setPriorityFilter] = useState("All Priorities");
+  const [attentionFilter, setAttentionFilter] =
+    useState<AttentionFilter>("All Cases");
 
   useEffect(() => {
     async function loadCases() {
@@ -130,7 +202,7 @@ export default function CasesPage() {
       const { data: loadedCases, error: casesError } = await supabase
         .from("cases")
         .select("*")
-        .order("updated_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (casesError) {
         setLoadError(casesError.message);
@@ -141,7 +213,7 @@ export default function CasesPage() {
       const { data: loadedDocuments, error: documentsError } = await supabase
         .from("case_documents")
         .select("*")
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (documentsError) {
         setLoadError(documentsError.message);
@@ -149,80 +221,164 @@ export default function CasesPage() {
         return;
       }
 
-      setCases((loadedCases ?? []) as CivicCase[]);
+      const { data: loadedNotes, error: notesError } = await supabase
+        .from("case_notes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (notesError) {
+        setLoadError(notesError.message);
+        setLoading(false);
+        return;
+      }
+
+      setCases((loadedCases ?? []) as CaseRecord[]);
       setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+      setNotes((loadedNotes ?? []) as CaseNote[]);
       setLoading(false);
     }
 
     loadCases();
   }, []);
 
-  const documentsByCaseId = useMemo(() => {
-    return documents.reduce<Record<string, CaseDocument[]>>(
-      (accumulator, document) => {
-        if (!accumulator[document.case_id]) {
-          accumulator[document.case_id] = [];
-        }
+  const openCases = useMemo(
+    () => cases.filter((caseItem) => !isCompletedCase(caseItem)),
+    [cases]
+  );
 
-        accumulator[document.case_id].push(document);
-        return accumulator;
-      },
-      {}
-    );
-  }, [documents]);
+  const unassignedCases = useMemo(
+    () =>
+      openCases.filter(
+        (caseItem) =>
+          !caseItem.assigned_to || caseItem.assigned_to === "Unassigned"
+      ),
+    [openCases]
+  );
+
+  const documentGaps = useMemo(
+    () => documents.filter((document) => document.status !== "Received"),
+    [documents]
+  );
+
+  const openFollowUps = useMemo(
+    () =>
+      notes.filter(
+        (note) => note.follow_up_required && !note.follow_up_completed
+      ),
+    [notes]
+  );
+
+  const overdueFollowUps = useMemo(
+    () => openFollowUps.filter((note) => isPastDue(note.follow_up_date)),
+    [openFollowUps]
+  );
+
+  const documentGapsByCase = useMemo(() => {
+    const lookup = new Map<string, number>();
+
+    documentGaps.forEach((document) => {
+      lookup.set(document.case_id, (lookup.get(document.case_id) ?? 0) + 1);
+    });
+
+    return lookup;
+  }, [documentGaps]);
+
+  const openFollowUpsByCase = useMemo(() => {
+    const lookup = new Map<string, number>();
+
+    openFollowUps.forEach((note) => {
+      lookup.set(note.case_id, (lookup.get(note.case_id) ?? 0) + 1);
+    });
+
+    return lookup;
+  }, [openFollowUps]);
+
+  const overdueFollowUpsByCase = useMemo(() => {
+    const lookup = new Map<string, number>();
+
+    overdueFollowUps.forEach((note) => {
+      lookup.set(note.case_id, (lookup.get(note.case_id) ?? 0) + 1);
+    });
+
+    return lookup;
+  }, [overdueFollowUps]);
 
   const filteredCases = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return cases.filter((caseItem) => {
-      const status = normalizeStatus(caseItem.status);
-
-      const matchesFilter = activeFilter === "All" || status === activeFilter;
-
       const clientName =
         `${caseItem.client_first_name} ${caseItem.client_last_name}`.toLowerCase();
 
-      const matchesSearch =
-        normalizedQuery.length === 0 ||
-        caseItem.case_number.toLowerCase().includes(normalizedQuery) ||
-        clientName.includes(normalizedQuery) ||
-        (caseItem.client_email ?? "").toLowerCase().includes(normalizedQuery) ||
-        caseItem.service_category.toLowerCase().includes(normalizedQuery) ||
-        caseItem.assigned_to.toLowerCase().includes(normalizedQuery);
+      const searchableContent = [
+        caseItem.case_number,
+        clientName,
+        caseItem.client_email ?? "",
+        caseItem.client_phone ?? "",
+        caseItem.service_category,
+        caseItem.priority,
+        caseItem.status,
+        caseItem.assigned_to,
+        caseItem.summary ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
 
-      return matchesFilter && matchesSearch;
+      const matchesSearch = normalizedSearch
+        ? searchableContent.includes(normalizedSearch)
+        : true;
+
+      const matchesStatus =
+        statusFilter === "All Statuses" || caseItem.status === statusFilter;
+
+      const matchesPriority =
+        priorityFilter === "All Priorities" ||
+        caseItem.priority === priorityFilter;
+
+      const hasOpenFollowUps =
+        (openFollowUpsByCase.get(caseItem.id) ?? 0) > 0;
+      const hasOverdueFollowUps =
+        (overdueFollowUpsByCase.get(caseItem.id) ?? 0) > 0;
+      const hasDocumentGaps = (documentGapsByCase.get(caseItem.id) ?? 0) > 0;
+      const isUnassigned =
+        !caseItem.assigned_to || caseItem.assigned_to === "Unassigned";
+
+      const matchesAttention =
+        attentionFilter === "All Cases" ||
+        (attentionFilter === "Open Follow-ups" && hasOpenFollowUps) ||
+        (attentionFilter === "Overdue Follow-ups" && hasOverdueFollowUps) ||
+        (attentionFilter === "Document Gaps" && hasDocumentGaps) ||
+        (attentionFilter === "Unassigned" && isUnassigned);
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesPriority &&
+        matchesAttention
+      );
     });
-  }, [activeFilter, cases, query]);
-
-  const openCases = cases.filter(
-    (caseItem) => normalizeStatus(caseItem.status) !== "Completed"
-  );
-
-  const unassignedCases = cases.filter(
-    (caseItem) => caseItem.assigned_to === "Unassigned"
-  );
-
-  const missingDocumentCaseIds = new Set(
-    documents
-      .filter((document) => document.status !== "Received")
-      .map((document) => document.case_id)
-  );
+  }, [
+    attentionFilter,
+    cases,
+    documentGapsByCase,
+    openFollowUpsByCase,
+    overdueFollowUpsByCase,
+    priorityFilter,
+    searchTerm,
+    statusFilter,
+  ]);
 
   if (loading) {
     return (
       <AppShell>
         <section className="premium-card">
           <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-            Loading Cases
+            Cases
           </p>
 
           <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-            Connecting to Supabase...
+            Loading case queue...
           </h1>
-
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            CivicFlow is loading real case records from your Supabase database.
-          </p>
         </section>
       </AppShell>
     );
@@ -237,7 +393,7 @@ export default function CasesPage() {
           </p>
 
           <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-            Cases could not be loaded.
+            Case queue could not be loaded.
           </h1>
 
           <p className="mt-3 text-base leading-7 text-slate-600">
@@ -252,215 +408,281 @@ export default function CasesPage() {
     <AppShell>
       <div className="space-y-6">
         <section className="premium-card">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
                 Case Queue
               </p>
 
               <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-                Cases
+                Cases and follow-up workload
               </h1>
 
-              <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                This queue is connected to Supabase and displays real case
-                records, assignment status, document gaps, and workflow movement.
+              <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
+                Review all cases, document blockers, open follow-ups, overdue
+                staff actions, assignment gaps, priorities, and workflow status.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
-              <Link
-                href="/intake"
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
-                Public intake
-              </Link>
-
-              <Link
-                href="/app/cases/new"
-                className="rounded-2xl bg-slate-950 px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
-              >
-                Create case
-              </Link>
-            </div>
+            <Link
+              href="/app/cases/new"
+              className="inline-flex h-12 w-fit items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+            >
+              Create case
+            </Link>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            ["Total cases", cases.length.toString(), "Supabase records"],
-            ["Open cases", openCases.length.toString(), "Not yet completed"],
-            [
-              "Unassigned",
-              unassignedCases.length.toString(),
-              "Need staff owner",
-            ],
-            [
-              "Missing docs",
-              missingDocumentCaseIds.size.toString(),
-              "Require follow-up",
-            ],
-          ].map(([label, value, detail]) => (
-            <div key={label} className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-                {label}
-              </p>
+        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-5">
+          <MetricCard
+            label="Total Cases"
+            value={cases.length}
+            detail="All case records"
+          />
 
-              <p className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-                {value}
-              </p>
+          <MetricCard
+            label="Open Cases"
+            value={openCases.length}
+            detail="Active workload"
+          />
 
-              <p className="mt-2 text-sm leading-6 text-slate-500">{detail}</p>
-            </div>
-          ))}
+          <MetricCard
+            label="Open Follow-ups"
+            value={openFollowUps.length}
+            detail="Pending staff actions"
+            tone={openFollowUps.length > 0 ? "amber" : "emerald"}
+          />
+
+          <MetricCard
+            label="Overdue"
+            value={overdueFollowUps.length}
+            detail="Past due follow-ups"
+            tone={overdueFollowUps.length > 0 ? "rose" : "emerald"}
+          />
+
+          <MetricCard
+            label="Doc Gaps"
+            value={documentGaps.length}
+            detail="Missing or review-needed"
+            tone={documentGaps.length > 0 ? "amber" : "emerald"}
+          />
         </section>
 
         <section className="premium-card">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-                Search and Filter
+                Filters
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-                Staff working queue
+                Find cases fast
               </h2>
             </div>
 
-            <div className="w-full xl:max-w-md">
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by case, client, service, or staff..."
-                className="input-field mt-0"
-              />
-            </div>
+            <p className="text-sm font-black text-slate-500">
+              Showing {filteredCases.length} of {cases.length} cases
+            </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            {filters.map((filter) => {
-              const active = activeFilter === filter;
+          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_220px_220px_240px]">
+            <label className="input-label">
+              Search
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search name, case number, email, phone, service, assigned staff..."
+                className="input-field"
+              />
+            </label>
+
+            <label className="input-label">
+              Status
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="input-field"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="input-label">
+              Priority
+              <select
+                value={priorityFilter}
+                onChange={(event) => setPriorityFilter(event.target.value)}
+                className="input-field"
+              >
+                {priorityOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="input-label">
+              Attention
+              <select
+                value={attentionFilter}
+                onChange={(event) =>
+                  setAttentionFilter(event.target.value as AttentionFilter)
+                }
+                className="input-field"
+              >
+                {attentionOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section className="grid gap-4">
+          {filteredCases.length === 0 ? (
+            <div className="premium-card">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                No Results
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                No cases match these filters.
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Adjust the search, status, priority, or attention filters to
+                view more records.
+              </p>
+            </div>
+          ) : (
+            filteredCases.map((caseItem) => {
+              const gapCount = documentGapsByCase.get(caseItem.id) ?? 0;
+              const followUpCount = openFollowUpsByCase.get(caseItem.id) ?? 0;
+              const overdueCount =
+                overdueFollowUpsByCase.get(caseItem.id) ?? 0;
+              const isUnassigned =
+                !caseItem.assigned_to || caseItem.assigned_to === "Unassigned";
 
               return (
-                <button
-                  key={filter}
-                  type="button"
-                  onClick={() => setActiveFilter(filter)}
-                  className={`rounded-full border px-4 py-2 text-xs font-black transition ${
-                    active
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
+                <Link
+                  key={caseItem.id}
+                  href={getCaseHref(caseItem.case_number)}
+                  className="block rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl"
                 >
-                  {filter}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 overflow-hidden rounded-3xl border border-slate-200 bg-white">
-            <div className="hidden grid-cols-[1.1fr_1.1fr_0.8fr_0.9fr_0.8fr_0.6fr] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-400 xl:grid">
-              <p>Case</p>
-              <p>Service</p>
-              <p>Status</p>
-              <p>Assigned</p>
-              <p>Updated</p>
-              <p className="text-right">Action</p>
-            </div>
-
-            <div className="divide-y divide-slate-100">
-              {filteredCases.map((caseItem) => {
-                const status = normalizeStatus(caseItem.status);
-                const priority = normalizePriority(caseItem.priority);
-                const caseDocuments = documentsByCaseId[caseItem.id] ?? [];
-                const missingDocs = caseDocuments.filter(
-                  (document) => document.status !== "Received"
-                ).length;
-
-                return (
-                  <Link
-                    key={caseItem.id}
-                    href={getCaseHref(caseItem.case_number)}
-                    className="grid gap-4 px-5 py-5 transition hover:bg-slate-50 xl:grid-cols-[1.1fr_1.1fr_0.8fr_0.9fr_0.8fr_0.6fr] xl:items-center"
-                  >
-                    <div>
+                  <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_420px] 2xl:items-start">
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-base font-black text-slate-950">
+                        <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
                           {caseItem.case_number}
-                        </p>
+                        </span>
 
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-black ${priorityStyles[priority]}`}
+                          className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
+                            caseItem.status
+                          )}`}
                         >
-                          {priority}
+                          {caseItem.status}
                         </span>
+
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-black ${getPriorityStyle(
+                            caseItem.priority
+                          )}`}
+                        >
+                          {caseItem.priority}
+                        </span>
+
+                        {isUnassigned ? (
+                          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">
+                            Unassigned
+                          </span>
+                        ) : null}
                       </div>
 
-                      <p className="mt-2 text-sm font-black text-slate-700">
-                        {caseItem.client_first_name} {caseItem.client_last_name}
+                      <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                        {caseItem.client_first_name}{" "}
+                        {caseItem.client_last_name}
+                      </h2>
+
+                      <p className="mt-2 text-sm font-bold text-slate-500">
+                        {caseItem.service_category} · Assigned to{" "}
+                        {caseItem.assigned_to || "Unassigned"}
                       </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
-                        {caseItem.client_email ?? "No email on file"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-black text-slate-900">
-                        {caseItem.service_category}
-                      </p>
-
-                      <p className="mt-1 text-sm text-slate-500">
-                        {missingDocs === 0
-                          ? "Documents complete"
-                          : `${missingDocs} missing document${
-                              missingDocs === 1 ? "" : "s"
-                            }`}
+                      <p className="mt-3 line-clamp-2 max-w-4xl text-sm leading-7 text-slate-600">
+                        {caseItem.summary ?? "No case summary provided."}
                       </p>
                     </div>
 
-                    <div>
-                      <span
-                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusStyles[status]}`}
+                    <div className="grid gap-3 sm:grid-cols-3 2xl:grid-cols-1">
+                      <div
+                        className={`rounded-3xl p-4 ${
+                          overdueCount > 0
+                            ? "bg-rose-50"
+                            : followUpCount > 0
+                              ? "bg-amber-50"
+                              : "bg-slate-50"
+                        }`}
                       >
-                        {status}
-                      </span>
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          Follow-ups
+                        </p>
+                        <p
+                          className={`mt-2 text-2xl font-black ${
+                            overdueCount > 0
+                              ? "text-rose-700"
+                              : followUpCount > 0
+                                ? "text-amber-700"
+                                : "text-slate-950"
+                          }`}
+                        >
+                          {followUpCount}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          {overdueCount} overdue
+                        </p>
+                      </div>
+
+                      <div
+                        className={`rounded-3xl p-4 ${
+                          gapCount > 0 ? "bg-amber-50" : "bg-emerald-50"
+                        }`}
+                      >
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          Document Gaps
+                        </p>
+                        <p
+                          className={`mt-2 text-2xl font-black ${
+                            gapCount > 0
+                              ? "text-amber-700"
+                              : "text-emerald-700"
+                          }`}
+                        >
+                          {gapCount}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          Missing or review-needed
+                        </p>
+                      </div>
+
+                      <div className="rounded-3xl bg-slate-50 p-4">
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          Created
+                        </p>
+                        <p className="mt-2 text-sm font-black text-slate-950">
+                          {formatDate(caseItem.created_at)}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-500">
+                          Source: {caseItem.source}
+                        </p>
+                      </div>
                     </div>
-
-                    <div>
-                      <p className="text-sm font-black text-slate-900">
-                        {caseItem.assigned_to}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-semibold text-slate-500">
-                        {formatUpdatedAt(caseItem.updated_at)}
-                      </p>
-                    </div>
-
-                    <div className="xl:text-right">
-                      <span className="inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-xs font-black text-white">
-                        View case
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {filteredCases.length === 0 ? (
-              <div className="px-5 py-12 text-center">
-                <p className="text-lg font-black text-slate-950">
-                  No cases found
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500">
-                  Try another search term or status filter.
-                </p>
-              </div>
-            ) : null}
-          </div>
+                  </div>
+                </Link>
+              );
+            })
+          )}
         </section>
       </div>
     </AppShell>
