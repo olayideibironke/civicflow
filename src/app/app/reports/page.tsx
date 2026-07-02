@@ -39,6 +39,21 @@ type CaseDocument = {
   updated_at: string;
 };
 
+type CaseNote = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  note: string | null;
+  note_type: string | null;
+  follow_up_required: boolean | null;
+  follow_up_date: string | null;
+  follow_up_completed: boolean | null;
+  follow_up_completed_at: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
 type TrendPoint = {
   label: string;
   dateKey: string;
@@ -49,6 +64,14 @@ type TrendPoint = {
 type BreakdownItem = {
   label: string;
   count: number;
+};
+
+type FollowUpCaseItem = {
+  label: string;
+  count: number;
+  caseNumber: string;
+  clientName: string;
+  overdue: number;
 };
 
 function isCompletedCase(caseItem: CaseRecord) {
@@ -80,6 +103,18 @@ function getDateKey(value: string | Date | null) {
   }
 
   return new Date(value).toISOString().slice(0, 10);
+}
+
+function getTodayDateInput() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastDue(dateValue: string | null) {
+  if (!dateValue) {
+    return false;
+  }
+
+  return dateValue < getTodayDateInput();
 }
 
 function formatCycleTime(days: number | null) {
@@ -115,17 +150,28 @@ function MetricCard({
   label,
   value,
   detail,
+  tone = "default",
 }: {
   label: string;
   value: string | number;
   detail: string;
+  tone?: "default" | "rose" | "amber" | "emerald";
 }) {
+  const valueClass =
+    tone === "rose"
+      ? "text-rose-700"
+      : tone === "amber"
+        ? "text-amber-700"
+        : tone === "emerald"
+          ? "text-emerald-700"
+          : "text-slate-950";
+
   return (
     <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">
         {label}
       </p>
-      <p className="mt-4 text-5xl font-black tracking-tight text-slate-950">
+      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
         {value}
       </p>
       <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
@@ -389,6 +435,7 @@ function CompletionDonut({
 export default function ReportsPage() {
   const [cases, setCases] = useState<CaseRecord[]>([]);
   const [documents, setDocuments] = useState<CaseDocument[]>([]);
+  const [notes, setNotes] = useState<CaseNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [exportMessage, setExportMessage] = useState("");
@@ -420,13 +467,35 @@ export default function ReportsPage() {
         return;
       }
 
+      const { data: loadedNotes, error: notesError } = await supabase
+        .from("case_notes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (notesError) {
+        setLoadError(notesError.message);
+        setLoading(false);
+        return;
+      }
+
       setCases((loadedCases ?? []) as CaseRecord[]);
       setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+      setNotes((loadedNotes ?? []) as CaseNote[]);
       setLoading(false);
     }
 
     loadReports();
   }, []);
+
+  const caseLookup = useMemo(() => {
+    const lookup = new Map<string, CaseRecord>();
+
+    cases.forEach((caseItem) => {
+      lookup.set(caseItem.id, caseItem);
+    });
+
+    return lookup;
+  }, [cases]);
 
   const completedCases = useMemo(
     () => cases.filter((caseItem) => isCompletedCase(caseItem)),
@@ -436,6 +505,27 @@ export default function ReportsPage() {
   const openCases = useMemo(
     () => cases.filter((caseItem) => !isCompletedCase(caseItem)),
     [cases]
+  );
+
+  const followUpNotes = useMemo(
+    () => notes.filter((note) => note.follow_up_required),
+    [notes]
+  );
+
+  const openFollowUps = useMemo(
+    () =>
+      followUpNotes.filter((note) => !note.follow_up_completed),
+    [followUpNotes]
+  );
+
+  const overdueFollowUps = useMemo(
+    () => openFollowUps.filter((note) => isPastDue(note.follow_up_date)),
+    [openFollowUps]
+  );
+
+  const completedFollowUps = useMemo(
+    () => followUpNotes.filter((note) => note.follow_up_completed),
+    [followUpNotes]
   );
 
   const documentGaps = useMemo(
@@ -461,6 +551,69 @@ export default function ReportsPage() {
     () => countBy(openCases, (caseItem) => caseItem.assigned_to || "Unassigned"),
     [openCases]
   );
+
+  const followUpsByType = useMemo(
+    () =>
+      countBy(
+        followUpNotes,
+        (note) => note.note_type || "General Update"
+      ),
+    [followUpNotes]
+  );
+
+  const followUpsByStaff = useMemo(
+    () =>
+      countBy(
+        openFollowUps,
+        (note) => note.created_by || "Unassigned"
+      ),
+    [openFollowUps]
+  );
+
+  const followUpsByCase = useMemo(() => {
+    const lookup = new Map<
+      string,
+      {
+        count: number;
+        overdue: number;
+        caseNumber: string;
+        clientName: string;
+      }
+    >();
+
+    openFollowUps.forEach((note) => {
+      const matchingCase = caseLookup.get(note.case_id);
+
+      if (!matchingCase) {
+        return;
+      }
+
+      const existing = lookup.get(note.case_id) ?? {
+        count: 0,
+        overdue: 0,
+        caseNumber: matchingCase.case_number,
+        clientName: `${matchingCase.client_first_name} ${matchingCase.client_last_name}`,
+      };
+
+      existing.count += 1;
+
+      if (isPastDue(note.follow_up_date)) {
+        existing.overdue += 1;
+      }
+
+      lookup.set(note.case_id, existing);
+    });
+
+    return Array.from(lookup.entries())
+      .map(([_caseId, item]) => ({
+        label: `${item.caseNumber} · ${item.clientName}`,
+        count: item.count,
+        caseNumber: item.caseNumber,
+        clientName: item.clientName,
+        overdue: item.overdue,
+      }))
+      .sort((a, b) => b.overdue - a.overdue || b.count - a.count);
+  }, [caseLookup, openFollowUps]);
 
   const trendData = useMemo(() => {
     const today = new Date();
@@ -517,6 +670,19 @@ export default function ReportsPage() {
     [completedCases]
   );
 
+  const recentOpenFollowUps = useMemo(
+    () =>
+      [...openFollowUps]
+        .sort((a, b) => {
+          const aDue = a.follow_up_date ?? "9999-12-31";
+          const bDue = b.follow_up_date ?? "9999-12-31";
+
+          return aDue.localeCompare(bDue);
+        })
+        .slice(0, 6),
+    [openFollowUps]
+  );
+
   const totalDocumentGaps = documentGaps.reduce(
     (total, item) => total + item.count,
     0
@@ -532,6 +698,10 @@ export default function ReportsPage() {
       ["Completed cases", completedCases.length],
       ["Average completed cycle time", formatCycleTime(averageCycleDays)],
       ["Document gaps", totalDocumentGaps],
+      ["Total follow-ups", followUpNotes.length],
+      ["Open follow-ups", openFollowUps.length],
+      ["Overdue follow-ups", overdueFollowUps.length],
+      ["Completed follow-ups", completedFollowUps.length],
       ["Generated at", new Date().toLocaleString()],
     ];
 
@@ -566,6 +736,35 @@ export default function ReportsPage() {
       };
     });
 
+    const followUpRows = followUpNotes.map((note) => {
+      const matchingCase = caseLookup.get(note.case_id);
+
+      return {
+        "Case Number": matchingCase?.case_number ?? "",
+        Client: matchingCase
+          ? `${matchingCase.client_first_name} ${matchingCase.client_last_name}`
+          : "",
+        "Note Type": note.note_type ?? "General Update",
+        "Created By": note.created_by ?? "",
+        Note: note.note ?? "",
+        "Follow-up Due": formatDate(note.follow_up_date),
+        Status: note.follow_up_completed
+          ? "Completed"
+          : isPastDue(note.follow_up_date)
+            ? "Overdue"
+            : "Open",
+        "Completed At": formatDate(note.follow_up_completed_at),
+        "Created At": formatDate(note.created_at),
+      };
+    });
+
+    const followUpByCaseRows = followUpsByCase.map((item) => ({
+      "Case Number": item.caseNumber,
+      Client: item.clientName,
+      "Open Follow-ups": item.count,
+      "Overdue Follow-ups": item.overdue,
+    }));
+
     XLSX.utils.book_append_sheet(
       workbook,
       XLSX.utils.aoa_to_sheet(summaryRows),
@@ -582,6 +781,24 @@ export default function ReportsPage() {
       workbook,
       XLSX.utils.json_to_sheet(documentRows),
       "Documents"
+    );
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(followUpRows),
+      "Follow-up Status"
+    );
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(followUpsByType),
+      "Follow-up by Type"
+    );
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(followUpByCaseRows),
+      "Follow-up by Case"
     );
 
     XLSX.utils.book_append_sheet(
@@ -618,7 +835,7 @@ export default function ReportsPage() {
     XLSX.writeFile(workbook, `CivicFlow_Report_${today}.xlsx`);
 
     setExportMessage(
-      "Excel report downloaded with summary, cases, documents, workload, breakdowns, gaps, and trend sheets."
+      "Excel report downloaded with summary, cases, documents, follow-up status, follow-up by type, follow-up by case, workload, breakdowns, gaps, and trend sheets."
     );
   }
 
@@ -669,8 +886,8 @@ export default function ReportsPage() {
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
                 Review case workload, closure activity, service demand, staff
-                assignments, and document blockers from one clean reporting
-                workspace.
+                assignments, document blockers, and follow-up accountability
+                from one reporting workspace.
               </p>
             </div>
 
@@ -690,7 +907,7 @@ export default function ReportsPage() {
           ) : null}
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-6">
           <MetricCard
             label="Open Cases"
             value={openCases.length}
@@ -707,9 +924,22 @@ export default function ReportsPage() {
             detail="Completed case cycle time"
           />
           <MetricCard
+            label="Open Follow-ups"
+            value={openFollowUps.length}
+            detail="Pending staff actions"
+            tone={openFollowUps.length > 0 ? "amber" : "emerald"}
+          />
+          <MetricCard
+            label="Overdue"
+            value={overdueFollowUps.length}
+            detail="Past due follow-ups"
+            tone={overdueFollowUps.length > 0 ? "rose" : "emerald"}
+          />
+          <MetricCard
             label="Document Gaps"
             value={totalDocumentGaps}
             detail={`${documentGaps.length} document types affected`}
+            tone={totalDocumentGaps > 0 ? "amber" : "emerald"}
           />
         </section>
 
@@ -728,7 +958,8 @@ export default function ReportsPage() {
 
                   <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
                     A clean view of intake activity, closure mix, service
-                    demand, status movement, and staff workload.
+                    demand, status movement, staff workload, and follow-up
+                    accountability.
                   </p>
                 </div>
 
@@ -744,6 +975,46 @@ export default function ReportsPage() {
                   completed={completedCases.length}
                   open={openCases.length}
                 />
+              </div>
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-2">
+              <div className="premium-card">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  Follow-up Types
+                </p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  Follow-ups by note type
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Shows which categories are creating the most follow-up work.
+                </p>
+
+                <div className="mt-6">
+                  <BarList
+                    items={followUpsByType}
+                    emptyLabel="No follow-up notes have been created yet."
+                  />
+                </div>
+              </div>
+
+              <div className="premium-card">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  Follow-up Owners
+                </p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  Open follow-ups by staff
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Shows who created or owns pending follow-up activity.
+                </p>
+
+                <div className="mt-6">
+                  <BarList
+                    items={followUpsByStaff}
+                    emptyLabel="No open staff follow-ups."
+                  />
+                </div>
               </div>
             </div>
 
@@ -824,15 +1095,23 @@ export default function ReportsPage() {
               </p>
 
               <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
-                {totalDocumentGaps > 0
-                  ? "Document gaps need attention."
-                  : "Documents are under control."}
+                {overdueFollowUps.length > 0
+                  ? "Overdue follow-ups need action."
+                  : openFollowUps.length > 0
+                    ? "Follow-ups are pending."
+                    : totalDocumentGaps > 0
+                      ? "Document gaps need attention."
+                      : "Workspace is under control."}
               </h2>
 
               <p className="mt-5 text-sm leading-7 text-slate-300">
-                {totalDocumentGaps > 0
-                  ? "Missing or review-needed documents are the main blockers to faster case completion."
-                  : "There are no open document gaps in the current case workload."}
+                {overdueFollowUps.length > 0
+                  ? "Prioritize overdue follow-ups before reviewing new intake."
+                  : openFollowUps.length > 0
+                    ? "Pending follow-ups should be resolved before they become overdue."
+                    : totalDocumentGaps > 0
+                      ? "Missing or review-needed documents are the main blockers to faster completion."
+                      : "There are no major blockers in the current case workload."}
               </p>
 
               <div className="mt-8 rounded-3xl bg-white/10 p-6">
@@ -840,10 +1119,135 @@ export default function ReportsPage() {
                   Recommended Action
                 </p>
                 <p className="mt-3 text-xl font-black leading-8 text-white">
-                  {totalDocumentGaps > 0
-                    ? "Prioritize document follow-up before new assignments."
-                    : "Continue monitoring new intake and review activity."}
+                  {overdueFollowUps.length > 0
+                    ? "Contact clients or staff owners tied to overdue follow-ups."
+                    : openFollowUps.length > 0
+                      ? "Review open follow-ups by due date."
+                      : totalDocumentGaps > 0
+                        ? "Prioritize document follow-up before new assignments."
+                        : "Continue monitoring new intake and review activity."}
                 </p>
+              </div>
+            </div>
+
+            <div className="premium-card">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                Follow-up Workload
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                Cases needing action
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Cases with open follow-ups, sorted by overdue risk.
+              </p>
+
+              <div className="mt-6 space-y-3">
+                {followUpsByCase.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-black text-slate-500">
+                      No cases have open follow-ups.
+                    </p>
+                  </div>
+                ) : (
+                  followUpsByCase.slice(0, 6).map((item) => (
+                    <div
+                      key={item.caseNumber}
+                      className={`rounded-3xl border p-4 ${
+                        item.overdue > 0
+                          ? "border-rose-200 bg-rose-50"
+                          : "border-amber-200 bg-amber-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-slate-950">
+                            {item.caseNumber}
+                          </p>
+                          <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                            {item.clientName}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-black ${
+                            item.overdue > 0
+                              ? "bg-rose-100 text-rose-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {item.count} open
+                        </span>
+                      </div>
+
+                      <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                        {item.overdue} overdue
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="premium-card">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                Upcoming Follow-ups
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                Due dates
+              </h2>
+
+              <div className="mt-6 space-y-3">
+                {recentOpenFollowUps.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-black text-slate-500">
+                      No open follow-ups due.
+                    </p>
+                  </div>
+                ) : (
+                  recentOpenFollowUps.map((note) => {
+                    const matchingCase = caseLookup.get(note.case_id);
+                    const overdue = isPastDue(note.follow_up_date);
+
+                    return (
+                      <div
+                        key={note.id}
+                        className={`rounded-3xl border p-4 ${
+                          overdue
+                            ? "border-rose-200 bg-rose-50"
+                            : "border-slate-200 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-black text-slate-950">
+                              {matchingCase?.case_number ?? "Unknown case"}
+                            </p>
+                            <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                              {note.note_type ?? "Follow-up"}
+                            </p>
+                          </div>
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-black ${
+                              overdue
+                                ? "bg-rose-100 text-rose-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {overdue ? "Overdue" : "Open"}
+                          </span>
+                        </div>
+
+                        <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          Due {formatDate(note.follow_up_date)}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
