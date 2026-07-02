@@ -4,6 +4,13 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import {
+  formatStaffRole,
+  getStaffDisplayName,
+  getStaffInitials,
+  loadStaffWorkspace,
+  type StaffWorkspace,
+} from "@/lib/workspace";
 
 type AppShellProps = {
   children: ReactNode;
@@ -32,22 +39,13 @@ const navigationItems = [
   },
 ];
 
-function getInitials(email: string) {
-  const cleanEmail = email.trim();
-
-  if (!cleanEmail) {
-    return "CF";
-  }
-
-  return cleanEmail.charAt(0).toUpperCase();
-}
-
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
 
   const [checkingSession, setCheckingSession] = useState(true);
-  const [staffEmail, setStaffEmail] = useState("");
+  const [workspace, setWorkspace] = useState<StaffWorkspace | null>(null);
+  const [workspaceError, setWorkspaceError] = useState("");
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
@@ -68,7 +66,20 @@ export default function AppShell({ children }: AppShellProps) {
         return;
       }
 
-      setStaffEmail(session.user.email ?? "staff@civicflow.local");
+      const result = await loadStaffWorkspace();
+
+      if (!active) {
+        return;
+      }
+
+      if (result.error || !result.workspace) {
+        setWorkspaceError(result.error || "Unable to load staff workspace.");
+        setCheckingSession(false);
+        return;
+      }
+
+      setWorkspace(result.workspace);
+      setWorkspaceError("");
       setCheckingSession(false);
     }
 
@@ -84,11 +95,7 @@ export default function AppShell({ children }: AppShellProps) {
       if (!session) {
         const redirectTo = encodeURIComponent(pathname || "/app");
         router.replace(`/login?redirectTo=${redirectTo}`);
-        return;
       }
-
-      setStaffEmail(session.user.email ?? "staff@civicflow.local");
-      setCheckingSession(false);
     });
 
     return () => {
@@ -97,7 +104,10 @@ export default function AppShell({ children }: AppShellProps) {
     };
   }, [pathname, router]);
 
-  const initials = useMemo(() => getInitials(staffEmail), [staffEmail]);
+  const initials = useMemo(() => getStaffInitials(workspace), [workspace]);
+  const displayName = useMemo(() => getStaffDisplayName(workspace), [workspace]);
+  const staffRole = workspace ? formatStaffRole(workspace.profile.role) : "Staff";
+  const workspaceName = workspace?.organization.name ?? "Workspace";
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -119,8 +129,47 @@ export default function AppShell({ children }: AppShellProps) {
             </h1>
 
             <p className="mt-3 text-base leading-7 text-slate-600">
-              Protected workspace pages require a signed-in staff user.
+              Protected workspace pages require a signed-in staff profile.
             </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (workspaceError) {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)] px-6 py-8">
+        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
+          <div className="premium-card w-full">
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-rose-500">
+              Workspace Setup Required
+            </p>
+
+            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              Staff profile could not be loaded.
+            </h1>
+
+            <p className="mt-3 text-base leading-7 text-slate-600">
+              {workspaceError}
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/"
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+              >
+                Back home
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -151,13 +200,13 @@ export default function AppShell({ children }: AppShellProps) {
               </p>
 
               <p className="mt-4 text-2xl font-black leading-tight">
-                Community Services
+                {workspaceName}
               </p>
 
               <div className="mt-5 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                 <p className="text-sm font-bold text-slate-200">
-                  Staff workspace protected
+                  Organization access verified
                 </p>
               </div>
             </div>
@@ -203,10 +252,10 @@ export default function AppShell({ children }: AppShellProps) {
 
                 <div className="min-w-0">
                   <p className="truncate text-sm font-black text-slate-950">
-                    {staffEmail}
+                    {displayName}
                   </p>
-                  <p className="mt-1 text-xs font-bold text-slate-500">
-                    Signed in staff user
+                  <p className="mt-1 truncate text-xs font-bold text-slate-500">
+                    {staffRole} · {workspace?.email}
                   </p>
                 </div>
               </div>
@@ -238,9 +287,8 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              CivicFlow now has authenticated staff access, Supabase cases,
-              public intake, document storage, reports, charts, and Excel
-              exports.
+              CivicFlow now loads the signed-in staff profile and organization
+              before showing protected workspace pages.
             </p>
           </div>
         </aside>
@@ -254,7 +302,7 @@ export default function AppShell({ children }: AppShellProps) {
                 </p>
 
                 <p className="mt-2 text-base font-black text-slate-800">
-                  Intake, documents, case management, and reporting
+                  {workspaceName} · {staffRole}
                 </p>
               </div>
 

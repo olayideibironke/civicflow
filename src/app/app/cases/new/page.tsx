@@ -4,6 +4,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
+import {
+  getStaffDisplayName,
+  loadStaffWorkspace,
+  type StaffWorkspace,
+} from "@/lib/workspace";
 import { supabase } from "@/lib/supabase";
 import {
   cleanPhoneDigits,
@@ -13,12 +18,6 @@ import {
   validateRequiredPhone,
   validateRequiredText,
 } from "@/lib/validation";
-
-type Organization = {
-  id: string;
-  name: string;
-  slug: string;
-};
 
 type CaseFormState = {
   firstName: string;
@@ -81,29 +80,31 @@ function getNextCaseNumber(existingCaseNumbers: string[]) {
 export default function NewCasePage() {
   const router = useRouter();
 
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [workspace, setWorkspace] = useState<StaffWorkspace | null>(null);
   const [formState, setFormState] = useState<CaseFormState>(defaultFormState);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    async function loadOrganization() {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("id, name, slug")
-        .eq("slug", "community-services")
-        .single();
+    async function loadWorkspace() {
+      const result = await loadStaffWorkspace();
 
-      if (error || !data) {
-        setLoadError(error?.message ?? "Unable to load the demo organization.");
+      if (result.error || !result.workspace) {
+        setLoadError(result.error || "Unable to load staff workspace.");
         return;
       }
 
-      setOrganization(data as Organization);
+      const staffName = getStaffDisplayName(result.workspace);
+
+      setWorkspace(result.workspace);
+      setFormState((currentState) => ({
+        ...currentState,
+        assignedTo: staffName,
+      }));
     }
 
-    loadOrganization();
+    loadWorkspace();
   }, []);
 
   function updateField(field: keyof CaseFormState, value: string) {
@@ -132,8 +133,8 @@ export default function NewCasePage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!organization) {
-      setFormError("Organization is not ready yet.");
+    if (!workspace) {
+      setFormError("Staff workspace is not ready yet.");
       return;
     }
 
@@ -150,7 +151,7 @@ export default function NewCasePage() {
     const { data: existingCases, error: existingCasesError } = await supabase
       .from("cases")
       .select("case_number")
-      .eq("organization_id", organization.id);
+      .eq("organization_id", workspace.organization.id);
 
     if (existingCasesError) {
       setSaving(false);
@@ -165,7 +166,7 @@ export default function NewCasePage() {
     const { data: createdCase, error: createCaseError } = await supabase
       .from("cases")
       .insert({
-        organization_id: organization.id,
+        organization_id: workspace.organization.id,
         case_number: nextCaseNumber,
         client_first_name: formState.firstName.trim(),
         client_last_name: formState.lastName.trim(),
@@ -189,7 +190,7 @@ export default function NewCasePage() {
 
     const documentRows = defaultDocuments.map((document) => ({
       case_id: createdCase.id,
-      organization_id: organization.id,
+      organization_id: workspace.organization.id,
       name: document.name,
       description: document.description,
       status: document.status,
@@ -209,7 +210,7 @@ export default function NewCasePage() {
       .from("case_activity")
       .insert({
         case_id: createdCase.id,
-        organization_id: organization.id,
+        organization_id: workspace.organization.id,
         title: "Case created",
         detail: `Staff created ${nextCaseNumber} for ${formState.firstName.trim()} ${formState.lastName.trim()}.`,
         created_by: formState.assignedTo,
@@ -248,13 +249,13 @@ export default function NewCasePage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                Staff-created cases require complete client information before a
-                new case record can be saved.
+                Staff-created cases are now tied to the signed-in staff member’s
+                organization profile.
               </p>
             </div>
 
             <div className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700">
-              Required fields enforced
+              Workspace aware
             </div>
           </div>
 
@@ -387,20 +388,15 @@ export default function NewCasePage() {
 
               <label className="input-label">
                 Assigned staff *
-                <select
+                <input
                   required
                   value={formState.assignedTo}
                   onChange={(event) =>
                     updateField("assignedTo", event.target.value)
                   }
+                  placeholder="Assigned staff or queue"
                   className="input-field"
-                >
-                  <option>Unassigned</option>
-                  <option>Maya Johnson</option>
-                  <option>Daniel Reeves</option>
-                  <option>Aisha Carter</option>
-                  <option>Eligibility Review Team</option>
-                </select>
+                />
               </label>
             </div>
 
@@ -418,12 +414,15 @@ export default function NewCasePage() {
 
             <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
               <p className="text-base font-black text-slate-950">
-                Default checklist will be created
+                Workspace connection
               </p>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                CivicFlow will automatically create required document checklist
-                items for this new case.
+                This case will be created under{" "}
+                <span className="font-black text-slate-950">
+                  {workspace?.organization.name ?? "your organization"}
+                </span>
+                .
               </p>
             </div>
 
@@ -436,7 +435,7 @@ export default function NewCasePage() {
             <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
                 After creation, the new validated case appears in the staff case
-                queue.
+                queue for this workspace.
               </p>
 
               <button
@@ -456,46 +455,55 @@ export default function NewCasePage() {
           <aside className="space-y-6">
             <div className="premium-dark">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-100">
-                Validation Rule
+                Staff Workspace
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
-                No incomplete records.
+                {workspace?.organization.name ?? "Loading workspace"}
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                Staff cannot create a case unless all required fields are
-                complete, email is valid, and phone number contains exactly 10
-                digits.
+                Staff-created cases now use the signed-in staff profile instead
+                of a hardcoded demo organization.
               </p>
             </div>
 
             <div className="premium-card">
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-                Creation Checklist
+                Staff Profile
               </p>
 
               <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-                Required before review
+                {workspace ? getStaffDisplayName(workspace) : "Loading staff"}
               </h2>
 
               <div className="mt-6 space-y-3">
-                {[
-                  "First and last name",
-                  "Valid email address",
-                  "10-digit phone number",
-                  "Service category",
-                  "Priority level",
-                  "Initial case summary",
-                  "Assigned staff or queue",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-3xl border border-slate-200 bg-white p-4"
-                  >
-                    <p className="text-sm font-black text-slate-950">{item}</p>
-                  </div>
-                ))}
+                <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Email
+                  </p>
+                  <p className="mt-2 text-sm font-black text-slate-950">
+                    {workspace?.email ?? "Loading"}
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Organization
+                  </p>
+                  <p className="mt-2 text-sm font-black text-slate-950">
+                    {workspace?.organization.name ?? "Loading"}
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Access
+                  </p>
+                  <p className="mt-2 text-sm font-black text-slate-950">
+                    Organization-scoped case creation
+                  </p>
+                </div>
               </div>
             </div>
           </aside>
