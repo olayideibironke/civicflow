@@ -27,6 +27,13 @@ type CaseStatus =
 
 type DocumentStatus = "Received" | "Missing" | "Needs Review";
 
+type NoteType =
+  | "General Update"
+  | "Client Contact"
+  | "Document Follow-up"
+  | "Review Note"
+  | "Decision Support";
+
 type CivicCase = {
   id: string;
   organization_id: string;
@@ -66,6 +73,11 @@ type CaseNote = {
   case_id: string;
   organization_id: string;
   note: string | null;
+  note_type: string | null;
+  follow_up_required: boolean | null;
+  follow_up_date: string | null;
+  follow_up_completed: boolean | null;
+  follow_up_completed_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string | null;
@@ -87,6 +99,14 @@ const statusOptions: CaseStatus[] = [
   "Assigned",
   "Waiting on Client",
   "Completed",
+];
+
+const noteTypeOptions: NoteType[] = [
+  "General Update",
+  "Client Contact",
+  "Document Follow-up",
+  "Review Note",
+  "Decision Support",
 ];
 
 const statusStyles: Record<CaseStatus, string> = {
@@ -123,7 +143,19 @@ function normalizeDocumentStatus(value: string): DocumentStatus {
   return "Missing";
 }
 
-function formatDate(value: string) {
+function normalizeNoteType(value: string | null): NoteType {
+  if (noteTypeOptions.includes(value as NoteType)) {
+    return value as NoteType;
+  }
+
+  return "General Update";
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return "—";
+  }
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -138,6 +170,19 @@ function formatActivityTime(value: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function getTodayDateInput() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastDue(dateValue: string | null) {
+  if (!dateValue) {
+    return false;
+  }
+
+  const today = getTodayDateInput();
+  return dateValue < today;
 }
 
 function savedButtonClass(isSaved: boolean) {
@@ -186,6 +231,9 @@ export default function DynamicCaseDetailPage() {
   const [workflowMessage, setWorkflowMessage] = useState("");
 
   const [newNote, setNewNote] = useState("");
+  const [noteType, setNoteType] = useState<NoteType>("General Update");
+  const [followUpRequired, setFollowUpRequired] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState("");
   const [savingNote, setSavingNote] = useState(false);
   const [noteMessage, setNoteMessage] = useState("");
   const [noteMessageTone, setNoteMessageTone] = useState<"success" | "error">(
@@ -234,6 +282,19 @@ export default function DynamicCaseDetailPage() {
     documents.length > 0 &&
     missingDocuments === 0 &&
     documentsNeedingReview === 0;
+
+  const openFollowUps = useMemo(
+    () =>
+      notes.filter(
+        (note) => note.follow_up_required && !note.follow_up_completed
+      ),
+    [notes]
+  );
+
+  const overdueFollowUps = useMemo(
+    () => openFollowUps.filter((note) => isPastDue(note.follow_up_date)),
+    [openFollowUps]
+  );
 
   const staffDisplayName = useMemo(() => {
     if (staffWorkspace) {
@@ -398,6 +459,13 @@ export default function DynamicCaseDetailPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function resetNoteForm() {
+    setNewNote("");
+    setNoteType("General Update");
+    setFollowUpRequired(false);
+    setFollowUpDate("");
   }
 
   function openUploadModal() {
@@ -654,6 +722,12 @@ export default function DynamicCaseDetailPage() {
       return;
     }
 
+    if (followUpRequired && !followUpDate) {
+      setNoteMessageTone("error");
+      setNoteMessage("Follow-up date is required when follow-up is selected.");
+      return;
+    }
+
     setSavingNote(true);
     setNoteMessage("");
 
@@ -663,6 +737,10 @@ export default function DynamicCaseDetailPage() {
         case_id: caseRecord.id,
         organization_id: caseRecord.organization_id,
         note: newNote.trim(),
+        note_type: noteType,
+        follow_up_required: followUpRequired,
+        follow_up_date: followUpRequired ? followUpDate : null,
+        follow_up_completed: false,
         created_by: staffDisplayName,
       })
       .select("*")
@@ -676,14 +754,62 @@ export default function DynamicCaseDetailPage() {
     }
 
     setNotes((currentNotes) => [data as CaseNote, ...currentNotes]);
-    setNewNote("");
     setSavingNote(false);
     setNoteMessageTone("success");
-    setNoteMessage("Internal note saved.");
+    setNoteMessage(
+      followUpRequired
+        ? "Internal note saved with follow-up tracking."
+        : "Internal note saved."
+    );
 
     await addActivity(
-      "Internal note added",
-      `${staffDisplayName} added an internal case note.`
+      followUpRequired ? "Follow-up note added" : "Internal note added",
+      followUpRequired
+        ? `${staffDisplayName} added a ${noteType.toLowerCase()} note with follow-up due ${formatDate(
+            followUpDate
+          )}.`
+        : `${staffDisplayName} added a ${noteType.toLowerCase()} note.`
+    );
+
+    resetNoteForm();
+  }
+
+  async function handleToggleFollowUp(note: CaseNote) {
+    const nextCompleted = !note.follow_up_completed;
+
+    const { data, error } = await supabase
+      .from("case_notes")
+      .update({
+        follow_up_completed: nextCompleted,
+        follow_up_completed_at: nextCompleted ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", note.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setNoteMessageTone("error");
+      setNoteMessage(error.message);
+      return;
+    }
+
+    setNotes((currentNotes) =>
+      currentNotes.map((currentNote) =>
+        currentNote.id === note.id ? (data as CaseNote) : currentNote
+      )
+    );
+
+    setNoteMessageTone("success");
+    setNoteMessage(
+      nextCompleted ? "Follow-up marked complete." : "Follow-up reopened."
+    );
+
+    await addActivity(
+      nextCompleted ? "Follow-up completed" : "Follow-up reopened",
+      nextCompleted
+        ? `${staffDisplayName} completed a case follow-up.`
+        : `${staffDisplayName} reopened a case follow-up.`
     );
   }
 
@@ -787,8 +913,8 @@ export default function DynamicCaseDetailPage() {
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Manage workflow status, documents, internal notes, activity, and
-                final case decision from one protected workspace.
+                Manage workflow status, documents, internal notes, follow-ups,
+                activity, and final case decision from one protected workspace.
               </p>
             </div>
 
@@ -911,18 +1037,84 @@ export default function DynamicCaseDetailPage() {
                   </h2>
 
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Record calls, follow-ups, review comments, and staff-only
-                    updates without changing the case decision.
+                    Add audit-ready notes with note type, follow-up status, and
+                    due dates for staff accountability.
                   </p>
                 </div>
 
-                <span className="w-fit rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
-                  {notes.length} notes
-                </span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="w-fit rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
+                    {notes.length} notes
+                  </span>
+
+                  <span
+                    className={`w-fit rounded-full px-4 py-2 text-xs font-black ${
+                      openFollowUps.length > 0
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {openFollowUps.length} open follow-ups
+                  </span>
+                </div>
               </div>
 
               <form onSubmit={handleAddNote} noValidate className="mt-6">
-                <label className="input-label">
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <label className="input-label">
+                    Note type *
+                    <select
+                      required
+                      value={noteType}
+                      onChange={(event) =>
+                        setNoteType(event.target.value as NoteType)
+                      }
+                      className="input-field"
+                    >
+                      {noteTypeOptions.map((option) => (
+                        <option key={option}>{option}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="input-label">
+                    Follow-up date
+                    <input
+                      type="date"
+                      value={followUpDate}
+                      disabled={!followUpRequired}
+                      onChange={(event) => setFollowUpDate(event.target.value)}
+                      className="input-field disabled:bg-slate-100 disabled:text-slate-400"
+                    />
+                  </label>
+                </div>
+
+                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <input
+                    type="checkbox"
+                    checked={followUpRequired}
+                    onChange={(event) => {
+                      setFollowUpRequired(event.target.checked);
+                      if (!event.target.checked) {
+                        setFollowUpDate("");
+                      }
+                      setNoteMessage("");
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                  />
+
+                  <span>
+                    <span className="block text-sm font-black text-slate-950">
+                      Follow-up required
+                    </span>
+                    <span className="mt-1 block text-sm leading-6 text-slate-600">
+                      Use this when staff must call, email, collect documents,
+                      review records, or take another action later.
+                    </span>
+                  </span>
+                </label>
+
+                <label className="input-label mt-5">
                   New internal note *
                   <textarea
                     required
@@ -968,26 +1160,92 @@ export default function DynamicCaseDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  notes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="rounded-3xl border border-slate-200 bg-white p-5"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <p className="text-sm font-black text-slate-950">
-                          {note.created_by ?? "Staff User"}
+                  notes.map((note) => {
+                    const normalizedType = normalizeNoteType(note.note_type);
+                    const hasOpenFollowUp =
+                      note.follow_up_required && !note.follow_up_completed;
+                    const pastDue = hasOpenFollowUp && isPastDue(note.follow_up_date);
+
+                    return (
+                      <div
+                        key={note.id}
+                        className={`rounded-3xl border p-5 ${
+                          pastDue
+                            ? "border-rose-200 bg-rose-50"
+                            : hasOpenFollowUp
+                              ? "border-amber-200 bg-amber-50"
+                              : "border-slate-200 bg-white"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                                {normalizedType}
+                              </span>
+
+                              {note.follow_up_required ? (
+                                <span
+                                  className={`rounded-full px-3 py-1 text-xs font-black ${
+                                    note.follow_up_completed
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : pastDue
+                                        ? "bg-rose-100 text-rose-700"
+                                        : "bg-amber-100 text-amber-700"
+                                  }`}
+                                >
+                                  {note.follow_up_completed
+                                    ? "Follow-up completed"
+                                    : pastDue
+                                      ? "Follow-up overdue"
+                                      : "Follow-up open"}
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <p className="mt-3 text-sm font-black text-slate-950">
+                              {note.created_by ?? "Staff User"}
+                            </p>
+                          </div>
+
+                          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                            {formatActivityTime(note.created_at)}
+                          </p>
+                        </div>
+
+                        <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+                          {note.note}
                         </p>
 
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                          {formatActivityTime(note.created_at)}
-                        </p>
+                        {note.follow_up_required ? (
+                          <div className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/70 bg-white/75 p-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                                Follow-up due
+                              </p>
+                              <p className="mt-1 text-sm font-black text-slate-950">
+                                {formatDate(note.follow_up_date)}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleFollowUp(note)}
+                              className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+                                note.follow_up_completed
+                                  ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                                  : "bg-slate-950 text-white hover:bg-slate-800"
+                              }`}
+                            >
+                              {note.follow_up_completed
+                                ? "Reopen follow-up"
+                                : "Mark complete"}
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
-
-                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                        {note.note}
-                      </p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -1202,11 +1460,15 @@ export default function DynamicCaseDetailPage() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
-                {caseCompleted
-                  ? "Case completed"
-                  : caseReadyForDecision
-                    ? "Ready for closure"
-                    : "Documents pending"}
+                {overdueFollowUps.length > 0
+                  ? "Follow-up overdue"
+                  : openFollowUps.length > 0
+                    ? "Follow-up pending"
+                    : caseCompleted
+                      ? "Case completed"
+                      : caseReadyForDecision
+                        ? "Ready for closure"
+                        : "Documents pending"}
               </h2>
 
               <div className="mt-6 grid gap-3">
@@ -1216,6 +1478,24 @@ export default function DynamicCaseDetailPage() {
                   </p>
                   <p className="mt-2 text-xl font-black text-white">
                     {missingDocuments} documents
+                  </p>
+                </div>
+
+                <div className="rounded-3xl bg-white/10 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Open Follow-ups
+                  </p>
+                  <p className="mt-2 text-xl font-black text-white">
+                    {openFollowUps.length} follow-ups
+                  </p>
+                </div>
+
+                <div className="rounded-3xl bg-white/10 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Overdue
+                  </p>
+                  <p className="mt-2 text-xl font-black text-white">
+                    {overdueFollowUps.length} follow-ups
                   </p>
                 </div>
 
