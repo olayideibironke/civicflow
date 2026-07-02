@@ -12,6 +12,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
+import {
+  getStaffDisplayName,
+  loadStaffWorkspace,
+  type StaffWorkspace,
+} from "@/lib/workspace";
 
 type CaseStatus =
   | "New Intake"
@@ -54,6 +59,16 @@ type CaseDocument = {
   file_path: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type CaseNote = {
+  id: string;
+  case_id: string;
+  organization_id: string;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string | null;
 };
 
 type CaseActivity = {
@@ -160,12 +175,22 @@ export default function DynamicCaseDetailPage() {
 
   const [caseRecord, setCaseRecord] = useState<CivicCase | null>(null);
   const [documents, setDocuments] = useState<CaseDocument[]>([]);
+  const [notes, setNotes] = useState<CaseNote[]>([]);
   const [activityFeed, setActivityFeed] = useState<CaseActivity[]>([]);
+  const [staffWorkspace, setStaffWorkspace] =
+    useState<StaffWorkspace | null>(null);
 
   const [status, setStatus] = useState<CaseStatus>("New Intake");
   const [assignedTo, setAssignedTo] = useState("Unassigned");
   const [workflowSaved, setWorkflowSaved] = useState(false);
   const [workflowMessage, setWorkflowMessage] = useState("");
+
+  const [newNote, setNewNote] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+  const [noteMessage, setNoteMessage] = useState("");
+  const [noteMessageTone, setNoteMessageTone] = useState<"success" | "error">(
+    "success"
+  );
 
   const [decisionOutcome, setDecisionOutcome] = useState("Approved");
   const [decisionNote, setDecisionNote] = useState(
@@ -210,6 +235,14 @@ export default function DynamicCaseDetailPage() {
     missingDocuments === 0 &&
     documentsNeedingReview === 0;
 
+  const staffDisplayName = useMemo(() => {
+    if (staffWorkspace) {
+      return getStaffDisplayName(staffWorkspace);
+    }
+
+    return assignedTo || "Staff User";
+  }, [assignedTo, staffWorkspace]);
+
   const summaryCards = useMemo(() => {
     if (!caseRecord) {
       return [];
@@ -224,7 +257,7 @@ export default function DynamicCaseDetailPage() {
       {
         label: "Service Type",
         value: caseRecord.service_category,
-        detail: "Staff-created case",
+        detail: "Case workflow",
       },
       {
         label: "Priority",
@@ -238,6 +271,18 @@ export default function DynamicCaseDetailPage() {
       },
     ];
   }, [caseRecord]);
+
+  useEffect(() => {
+    async function loadStaffProfile() {
+      const result = await loadStaffWorkspace();
+
+      if (result.workspace) {
+        setStaffWorkspace(result.workspace);
+      }
+    }
+
+    loadStaffProfile();
+  }, []);
 
   async function loadCaseData() {
     setLoading(true);
@@ -269,6 +314,18 @@ export default function DynamicCaseDetailPage() {
       return;
     }
 
+    const { data: loadedNotes, error: notesError } = await supabase
+      .from("case_notes")
+      .select("*")
+      .eq("case_id", loadedCase.id)
+      .order("created_at", { ascending: false });
+
+    if (notesError) {
+      setLoadError(notesError.message);
+      setLoading(false);
+      return;
+    }
+
     const { data: loadedActivity, error: activityError } = await supabase
       .from("case_activity")
       .select("*")
@@ -285,6 +342,7 @@ export default function DynamicCaseDetailPage() {
 
     setCaseRecord(loadedCase as CivicCase);
     setDocuments((loadedDocuments ?? []) as CaseDocument[]);
+    setNotes((loadedNotes ?? []) as CaseNote[]);
     setActivityFeed((loadedActivity ?? []) as CaseActivity[]);
     setStatus(normalizedStatus);
     setAssignedTo(loadedCase.assigned_to);
@@ -314,7 +372,7 @@ export default function DynamicCaseDetailPage() {
         organization_id: caseRecord.organization_id,
         title,
         detail,
-        created_by: assignedTo,
+        created_by: staffDisplayName,
       })
       .select("*")
       .single();
@@ -581,6 +639,54 @@ export default function DynamicCaseDetailPage() {
     );
   }
 
+  async function handleAddNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!caseRecord) {
+      setNoteMessageTone("error");
+      setNoteMessage("Case data is not ready yet.");
+      return;
+    }
+
+    if (!newNote.trim()) {
+      setNoteMessageTone("error");
+      setNoteMessage("Internal note is required before saving.");
+      return;
+    }
+
+    setSavingNote(true);
+    setNoteMessage("");
+
+    const { data, error } = await supabase
+      .from("case_notes")
+      .insert({
+        case_id: caseRecord.id,
+        organization_id: caseRecord.organization_id,
+        note: newNote.trim(),
+        created_by: staffDisplayName,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      setSavingNote(false);
+      setNoteMessageTone("error");
+      setNoteMessage(error.message);
+      return;
+    }
+
+    setNotes((currentNotes) => [data as CaseNote, ...currentNotes]);
+    setNewNote("");
+    setSavingNote(false);
+    setNoteMessageTone("success");
+    setNoteMessage("Internal note saved.");
+
+    await addActivity(
+      "Internal note added",
+      `${staffDisplayName} added an internal case note.`
+    );
+  }
+
   async function handleCompleteCase() {
     if (!caseRecord) {
       return;
@@ -681,8 +787,8 @@ export default function DynamicCaseDetailPage() {
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                This case page now supports real Supabase Storage uploads,
-                document metadata, signed file downloads, and workflow activity.
+                Manage workflow status, documents, internal notes, activity, and
+                final case decision from one protected workspace.
               </p>
             </div>
 
@@ -766,6 +872,7 @@ export default function DynamicCaseDetailPage() {
                     className="input-field"
                   >
                     <option>Unassigned</option>
+                    <option>{staffDisplayName}</option>
                     <option>Maya Johnson</option>
                     <option>Daniel Reeves</option>
                     <option>Aisha Carter</option>
@@ -789,6 +896,99 @@ export default function DynamicCaseDetailPage() {
                 >
                   {workflowSaved ? "Workflow saved" : "Save workflow"}
                 </button>
+              </div>
+            </div>
+
+            <div className="premium-card">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                    Internal Notes
+                  </p>
+
+                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                    Staff case notes
+                  </h2>
+
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    Record calls, follow-ups, review comments, and staff-only
+                    updates without changing the case decision.
+                  </p>
+                </div>
+
+                <span className="w-fit rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
+                  {notes.length} notes
+                </span>
+              </div>
+
+              <form onSubmit={handleAddNote} noValidate className="mt-6">
+                <label className="input-label">
+                  New internal note *
+                  <textarea
+                    required
+                    value={newNote}
+                    onChange={(event) => {
+                      setNewNote(event.target.value);
+                      setNoteMessage("");
+                    }}
+                    rows={5}
+                    placeholder="Add a clear staff note, client contact update, document follow-up, or review observation."
+                    className="input-field resize-y leading-7"
+                  />
+                </label>
+
+                {noteMessage ? (
+                  <div
+                    className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-black ${
+                      noteMessageTone === "success"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-rose-200 bg-rose-50 text-rose-700"
+                    }`}
+                  >
+                    {noteMessage}
+                  </div>
+                ) : null}
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={savingNote}
+                    className={savedButtonClass(savingNote)}
+                  >
+                    {savingNote ? "Saving note..." : "Save note"}
+                  </button>
+                </div>
+              </form>
+
+              <div className="mt-6 space-y-3">
+                {notes.length === 0 ? (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-black text-slate-500">
+                      No internal notes have been added yet.
+                    </p>
+                  </div>
+                ) : (
+                  notes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="rounded-3xl border border-slate-200 bg-white p-5"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <p className="text-sm font-black text-slate-950">
+                          {note.created_by ?? "Staff User"}
+                        </p>
+
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          {formatActivityTime(note.created_at)}
+                        </p>
+                      </div>
+
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-600">
+                        {note.note}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -1016,6 +1216,15 @@ export default function DynamicCaseDetailPage() {
                   </p>
                   <p className="mt-2 text-xl font-black text-white">
                     {missingDocuments} documents
+                  </p>
+                </div>
+
+                <div className="rounded-3xl bg-white/10 p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                    Internal Notes
+                  </p>
+                  <p className="mt-2 text-xl font-black text-white">
+                    {notes.length} notes
                   </p>
                 </div>
 
