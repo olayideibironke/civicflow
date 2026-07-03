@@ -26,6 +26,8 @@ type DemoRequest = {
   last_staff_action_at: string | null;
 };
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 const statusOptions = [
   "New",
   "Contacted",
@@ -126,9 +128,15 @@ function MetricCard({
 export default function DemoRequestsPage() {
   const [requests, setRequests] = useState<DemoRequest[]>([]);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+  const [noteSaveStates, setNoteSaveStates] = useState<Record<string, SaveState>>(
+    {}
+  );
+  const [statusSaveStates, setStatusSaveStates] = useState<
+    Record<string, SaveState>
+  >({});
+  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [savingId, setSavingId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
 
@@ -149,13 +157,20 @@ export default function DemoRequestsPage() {
 
     const loadedRequests = (data ?? []) as DemoRequest[];
     const drafts: Record<string, string> = {};
+    const noteStates: Record<string, SaveState> = {};
+    const statusStates: Record<string, SaveState> = {};
 
     loadedRequests.forEach((request) => {
       drafts[request.id] = request.internal_note ?? "";
+      noteStates[request.id] = "idle";
+      statusStates[request.id] = "idle";
     });
 
     setRequests(loadedRequests);
     setNoteDrafts(drafts);
+    setNoteSaveStates(noteStates);
+    setStatusSaveStates(statusStates);
+    setCardErrors({});
     setLoading(false);
   }
 
@@ -235,8 +250,50 @@ export default function DemoRequestsPage() {
       .sort((a, b) => b.count - a.count);
   }, [requests]);
 
+  function noteHasChanges(request: DemoRequest) {
+    const savedNote = request.internal_note ?? "";
+    const draftNote = noteDrafts[request.id] ?? "";
+
+    return draftNote.trim() !== savedNote.trim();
+  }
+
+  function getNoteButtonLabel(request: DemoRequest) {
+    const saveState = noteSaveStates[request.id] ?? "idle";
+
+    if (saveState === "saving") {
+      return "Saving...";
+    }
+
+    if (saveState === "saved") {
+      return "Saved ✓";
+    }
+
+    if (saveState === "error") {
+      return "Try again";
+    }
+
+    if (!noteHasChanges(request)) {
+      return "No changes";
+    }
+
+    return "Save note";
+  }
+
+  function clearCardError(requestId: string) {
+    setCardErrors((currentErrors) => {
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[requestId];
+      return nextErrors;
+    });
+  }
+
   async function updateStatus(requestId: string, status: string) {
-    setSavingId(requestId);
+    clearCardError(requestId);
+
+    setStatusSaveStates((currentStates) => ({
+      ...currentStates,
+      [requestId]: "saving",
+    }));
 
     const now = new Date().toISOString();
 
@@ -250,8 +307,14 @@ export default function DemoRequestsPage() {
       .eq("id", requestId);
 
     if (error) {
-      setSavingId("");
-      alert(error.message);
+      setStatusSaveStates((currentStates) => ({
+        ...currentStates,
+        [requestId]: "error",
+      }));
+      setCardErrors((currentErrors) => ({
+        ...currentErrors,
+        [requestId]: error.message,
+      }));
       return;
     }
 
@@ -268,11 +331,48 @@ export default function DemoRequestsPage() {
       )
     );
 
-    setSavingId("");
+    setStatusSaveStates((currentStates) => ({
+      ...currentStates,
+      [requestId]: "saved",
+    }));
+
+    window.setTimeout(() => {
+      setStatusSaveStates((currentStates) => ({
+        ...currentStates,
+        [requestId]: "idle",
+      }));
+    }, 1400);
   }
 
   async function saveInternalNote(requestId: string) {
-    setSavingId(requestId);
+    const matchingRequest = requests.find((request) => request.id === requestId);
+
+    if (!matchingRequest) {
+      return;
+    }
+
+    if (!noteHasChanges(matchingRequest)) {
+      setNoteSaveStates((currentStates) => ({
+        ...currentStates,
+        [requestId]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setNoteSaveStates((currentStates) => ({
+          ...currentStates,
+          [requestId]: "idle",
+        }));
+      }, 1200);
+
+      return;
+    }
+
+    clearCardError(requestId);
+
+    setNoteSaveStates((currentStates) => ({
+      ...currentStates,
+      [requestId]: "saving",
+    }));
 
     const now = new Date().toISOString();
     const internalNote = noteDrafts[requestId]?.trim() ?? "";
@@ -287,8 +387,14 @@ export default function DemoRequestsPage() {
       .eq("id", requestId);
 
     if (error) {
-      setSavingId("");
-      alert(error.message);
+      setNoteSaveStates((currentStates) => ({
+        ...currentStates,
+        [requestId]: "error",
+      }));
+      setCardErrors((currentErrors) => ({
+        ...currentErrors,
+        [requestId]: error.message,
+      }));
       return;
     }
 
@@ -305,7 +411,22 @@ export default function DemoRequestsPage() {
       )
     );
 
-    setSavingId("");
+    setNoteDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [requestId]: internalNote,
+    }));
+
+    setNoteSaveStates((currentStates) => ({
+      ...currentStates,
+      [requestId]: "saved",
+    }));
+
+    window.setTimeout(() => {
+      setNoteSaveStates((currentStates) => ({
+        ...currentStates,
+        [requestId]: "idle",
+      }));
+    }, 1600);
   }
 
   if (loading) {
@@ -479,152 +600,210 @@ export default function DemoRequestsPage() {
                   </h2>
                 </div>
               ) : (
-                filteredRequests.map((request) => (
-                  <article
-                    key={request.id}
-                    className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
-                  >
-                    <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
-                              request.status
-                            )}`}
-                          >
-                            {request.status}
-                          </span>
+                filteredRequests.map((request) => {
+                  const noteState = noteSaveStates[request.id] ?? "idle";
+                  const statusState = statusSaveStates[request.id] ?? "idle";
+                  const cardError = cardErrors[request.id] ?? "";
+                  const hasNoteChanges = noteHasChanges(request);
+                  const noteButtonDisabled =
+                    noteState === "saving" || (!hasNoteChanges && noteState !== "error");
 
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                            {request.timeline}
-                          </span>
+                  return (
+                    <article
+                      key={request.id}
+                      className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+                    >
+                      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
+                                request.status
+                              )}`}
+                            >
+                              {request.status}
+                            </span>
 
-                          <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
-                            {request.primary_need}
-                          </span>
+                            {statusState === "saving" ? (
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">
+                                Saving status...
+                              </span>
+                            ) : null}
+
+                            {statusState === "saved" ? (
+                              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                                Status saved ✓
+                              </span>
+                            ) : null}
+
+                            {statusState === "error" ? (
+                              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-700">
+                                Status error
+                              </span>
+                            ) : null}
+
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                              {request.timeline}
+                            </span>
+
+                            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                              {request.primary_need}
+                            </span>
+                          </div>
+
+                          <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                            {request.organization_name}
+                          </h2>
+
+                          <p className="mt-2 text-sm font-bold text-slate-500">
+                            {request.first_name} {request.last_name} ·{" "}
+                            {request.role_title}
+                          </p>
+
+                          <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600">
+                            {request.message}
+                          </p>
                         </div>
 
-                        <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
-                          {request.organization_name}
-                        </h2>
+                        <div className="grid shrink-0 gap-2 rounded-3xl bg-slate-50 p-4 text-sm">
+                          <a
+                            href={`mailto:${request.work_email}`}
+                            className="font-black text-blue-700 hover:text-blue-900"
+                          >
+                            {request.work_email}
+                          </a>
 
-                        <p className="mt-2 text-sm font-bold text-slate-500">
-                          {request.first_name} {request.last_name} ·{" "}
-                          {request.role_title}
-                        </p>
+                          <p className="font-bold text-slate-600">
+                            Phone: {formatPhone(request.phone)}
+                          </p>
 
-                        <p className="mt-4 max-w-4xl text-sm leading-7 text-slate-600">
-                          {request.message}
-                        </p>
+                          <p className="font-bold text-slate-600">
+                            Contact: {request.preferred_contact}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="grid shrink-0 gap-2 rounded-3xl bg-slate-50 p-4 text-sm">
-                        <a
-                          href={`mailto:${request.work_email}`}
-                          className="font-black text-blue-700 hover:text-blue-900"
-                        >
-                          {request.work_email}
-                        </a>
+                      <div className="mt-6 grid gap-4 border-t border-slate-100 pt-6 xl:grid-cols-3">
+                        <div className="rounded-3xl bg-slate-50 p-5">
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                            Organization Type
+                          </p>
+                          <p className="mt-2 text-sm font-black text-slate-950">
+                            {request.organization_type}
+                          </p>
+                        </div>
 
-                        <p className="font-bold text-slate-600">
-                          Phone: {formatPhone(request.phone)}
-                        </p>
+                        <div className="rounded-3xl bg-slate-50 p-5">
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                            Team Size
+                          </p>
+                          <p className="mt-2 text-sm font-black text-slate-950">
+                            {request.team_size}
+                          </p>
+                        </div>
 
-                        <p className="font-bold text-slate-600">
-                          Contact: {request.preferred_contact}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6 grid gap-4 border-t border-slate-100 pt-6 xl:grid-cols-3">
-                      <div className="rounded-3xl bg-slate-50 p-5">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                          Organization Type
-                        </p>
-                        <p className="mt-2 text-sm font-black text-slate-950">
-                          {request.organization_type}
-                        </p>
-                      </div>
-
-                      <div className="rounded-3xl bg-slate-50 p-5">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                          Team Size
-                        </p>
-                        <p className="mt-2 text-sm font-black text-slate-950">
-                          {request.team_size}
-                        </p>
+                        <div className="rounded-3xl bg-slate-50 p-5">
+                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                            Submitted
+                          </p>
+                          <p className="mt-2 text-sm font-black text-slate-950">
+                            {formatDate(request.created_at)}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="rounded-3xl bg-slate-50 p-5">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
-                          Submitted
-                        </p>
-                        <p className="mt-2 text-sm font-black text-slate-950">
-                          {formatDate(request.created_at)}
-                        </p>
+                      {cardError ? (
+                        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+                          {cardError}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-6 grid gap-4 border-t border-slate-100 pt-6 xl:grid-cols-[260px_minmax(0,1fr)_170px]">
+                        <label className="input-label">
+                          Pipeline status
+                          <select
+                            value={request.status}
+                            onChange={(event) =>
+                              updateStatus(request.id, event.target.value)
+                            }
+                            disabled={statusState === "saving"}
+                            className="input-field disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
+                          >
+                            {statusOptions.map((status) => (
+                              <option key={status}>{status}</option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label className="input-label">
+                          Internal Westforge note
+                          <textarea
+                            value={noteDrafts[request.id] ?? ""}
+                            onChange={(event) => {
+                              setNoteDrafts((currentDrafts) => ({
+                                ...currentDrafts,
+                                [request.id]: event.target.value,
+                              }));
+
+                              setNoteSaveStates((currentStates) => ({
+                                ...currentStates,
+                                [request.id]: "idle",
+                              }));
+
+                              clearCardError(request.id);
+                            }}
+                            rows={3}
+                            placeholder="Add internal sales notes, contact attempts, pricing thoughts, or next steps..."
+                            className="input-field resize-y leading-7"
+                          />
+                        </label>
+
+                        <div className="flex flex-col justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => saveInternalNote(request.id)}
+                            disabled={noteButtonDisabled}
+                            className={`w-full rounded-2xl px-5 py-3 text-sm font-black transition ${
+                              noteState === "saving"
+                                ? "bg-slate-200 text-slate-500 shadow-none"
+                                : noteState === "saved"
+                                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/15"
+                                  : noteState === "error"
+                                    ? "bg-rose-600 text-white shadow-lg shadow-rose-600/15 hover:bg-rose-700"
+                                    : hasNoteChanges
+                                      ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
+                                      : "bg-slate-100 text-slate-400 shadow-none"
+                            } disabled:cursor-not-allowed`}
+                          >
+                            {getNoteButtonLabel(request)}
+                          </button>
+
+                          {hasNoteChanges && noteState !== "saving" ? (
+                            <p className="text-center text-xs font-black text-amber-600">
+                              Unsaved changes
+                            </p>
+                          ) : null}
+
+                          {noteState === "saved" ? (
+                            <p className="text-center text-xs font-black text-emerald-700">
+                              Note saved
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="mt-6 grid gap-4 border-t border-slate-100 pt-6 xl:grid-cols-[260px_minmax(0,1fr)_160px]">
-                      <label className="input-label">
-                        Pipeline status
-                        <select
-                          value={request.status}
-                          onChange={(event) =>
-                            updateStatus(request.id, event.target.value)
-                          }
-                          disabled={savingId === request.id}
-                          className="input-field"
-                        >
-                          {statusOptions.map((status) => (
-                            <option key={status}>{status}</option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="input-label">
-                        Internal Westforge note
-                        <textarea
-                          value={noteDrafts[request.id] ?? ""}
-                          onChange={(event) =>
-                            setNoteDrafts((currentDrafts) => ({
-                              ...currentDrafts,
-                              [request.id]: event.target.value,
-                            }))
-                          }
-                          rows={3}
-                          placeholder="Add internal sales notes, contact attempts, pricing thoughts, or next steps..."
-                          className="input-field resize-y leading-7"
-                        />
-                      </label>
-
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          onClick={() => saveInternalNote(request.id)}
-                          disabled={savingId === request.id}
-                          className={`w-full rounded-2xl px-5 py-3 text-sm font-black transition ${
-                            savingId === request.id
-                              ? "bg-slate-200 text-slate-500"
-                              : "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
-                          } disabled:cursor-not-allowed`}
-                        >
-                          {savingId === request.id ? "Saving..." : "Save note"}
-                        </button>
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-400">
+                        <span>Source: {request.source}</span>
+                        <span>·</span>
+                        <span>Updated: {formatDate(request.updated_at)}</span>
+                        <span>·</span>
+                        <span>
+                          Last staff action: {formatDate(request.last_staff_action_at)}
+                        </span>
                       </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-400">
-                      <span>Source: {request.source}</span>
-                      <span>·</span>
-                      <span>Updated: {formatDate(request.updated_at)}</span>
-                      <span>·</span>
-                      <span>
-                        Last staff action: {formatDate(request.last_staff_action_at)}
-                      </span>
-                    </div>
-                  </article>
-                ))
+                    </article>
+                  );
+                })
               )}
             </section>
           </div>
