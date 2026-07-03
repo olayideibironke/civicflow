@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import CivicFlowLogo from "@/components/CivicFlowLogo";
 import { supabase } from "@/lib/supabase";
 import {
   getFirstValidationError,
@@ -80,7 +81,7 @@ export default function LoginPage() {
 
   if (checkingSession) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)] px-6 py-8">
+      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] px-6 py-8">
         <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
           <div className="premium-card w-full text-center">
             <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
@@ -97,22 +98,11 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)] px-6 py-8">
+    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] px-6 py-8">
       <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <aside className="premium-dark">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-xl font-black text-slate-950">
-              CF
-            </div>
-
-            <div>
-              <p className="text-2xl font-black leading-none text-white">
-                CivicFlow
-              </p>
-              <p className="mt-2 text-xs font-black uppercase tracking-[0.3em] text-blue-100">
-                By Westforge
-              </p>
-            </div>
+        <aside className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20">
+          <div className="w-fit rounded-3xl bg-white p-4 shadow-xl shadow-blue-950/20">
+            <CivicFlowLogo size="md" />
           </div>
 
           <p className="mt-10 text-xs font-black uppercase tracking-[0.3em] text-blue-100">
@@ -129,7 +119,11 @@ export default function LoginPage() {
           </p>
         </aside>
 
-        <form onSubmit={handleLogin} noValidate className="premium-card">
+        <form
+          onSubmit={handleLogin}
+          noValidate
+          className="rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-2xl shadow-slate-200/70 backdrop-blur"
+        >
           <div className="border-b border-slate-100 pb-6">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
               Staff Login

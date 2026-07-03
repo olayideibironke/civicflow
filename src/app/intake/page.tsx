@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CivicFlowLogo from "@/components/CivicFlowLogo";
 import { supabase } from "@/lib/supabase";
 import {
   cleanPhoneDigits,
@@ -111,22 +112,15 @@ export default function IntakePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)]">
-      <header className="border-b border-slate-200/70 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
-              CF
-            </div>
-
-            <div>
-              <p className="text-lg font-black leading-none text-slate-950">
-                CivicFlow
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-500">
-                by Westforge
-              </p>
-            </div>
+    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+      <header className="border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-24 max-w-[1440px] items-center justify-between px-6">
+          <Link
+            href="/"
+            className="flex items-center rounded-2xl transition hover:opacity-90"
+            aria-label="CivicFlow home"
+          >
+            <CivicFlowLogo size="md" />
           </Link>
 
           <Link
@@ -139,7 +133,7 @@ export default function IntakePage() {
       </header>
 
       <section className="mx-auto grid max-w-[1440px] gap-6 px-6 py-8 lg:grid-cols-[420px_minmax(0,1fr)] lg:py-10">
-        <aside className="premium-dark self-start lg:sticky lg:top-8">
+        <aside className="self-start rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20 lg:sticky lg:top-8">
           <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
             Public Intake
           </p>
@@ -176,7 +170,11 @@ export default function IntakePage() {
           </div>
         </aside>
 
-        <form onSubmit={handleSubmit} noValidate className="premium-card">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          className="rounded-[2rem] border border-slate-200 bg-white/90 p-7 shadow-xl shadow-slate-200/60 backdrop-blur"
+        >
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">

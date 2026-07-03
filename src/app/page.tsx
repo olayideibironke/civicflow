@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import CivicFlowLogo from "@/components/CivicFlowLogo";
 import { supabase } from "@/lib/supabase";
 
 const featureCards = [
@@ -13,7 +14,7 @@ const featureCards = [
   {
     title: "Case management",
     description:
-      "Move requests through staff assignment, statuses, document review, notes, and completion workflows.",
+      "Move requests through staff assignment, statuses, document review, notes, follow-ups, and completion workflows.",
   },
   {
     title: "Reports and exports",
@@ -72,25 +73,18 @@ export default function Home() {
   const isSignedIn = Boolean(staffEmail);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#dbeafe_0%,transparent_28%),linear-gradient(135deg,#f8fafc_0%,#eef6ff_48%,#f8fafc_100%)]">
-      <header className="border-b border-slate-200/70 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-5 px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
-              CF
-            </div>
-
-            <div>
-              <p className="text-lg font-black leading-none text-slate-950">
-                CivicFlow
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-500">
-                by Westforge
-              </p>
-            </div>
+    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] text-slate-950">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-24 max-w-[1440px] items-center justify-between gap-6 px-6">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center rounded-2xl transition hover:opacity-90"
+            aria-label="CivicFlow home"
+          >
+            <CivicFlowLogo size="md" />
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm font-black text-slate-600 md:flex">
+          <nav className="hidden items-center gap-9 text-sm font-black text-slate-600 lg:flex">
             <a href="#platform" className="transition hover:text-slate-950">
               Platform
             </a>
@@ -126,7 +120,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="hidden rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:inline-flex"
                 >
                   Sign out
                 </button>
@@ -147,21 +141,22 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-[1440px] gap-10 px-6 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
+      <section className="mx-auto grid max-w-[1440px] gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
         <div>
           <div className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-blue-700">
             Premium Workflow SaaS
           </div>
 
-          <h1 className="mt-8 max-w-4xl text-5xl font-black leading-tight tracking-tight text-slate-950 sm:text-6xl">
+          <h1 className="mt-8 max-w-4xl text-5xl font-black leading-[1.03] tracking-tight text-slate-950 sm:text-6xl xl:text-7xl">
             Intake, case management, documents, and reporting in one clean
             workspace.
           </h1>
 
-          <p className="mt-7 max-w-4xl text-lg leading-9 text-slate-600">
+          <p className="mt-7 max-w-3xl text-lg leading-9 text-slate-600">
             CivicFlow helps organizations manage service requests from the first
             public intake submission through staff assignment, document review,
-            case tracking, notes, statuses, and performance reporting.
+            case tracking, notes, statuses, follow-ups, and performance
+            reporting.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -190,19 +185,23 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="premium-dark" id="demo">
+        <div
+          id="demo"
+          className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20 ring-1 ring-white/10"
+        >
           <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
             CivicFlow Demo Snapshot
           </p>
 
-          <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+          <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white xl:text-5xl">
             Built for teams that cannot afford messy workflows.
           </h2>
 
           <p className="mt-5 text-sm leading-7 text-slate-300">
             The current MVP demo shows the core operating loop: public intake,
             case queue, case detail workspace, document checklist, storage,
-            notes, status controls, reports, charts, and Excel exports.
+            notes, status controls, follow-ups, reports, charts, and Excel
+            exports.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -222,7 +221,7 @@ export default function Home() {
       </section>
 
       <section id="platform" className="mx-auto max-w-[1440px] px-6 pb-10">
-        <div className="premium-card">
+        <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-7 shadow-xl shadow-slate-200/60 backdrop-blur">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
@@ -234,7 +233,7 @@ export default function Home() {
               </h2>
 
               <p className="mt-4 max-w-4xl text-base leading-8 text-slate-600">
-                CivicFlow can support teams that need a professional system for
+                CivicFlow supports teams that need a professional system for
                 intake, case routing, documentation, review, approvals,
                 reporting, and operational visibility.
               </p>
@@ -268,7 +267,7 @@ export default function Home() {
 
       <section id="use-cases" className="mx-auto max-w-[1440px] px-6 pb-16">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="premium-dark">
+          <div className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20">
             <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-100">
               Use Cases
             </p>
@@ -284,7 +283,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="premium-card">
+          <div className="rounded-[2rem] border border-slate-200 bg-white/90 p-7 shadow-xl shadow-slate-200/60 backdrop-blur">
             <div className="grid gap-3 sm:grid-cols-2">
               {useCases.map((item) => (
                 <div
