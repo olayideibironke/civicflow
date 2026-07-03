@@ -29,9 +29,14 @@ const navigationItems = [
     icon: "•",
   },
   {
+    label: "Demo Requests",
+    href: "/app/demo-requests",
+    icon: "✦",
+  },
+  {
     label: "Public Intake",
     href: "/intake",
-    icon: "✦",
+    icon: "◇",
   },
   {
     label: "Reports",
@@ -282,7 +287,8 @@ export default function AppShell({ children }: AppShellProps) {
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
               CivicFlow is live with authenticated workspace access, public
-              intake, case tracking, documents, notes, follow-ups, and reports.
+              intake, case tracking, documents, notes, follow-ups, reports, and
+              demo request management.
             </p>
           </div>
         </aside>
@@ -301,6 +307,13 @@ export default function AppShell({ children }: AppShellProps) {
               </div>
 
               <div className="flex items-center gap-3">
+                <Link
+                  href="/request-demo"
+                  className="hidden rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:inline-flex"
+                >
+                  Demo form
+                </Link>
+
                 <Link
                   href="/intake"
                   className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
