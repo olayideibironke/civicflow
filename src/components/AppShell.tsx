@@ -43,6 +43,11 @@ const navigationItems = [
     href: "/app/reports",
     icon: "▲",
   },
+  {
+    label: "Settings",
+    href: "/app/settings",
+    icon: "●",
+  },
 ];
 
 export default function AppShell({ children }: AppShellProps) {
@@ -286,9 +291,9 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
 
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              CivicFlow is live with authenticated workspace access, public
-              intake, case tracking, documents, notes, follow-ups, reports, and
-              demo request management.
+              CivicFlow now has workspace settings, demo request management,
+              public intake, case tracking, documents, notes, follow-ups, and
+              reports.
             </p>
           </div>
         </aside>
