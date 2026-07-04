@@ -125,6 +125,8 @@ export default function SettingsPage() {
   const [organizationId, setOrganizationId] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [siteOrigin, setSiteOrigin] = useState("https://civicflowapp.org");
+  const [copyMessage, setCopyMessage] = useState("");
   const [formState, setFormState] =
     useState<SettingsFormState>(defaultFormState);
   const [loading, setLoading] = useState(true);
@@ -132,6 +134,12 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSiteOrigin(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     async function loadSettings() {
@@ -177,6 +185,10 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  const publicIntakeUrl = `${siteOrigin}/intake/${
+    organizationSlug || "community-services"
+  }`;
+
   function updateField<K extends keyof SettingsFormState>(
     field: K,
     value: SettingsFormState[K]
@@ -188,6 +200,7 @@ export default function SettingsPage() {
 
     setFormError("");
     setSaveMessage("");
+    setCopyMessage("");
   }
 
   function validateForm() {
@@ -208,6 +221,16 @@ export default function SettingsPage() {
         "Default priority options"
       ),
     ]);
+  }
+
+  async function handleCopyIntakeLink() {
+    try {
+      await navigator.clipboard.writeText(publicIntakeUrl);
+      setCopyMessage("Public intake link copied.");
+      window.setTimeout(() => setCopyMessage(""), 2000);
+    } catch {
+      setCopyMessage("Copy failed. You can manually copy the link.");
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -314,20 +337,29 @@ export default function SettingsPage() {
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Manage the workspace identity, default intake categories,
-                priority options, contact details, and implementation notes for
-                this CivicFlow organization.
+                Manage the workspace identity, public intake link, default
+                intake categories, priority options, contact details, and
+                implementation notes for this CivicFlow organization.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <a
-                href="/intake"
+                href={publicIntakeUrl}
                 target="_blank"
+                rel="noreferrer"
                 className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
-                View public intake
+                Open intake link
               </a>
+
+              <button
+                type="button"
+                onClick={handleCopyIntakeLink}
+                className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:bg-blue-100"
+              >
+                Copy intake link
+              </button>
 
               <button
                 type="submit"
@@ -343,6 +375,12 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
+
+          {copyMessage ? (
+            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-700">
+              {copyMessage}
+            </div>
+          ) : null}
 
           {saveMessage ? (
             <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
@@ -367,13 +405,13 @@ export default function SettingsPage() {
           <StatusCard
             label="Public Intake"
             value={formState.publicIntakeEnabled ? "Enabled" : "Disabled"}
-            detail="This setting is ready for intake routing controls."
+            detail="Controls whether this organization accepts public intake."
           />
 
           <StatusCard
             label="Service Categories"
             value={`${serviceCategoryCount}`}
-            detail="Default options for future configurable intake."
+            detail="Options shown on this organization’s public intake form."
           />
 
           <StatusCard
@@ -473,8 +511,8 @@ export default function SettingsPage() {
                 </h2>
 
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  These values create the foundation for customer-specific
-                  intake forms. Put one option per line.
+                  These values power the organization-specific public intake
+                  link. Put one option per line.
                 </p>
               </div>
 
@@ -494,8 +532,8 @@ export default function SettingsPage() {
                       Public intake enabled
                     </span>
                     <span className="mt-1 block text-sm leading-6 text-slate-600">
-                      This setting is saved now and will be wired into the live
-                      intake behavior in the next scaling step.
+                      When disabled, this organization’s public intake link will
+                      show an intake closed message.
                     </span>
                   </span>
                 </label>
@@ -566,18 +604,58 @@ export default function SettingsPage() {
           <aside className="space-y-6">
             <section className="premium-dark">
               <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
-                SaaS Foundation
+                Multi-Tenant Intake
               </p>
 
               <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
-                This is how CivicFlow becomes configurable.
+                Every customer now gets their own intake link.
               </h2>
 
               <p className="mt-5 text-sm leading-7 text-slate-300">
-                Organization settings are the first layer needed for real SaaS
-                customers. Next, these settings can drive public intake options,
-                team access, branding, and customer-specific workflows.
+                The public intake URL uses the organization slug, loads that
+                organization’s settings, and submits cases into the correct
+                workspace.
               </p>
+            </section>
+
+            <section className="premium-card">
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                Public Intake Link
+              </p>
+
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                Shareable URL
+              </h2>
+
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                This is the organization-specific intake link for{" "}
+                {formState.name || "this workspace"}.
+              </p>
+
+              <input
+                readOnly
+                value={publicIntakeUrl}
+                className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700"
+              />
+
+              <div className="mt-4 grid gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopyIntakeLink}
+                  className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                >
+                  Copy link
+                </button>
+
+                <a
+                  href={publicIntakeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Open link
+                </a>
+              </div>
             </section>
 
             <section className="premium-card">
@@ -632,13 +710,13 @@ export default function SettingsPage() {
               </p>
 
               <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-                Wire settings into intake.
+                Team management.
               </h2>
 
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                After this page is clean, we will make the public intake form
-                use the saved service categories and priority options from this
-                organization instead of hardcoded values.
+                After this is clean, we build the staff/team layer so each
+                organization can manage users instead of manually creating them
+                in Supabase.
               </p>
             </section>
           </aside>
