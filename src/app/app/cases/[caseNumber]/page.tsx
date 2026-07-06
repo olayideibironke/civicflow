@@ -186,9 +186,7 @@ function isPastDue(dateValue: string | null) {
 }
 
 function savedButtonClass(isSaved: boolean) {
-  return isSaved
-    ? "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-300 px-5 text-sm font-black text-slate-600 shadow-none"
-    : "inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800";
+  return isSaved ? "btn btn-primary" : "btn btn-primary";
 }
 
 function formatFileSize(size: number) {
@@ -858,10 +856,10 @@ export default function DynamicCaseDetailPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Loading Case
           </p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Loading {routeCaseNumber}...
           </h1>
         </section>
@@ -873,10 +871,10 @@ export default function DynamicCaseDetailPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Supabase Error
           </p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Case could not be loaded.
           </h1>
           <p className="mt-3 text-base leading-7 text-slate-600">
@@ -896,19 +894,19 @@ export default function DynamicCaseDetailPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/app/cases"
-                  className="text-sm font-black text-slate-500 transition hover:text-slate-950"
+                  className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
                 >
                   ← Back to cases
                 </Link>
 
                 <span
-                  className={`rounded-full border px-3 py-1 text-xs font-black ${statusStyles[status]}`}
+                  className={`chip ${statusStyles[status]}`}
                 >
                   {status}
                 </span>
               </div>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Case {caseRecord.case_number}
               </h1>
 
@@ -922,14 +920,14 @@ export default function DynamicCaseDetailPage() {
               <button
                 type="button"
                 onClick={openUploadModal}
-                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="btn btn-secondary"
               >
                 Upload document
               </button>
 
               <Link
                 href="/app/reports"
-                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                className="btn btn-primary"
               >
                 View reports
               </Link>
@@ -937,7 +935,7 @@ export default function DynamicCaseDetailPage() {
           </div>
 
           {downloadMessage ? (
-            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
+            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
               {downloadMessage}
             </div>
           ) : null}
@@ -946,10 +944,10 @@ export default function DynamicCaseDetailPage() {
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => (
             <div key={card.label} className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 {card.label}
               </p>
-              <p className="mt-4 text-2xl font-black leading-tight tracking-tight text-slate-950">
+              <p className="mt-4 text-lg font-semibold leading-tight tracking-tight text-slate-900">
                 {card.value}
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-500">
@@ -962,11 +960,11 @@ export default function DynamicCaseDetailPage() {
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <div className="space-y-6">
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Workflow Control
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Status and assignment
               </h2>
 
@@ -1008,7 +1006,7 @@ export default function DynamicCaseDetailPage() {
               </div>
 
               {workflowMessage ? (
-                <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+                <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                   {workflowMessage}
                 </div>
               ) : null}
@@ -1028,11 +1026,11 @@ export default function DynamicCaseDetailPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Internal Notes
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Staff case notes
                   </h2>
 
@@ -1043,12 +1041,12 @@ export default function DynamicCaseDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="w-fit rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
+                  <span className="w-fit chip bg-slate-100 text-slate-600">
                     {notes.length} notes
                   </span>
 
                   <span
-                    className={`w-fit rounded-full px-4 py-2 text-xs font-black ${
+                    className={`w-fit chip ${
                       openFollowUps.length > 0
                         ? "bg-amber-100 text-amber-700"
                         : "bg-emerald-50 text-emerald-700"
@@ -1089,7 +1087,7 @@ export default function DynamicCaseDetailPage() {
                   </label>
                 </div>
 
-                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <input
                     type="checkbox"
                     checked={followUpRequired}
@@ -1104,7 +1102,7 @@ export default function DynamicCaseDetailPage() {
                   />
 
                   <span>
-                    <span className="block text-sm font-black text-slate-950">
+                    <span className="block text-sm font-semibold text-slate-900">
                       Follow-up required
                     </span>
                     <span className="mt-1 block text-sm leading-6 text-slate-600">
@@ -1131,7 +1129,7 @@ export default function DynamicCaseDetailPage() {
 
                 {noteMessage ? (
                   <div
-                    className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-black ${
+                    className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
                       noteMessageTone === "success"
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                         : "border-rose-200 bg-rose-50 text-rose-700"
@@ -1154,8 +1152,8 @@ export default function DynamicCaseDetailPage() {
 
               <div className="mt-6 space-y-3">
                 {notes.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-medium text-slate-500">
                       No internal notes have been added yet.
                     </p>
                   </div>
@@ -1169,7 +1167,7 @@ export default function DynamicCaseDetailPage() {
                     return (
                       <div
                         key={note.id}
-                        className={`rounded-3xl border p-5 ${
+                        className={`rounded-xl border p-5 ${
                           pastDue
                             ? "border-rose-200 bg-rose-50"
                             : hasOpenFollowUp
@@ -1180,13 +1178,13 @@ export default function DynamicCaseDetailPage() {
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                              <span className="chip bg-slate-900 text-white">
                                 {normalizedType}
                               </span>
 
                               {note.follow_up_required ? (
                                 <span
-                                  className={`rounded-full px-3 py-1 text-xs font-black ${
+                                  className={`chip ${
                                     note.follow_up_completed
                                       ? "bg-emerald-100 text-emerald-700"
                                       : pastDue
@@ -1203,12 +1201,12 @@ export default function DynamicCaseDetailPage() {
                               ) : null}
                             </div>
 
-                            <p className="mt-3 text-sm font-black text-slate-950">
+                            <p className="mt-3 text-sm font-semibold text-slate-900">
                               {note.created_by ?? "Staff User"}
                             </p>
                           </div>
 
-                          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                             {formatActivityTime(note.created_at)}
                           </p>
                         </div>
@@ -1218,12 +1216,12 @@ export default function DynamicCaseDetailPage() {
                         </p>
 
                         {note.follow_up_required ? (
-                          <div className="mt-4 flex flex-col gap-3 rounded-3xl border border-white/70 bg-white/75 p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-white/70 bg-white/75 p-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                                 Follow-up due
                               </p>
-                              <p className="mt-1 text-sm font-black text-slate-950">
+                              <p className="mt-1 text-sm font-semibold text-slate-900">
                                 {formatDate(note.follow_up_date)}
                               </p>
                             </div>
@@ -1231,7 +1229,7 @@ export default function DynamicCaseDetailPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleFollowUp(note)}
-                              className={`rounded-2xl px-4 py-2 text-xs font-black transition ${
+                              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
                                 note.follow_up_completed
                                   ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                                   : "bg-slate-950 text-white hover:bg-slate-800"
@@ -1253,11 +1251,11 @@ export default function DynamicCaseDetailPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Documents
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Document checklist
                   </h2>
 
@@ -1267,14 +1265,14 @@ export default function DynamicCaseDetailPage() {
                   </p>
                 </div>
 
-                <div className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-4 text-sm font-black text-white">
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-white">
                   {completionPercent}% complete
                 </div>
               </div>
 
               <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-slate-950 transition-all"
+                  className="h-full rounded-full bg-slate-900 transition-all"
                   style={{ width: `${completionPercent}%` }}
                 />
               </div>
@@ -1286,11 +1284,11 @@ export default function DynamicCaseDetailPage() {
                   return (
                     <div
                       key={document.id}
-                      className="rounded-3xl border border-slate-200 bg-white p-4"
+                      className="rounded-xl border border-slate-200 bg-white p-4"
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <p className="text-base font-black text-slate-950">
+                          <p className="text-base font-semibold text-slate-900">
                             {document.name}
                           </p>
                           <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -1299,7 +1297,7 @@ export default function DynamicCaseDetailPage() {
 
                           {document.file_name ? (
                             <div className="mt-3 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                              <span className="chip bg-slate-100 text-slate-600">
                                 File: {document.file_name}
                               </span>
 
@@ -1309,7 +1307,7 @@ export default function DynamicCaseDetailPage() {
                                   onClick={() =>
                                     handleDownloadDocument(document)
                                   }
-                                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                                  className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                                 >
                                   Download
                                 </button>
@@ -1319,7 +1317,7 @@ export default function DynamicCaseDetailPage() {
                         </div>
 
                         <span
-                          className={`w-fit rounded-full border px-3 py-1 text-xs font-black ${documentStatusStyles[documentStatus]}`}
+                          className={`w-fit chip ${documentStatusStyles[documentStatus]}`}
                         >
                           {documentStatus}
                         </span>
@@ -1331,7 +1329,7 @@ export default function DynamicCaseDetailPage() {
                           onClick={() =>
                             updateDocumentStatus(document, "Received")
                           }
-                          className="rounded-2xl bg-emerald-600 px-4 py-2 text-xs font-black text-white transition hover:bg-emerald-700"
+                          className="rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
                         >
                           Mark received
                         </button>
@@ -1341,7 +1339,7 @@ export default function DynamicCaseDetailPage() {
                           onClick={() =>
                             updateDocumentStatus(document, "Needs Review")
                           }
-                          className="rounded-2xl bg-amber-500 px-4 py-2 text-xs font-black text-white transition hover:bg-amber-600"
+                          className="rounded-lg bg-amber-500 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-amber-600"
                         >
                           Needs review
                         </button>
@@ -1351,7 +1349,7 @@ export default function DynamicCaseDetailPage() {
                           onClick={() =>
                             updateDocumentStatus(document, "Missing")
                           }
-                          className="rounded-2xl bg-slate-950 px-4 py-2 text-xs font-black text-white transition hover:bg-slate-800"
+                          className="rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
                         >
                           Mark missing
                         </button>
@@ -1365,17 +1363,17 @@ export default function DynamicCaseDetailPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Final Decision
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Close case workflow
                   </h2>
                 </div>
 
                 <span
-                  className={`w-fit rounded-full border px-4 py-2 text-xs font-black ${
+                  className={`w-fit chip ${
                     caseCompleted || caseReadyForDecision
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-amber-200 bg-amber-50 text-amber-700"
@@ -1408,10 +1406,10 @@ export default function DynamicCaseDetailPage() {
                 </label>
 
                 <div className="soft-panel px-4 py-3">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                  <p className="eyebrow">
                     Closure Status
                   </p>
-                  <p className="mt-2 text-sm font-black leading-5 text-slate-900">
+                  <p className="mt-2 text-sm font-semibold leading-5 text-slate-900">
                     {caseCompleted
                       ? "Case closed"
                       : caseReadyForDecision
@@ -1435,7 +1433,7 @@ export default function DynamicCaseDetailPage() {
               </label>
 
               {decisionMessage ? (
-                <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+                <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                   {decisionMessage}
                 </div>
               ) : null}
@@ -1455,11 +1453,11 @@ export default function DynamicCaseDetailPage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Case Health
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white">
                 {overdueFollowUps.length > 0
                   ? "Follow-up overdue"
                   : openFollowUps.length > 0
@@ -1472,47 +1470,47 @@ export default function DynamicCaseDetailPage() {
               </h2>
 
               <div className="mt-6 grid gap-3">
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Missing Items
                   </p>
-                  <p className="mt-2 text-xl font-black text-white">
+                  <p className="mt-2 text-lg font-semibold text-white">
                     {missingDocuments} documents
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Open Follow-ups
                   </p>
-                  <p className="mt-2 text-xl font-black text-white">
+                  <p className="mt-2 text-lg font-semibold text-white">
                     {openFollowUps.length} follow-ups
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Overdue
                   </p>
-                  <p className="mt-2 text-xl font-black text-white">
+                  <p className="mt-2 text-lg font-semibold text-white">
                     {overdueFollowUps.length} follow-ups
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Internal Notes
                   </p>
-                  <p className="mt-2 text-xl font-black text-white">
+                  <p className="mt-2 text-lg font-semibold text-white">
                     {notes.length} notes
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Needs Review
                   </p>
-                  <p className="mt-2 text-xl font-black text-white">
+                  <p className="mt-2 text-lg font-semibold text-white">
                     {documentsNeedingReview} documents
                   </p>
                 </div>
@@ -1520,20 +1518,20 @@ export default function DynamicCaseDetailPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Activity
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Timeline
               </h2>
 
               <div className="mt-6 space-y-5">
                 {activityFeed.map((item) => (
                   <div key={item.id} className="relative pl-6">
-                    <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-slate-950" />
+                    <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full bg-slate-900" />
 
-                    <p className="text-sm font-black text-slate-950">
+                    <p className="text-sm font-semibold text-slate-900">
                       {item.title}
                     </p>
 
@@ -1541,7 +1539,7 @@ export default function DynamicCaseDetailPage() {
                       {item.detail}
                     </p>
 
-                    <p className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                    <p className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                       {formatActivityTime(item.created_at)}
                     </p>
                   </div>
@@ -1553,14 +1551,14 @@ export default function DynamicCaseDetailPage() {
 
         {uploadModalOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-5 py-8 backdrop-blur-sm">
-            <div className="w-full max-w-2xl rounded-[2rem] bg-white p-6 shadow-2xl">
+            <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
               <div className="flex items-start justify-between gap-5 border-b border-slate-100 pb-5">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Storage Upload
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Upload document file
                   </h2>
 
@@ -1573,7 +1571,7 @@ export default function DynamicCaseDetailPage() {
                 <button
                   type="button"
                   onClick={closeUploadModal}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-lg font-black text-slate-500 transition hover:bg-slate-50"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-lg font-semibold text-slate-500 transition hover:bg-slate-50"
                 >
                   ×
                 </button>
@@ -1588,8 +1586,8 @@ export default function DynamicCaseDetailPage() {
                   accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
                 />
 
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                  <p className="text-base font-black text-slate-950">
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                  <p className="text-sm font-semibold text-slate-900">
                     File from computer
                   </p>
 
@@ -1602,12 +1600,12 @@ export default function DynamicCaseDetailPage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                      className="btn btn-primary"
                     >
                       Select file
                     </button>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-500">
+                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-500">
                       {selectedFileLabel}
                     </div>
                   </div>
@@ -1656,7 +1654,7 @@ export default function DynamicCaseDetailPage() {
                 </label>
 
                 {uploadMessage ? (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
                     {uploadMessage}
                   </div>
                 ) : null}
@@ -1665,7 +1663,7 @@ export default function DynamicCaseDetailPage() {
                   <button
                     type="button"
                     onClick={closeUploadModal}
-                    className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                    className="btn btn-secondary"
                   >
                     Cancel
                   </button>

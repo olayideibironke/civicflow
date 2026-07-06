@@ -176,19 +176,19 @@ function MetricCard({
         ? "text-amber-700"
         : tone === "emerald"
           ? "text-emerald-700"
-          : "text-slate-950";
+          : "text-slate-900";
 
   return (
     <div className="premium-card">
-      <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+      <p className="eyebrow">
         {label}
       </p>
 
-      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
+      <p className={`mt-3 text-3xl font-bold tracking-tight ${valueClass}`}>
         {value}
       </p>
 
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -412,12 +412,12 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Dashboard
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-            Loading CivicFlow workspace...
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Loading CivicFlow workspace…
           </h1>
         </section>
       </AppShell>
@@ -428,11 +428,11 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Supabase Error
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Dashboard could not be loaded.
           </h1>
 
@@ -450,11 +450,11 @@ export default function DashboardPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Operations Dashboard
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Staff command center
               </h1>
 
@@ -467,14 +467,14 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/app/cases/new"
-                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                className="btn btn-primary"
               >
                 Create case
               </Link>
 
               <Link
                 href="/intake"
-                className="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="btn btn-secondary"
               >
                 Public intake
               </Link>
@@ -516,11 +516,11 @@ export default function DashboardPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Needs Attention
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Follow-ups and assignment gaps
                   </h2>
 
@@ -531,7 +531,7 @@ export default function DashboardPage() {
                 </div>
 
                 <span
-                  className={`w-fit rounded-full px-4 py-2 text-xs font-black ${
+                  className={`chip w-fit ${
                     attentionItems.length > 0
                       ? "bg-amber-100 text-amber-700"
                       : "bg-emerald-50 text-emerald-700"
@@ -543,8 +543,8 @@ export default function DashboardPage() {
 
               <div className="mt-6 grid gap-3">
                 {attentionItems.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                    <p className="text-sm font-medium text-slate-500">
                       No overdue follow-ups, open follow-ups, or unassigned
                       cases need attention right now.
                     </p>
@@ -557,27 +557,27 @@ export default function DashboardPage() {
                       <Link
                         key={item.id}
                         href={item.href}
-                        className={`block rounded-3xl border p-5 transition hover:-translate-y-0.5 hover:shadow-lg ${styles.card}`}
+                        className={`card-interactive block rounded-xl border p-5 ${styles.card}`}
                       >
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                              <span className="chip bg-slate-900 text-white">
                                 {item.caseNumber}
                               </span>
 
                               <span
-                                className={`rounded-full px-3 py-1 text-xs font-black ${styles.badge}`}
+                                className={`chip ${styles.badge}`}
                               >
                                 {item.badge}
                               </span>
                             </div>
 
-                            <p className="mt-4 text-lg font-black text-slate-950">
+                            <p className="mt-4 text-lg font-semibold text-slate-900">
                               {item.title}
                             </p>
 
-                            <p className="mt-1 text-sm font-bold text-slate-600">
+                            <p className="mt-1 text-sm font-medium text-slate-600">
                               {item.clientName}
                             </p>
 
@@ -586,7 +586,7 @@ export default function DashboardPage() {
                             </p>
                           </div>
 
-                          <div className="shrink-0 rounded-2xl bg-white/75 px-4 py-3 text-sm font-black text-slate-700">
+                          <div className="shrink-0 rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
                             Due: {formatDate(item.dueDate)}
                           </div>
                         </div>
@@ -600,11 +600,11 @@ export default function DashboardPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Recent Cases
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Latest case activity
                   </h2>
 
@@ -615,7 +615,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/app/cases"
-                  className="w-fit rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="btn btn-secondary w-fit"
                 >
                   View all cases
                 </Link>
@@ -623,8 +623,8 @@ export default function DashboardPage() {
 
               <div className="mt-6 grid gap-3">
                 {recentCases.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                    <p className="text-sm font-medium text-slate-500">
                       No cases have been created yet.
                     </p>
                   </div>
@@ -637,17 +637,17 @@ export default function DashboardPage() {
                       <Link
                         key={caseItem.id}
                         href={getCaseHref(caseItem.case_number)}
-                        className="block rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-lg"
+                        className="card-interactive block rounded-xl border border-slate-200/80 bg-white p-5"
                       >
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                              <span className="chip bg-slate-900 text-white">
                                 {caseItem.case_number}
                               </span>
 
                               <span
-                                className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
+                                className={`chip ${getStatusStyle(
                                   caseItem.status
                                 )}`}
                               >
@@ -655,7 +655,7 @@ export default function DashboardPage() {
                               </span>
 
                               <span
-                                className={`rounded-full border px-3 py-1 text-xs font-black ${getPriorityStyle(
+                                className={`chip ${getPriorityStyle(
                                   caseItem.priority
                                 )}`}
                               >
@@ -663,12 +663,12 @@ export default function DashboardPage() {
                               </span>
                             </div>
 
-                            <p className="mt-4 text-lg font-black text-slate-950">
+                            <p className="mt-4 text-lg font-semibold text-slate-900">
                               {caseItem.client_first_name}{" "}
                               {caseItem.client_last_name}
                             </p>
 
-                            <p className="mt-1 text-sm font-bold text-slate-500">
+                            <p className="mt-1 text-sm font-medium text-slate-500">
                               {caseItem.service_category} · Assigned to{" "}
                               {caseItem.assigned_to || "Unassigned"}
                             </p>
@@ -676,7 +676,7 @@ export default function DashboardPage() {
 
                           <div className="flex flex-wrap gap-2 xl:justify-end">
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                              className={`chip ${
                                 gapCount > 0
                                   ? "bg-amber-100 text-amber-700"
                                   : "bg-emerald-50 text-emerald-700"
@@ -686,7 +686,7 @@ export default function DashboardPage() {
                             </span>
 
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                              className={`chip ${
                                 followUpCount > 0
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-slate-100 text-slate-500"
@@ -706,11 +706,11 @@ export default function DashboardPage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Operating Signal
               </p>
 
-              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 {overdueFollowUps.length > 0
                   ? "Overdue follow-ups need action."
                   : openFollowUps.length > 0
@@ -731,29 +731,29 @@ export default function DashboardPage() {
               </p>
 
               <div className="mt-8 grid gap-3">
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl bg-white/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                     Open Follow-ups
                   </p>
-                  <p className="mt-2 text-2xl font-black text-white">
+                  <p className="mt-2 text-2xl font-semibold text-white">
                     {openFollowUps.length}
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl bg-white/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                     Overdue Follow-ups
                   </p>
-                  <p className="mt-2 text-2xl font-black text-white">
+                  <p className="mt-2 text-2xl font-semibold text-white">
                     {overdueFollowUps.length}
                   </p>
                 </div>
 
-                <div className="rounded-3xl bg-white/10 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl bg-white/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
                     Unassigned Cases
                   </p>
-                  <p className="mt-2 text-2xl font-black text-white">
+                  <p className="mt-2 text-2xl font-semibold text-white">
                     {unassignedCases.length}
                   </p>
                 </div>
@@ -761,11 +761,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Workflow Queues
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Case stages
               </h2>
 
@@ -773,11 +773,11 @@ export default function DashboardPage() {
                 {workflowQueues.map((queue) => (
                   <div
                     key={queue.label}
-                    className="rounded-3xl border border-slate-200 bg-white p-5"
+                    className="rounded-xl border border-slate-200/80 bg-white p-5"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-black text-slate-950">
+                        <p className="text-sm font-semibold text-slate-900">
                           {queue.label}
                         </p>
                         <p className="mt-1 text-sm leading-6 text-slate-500">
@@ -785,7 +785,7 @@ export default function DashboardPage() {
                         </p>
                       </div>
 
-                      <span className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white">
+                      <span className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
                         {queue.count}
                       </span>
                     </div>
@@ -795,28 +795,28 @@ export default function DashboardPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Quick Links
               </p>
 
               <div className="mt-5 grid gap-3">
                 <Link
                   href="/app/cases"
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="btn btn-secondary"
                 >
                   Open case queue
                 </Link>
 
                 <Link
                   href="/app/reports"
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="btn btn-secondary"
                 >
                   View reports
                 </Link>
 
                 <Link
                   href="/app/cases/new"
-                  className="rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                  className="btn btn-primary"
                 >
                   Create staff case
                 </Link>

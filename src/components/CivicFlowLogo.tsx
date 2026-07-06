@@ -12,14 +12,14 @@ type CivicFlowLogoProps = {
 
 const sizeStyles = {
   sm: {
-    mark: "h-10 w-10 rounded-xl",
-    wordmark: "text-lg",
-    subtext: "text-xs",
+    mark: "h-9 w-9 rounded-[10px]",
+    wordmark: "text-base",
+    subtext: "text-[0.66rem]",
   },
   md: {
-    mark: "h-12 w-12 rounded-2xl",
-    wordmark: "text-xl",
-    subtext: "text-sm",
+    mark: "h-11 w-11 rounded-xl",
+    wordmark: "text-lg",
+    subtext: "text-xs",
   },
   lg: {
     mark: "h-14 w-14 rounded-2xl",
@@ -47,7 +47,7 @@ export default function CivicFlowLogo({
       aria-label="CivicFlow by Westforge"
     >
       <div
-        className={`flex shrink-0 items-center justify-center bg-slate-950 text-white shadow-lg shadow-slate-950/15 ${styles.mark} ${markClassName}`}
+        className={`flex shrink-0 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950 text-white shadow-md shadow-slate-950/20 ring-1 ring-white/10 ${styles.mark} ${markClassName}`}
       >
         <svg
           viewBox="0 0 64 64"
@@ -96,8 +96,8 @@ export default function CivicFlowLogo({
       {shouldShowText ? (
         <div className={`leading-none ${textClassName}`}>
           <p
-            className={`font-black tracking-tight ${
-              inverted ? "text-white" : "text-slate-950"
+            className={`font-bold tracking-tight ${
+              inverted ? "text-white" : "text-slate-900"
             } ${styles.wordmark}`}
           >
             CivicFlow
@@ -105,8 +105,8 @@ export default function CivicFlowLogo({
 
           {showSubtext ? (
             <p
-              className={`mt-1 font-extrabold ${
-                inverted ? "text-blue-100" : "text-slate-500"
+              className={`mt-1.5 font-semibold uppercase tracking-[0.14em] ${
+                inverted ? "text-blue-200/80" : "text-slate-400"
               } ${styles.subtext}`}
             >
               by Westforge

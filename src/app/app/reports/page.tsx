@@ -167,14 +167,14 @@ function MetricCard({
           : "text-slate-950";
 
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">
+    <div className="premium-card">
+      <p className="eyebrow">
         {label}
       </p>
-      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
+      <p className={`mt-4 text-3xl font-bold tracking-tight ${valueClass}`}>
         {value}
       </p>
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -192,8 +192,8 @@ function BarList({
 
   if (items.length === 0) {
     return (
-      <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-        <p className="text-sm font-black text-slate-500">{emptyLabel}</p>
+      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6">
+        <p className="text-sm font-medium text-slate-500">{emptyLabel}</p>
       </div>
     );
   }
@@ -206,17 +206,17 @@ function BarList({
         return (
           <div key={item.label} className="space-y-2">
             <div className="flex items-center justify-between gap-4">
-              <p className="min-w-0 truncate text-sm font-black text-slate-950">
+              <p className="min-w-0 truncate text-sm font-semibold text-slate-900">
                 {item.label}
               </p>
-              <p className="shrink-0 text-sm font-black text-slate-500">
+              <p className="shrink-0 text-sm font-semibold text-slate-500">
                 {item.count}
               </p>
             </div>
 
             <div className="h-3 overflow-hidden rounded-full bg-slate-100">
               <div
-                className="h-full rounded-full bg-slate-950"
+                className="h-full rounded-full bg-slate-900"
                 style={{ width: `${percent}%` }}
               />
             </div>
@@ -260,20 +260,20 @@ function TrendLineChart({ data }: { data: TrendPoint[] }) {
     .join(" ");
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-5">
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
             7-Day Trend
           </p>
-          <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+          <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
             Intake and closure activity
           </h3>
         </div>
 
-        <div className="flex flex-wrap gap-3 text-xs font-black text-slate-500">
+        <div className="flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-slate-950" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-900" />
             Created
           </span>
           <span className="inline-flex items-center gap-2">
@@ -368,11 +368,11 @@ function CompletionDonut({
   const filled = (percent / 100) * circumference;
 
   return (
-    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
         Completion Mix
       </p>
-      <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+      <h3 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
         Closed vs open cases
       </h3>
 
@@ -401,10 +401,10 @@ function CompletionDonut({
           </svg>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="text-4xl font-black tracking-tight text-slate-950">
+            <p className="text-3xl font-bold tracking-tight text-slate-900">
               {percent}%
             </p>
-            <p className="mt-1 text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+            <p className="mt-1 eyebrow">
               Closed
             </p>
           </div>
@@ -412,20 +412,20 @@ function CompletionDonut({
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="rounded-3xl bg-emerald-50 p-4 text-center">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-700">
+        <div className="rounded-xl bg-emerald-50 p-4 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
             Completed
           </p>
-          <p className="mt-2 text-3xl font-black text-slate-950">
+          <p className="mt-2 text-2xl font-bold text-slate-900">
             {completed}
           </p>
         </div>
 
-        <div className="rounded-3xl bg-slate-100 p-4 text-center">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-500">
+        <div className="rounded-xl bg-slate-100 p-4 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
             Open
           </p>
-          <p className="mt-2 text-3xl font-black text-slate-950">{open}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{open}</p>
         </div>
       </div>
     </div>
@@ -843,10 +843,10 @@ export default function ReportsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Reports
           </p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Loading report dashboard...
           </h1>
         </section>
@@ -858,10 +858,10 @@ export default function ReportsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Supabase Error
           </p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Reports could not be loaded.
           </h1>
           <p className="mt-3 text-base leading-7 text-slate-600">{loadError}</p>
@@ -876,11 +876,11 @@ export default function ReportsPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Reports
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Performance dashboard
               </h1>
 
@@ -894,14 +894,14 @@ export default function ReportsPage() {
             <button
               type="button"
               onClick={handleDownloadExcel}
-              className="inline-flex h-12 w-fit items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+              className="btn btn-primary px-6"
             >
               Download Excel report
             </button>
           </div>
 
           {exportMessage ? (
-            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
               {exportMessage}
             </div>
           ) : null}
@@ -948,11 +948,11 @@ export default function ReportsPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Visualization Studio
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Case performance charts
                   </h2>
 
@@ -963,7 +963,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
 
-                <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-700">
+                <span className="chip border-emerald-200 bg-emerald-50 text-emerald-700">
                   Excel export ready
                 </span>
               </div>
@@ -980,10 +980,10 @@ export default function ReportsPage() {
 
             <div className="grid gap-6 xl:grid-cols-2">
               <div className="premium-card">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Follow-up Types
                 </p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Follow-ups by note type
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -999,10 +999,10 @@ export default function ReportsPage() {
               </div>
 
               <div className="premium-card">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Follow-up Owners
                 </p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Open follow-ups by staff
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -1020,10 +1020,10 @@ export default function ReportsPage() {
 
             <div className="grid gap-6 xl:grid-cols-2">
               <div className="premium-card">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Service Demand
                 </p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Case categories
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -1039,10 +1039,10 @@ export default function ReportsPage() {
               </div>
 
               <div className="premium-card">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Status Distribution
                 </p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Workflow stages
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -1061,11 +1061,11 @@ export default function ReportsPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Staff Workload
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Open case ownership
                   </h2>
 
@@ -1074,7 +1074,7 @@ export default function ReportsPage() {
                   </p>
                 </div>
 
-                <span className="w-fit rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
+                <span className="chip bg-slate-100 text-slate-600">
                   {openCases.length} open cases
                 </span>
               </div>
@@ -1090,11 +1090,11 @@ export default function ReportsPage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Operational Signal
               </p>
 
-              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 {overdueFollowUps.length > 0
                   ? "Overdue follow-ups need action."
                   : openFollowUps.length > 0
@@ -1114,11 +1114,11 @@ export default function ReportsPage() {
                       : "There are no major blockers in the current case workload."}
               </p>
 
-              <div className="mt-8 rounded-3xl bg-white/10 p-6">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">
+              <div className="mt-8 rounded-xl bg-white/10 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
                   Recommended Action
                 </p>
-                <p className="mt-3 text-xl font-black leading-8 text-white">
+                <p className="mt-3 text-lg font-semibold leading-8 text-white">
                   {overdueFollowUps.length > 0
                     ? "Contact clients or staff owners tied to overdue follow-ups."
                     : openFollowUps.length > 0
@@ -1131,11 +1131,11 @@ export default function ReportsPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Follow-up Workload
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Cases needing action
               </h2>
 
@@ -1145,8 +1145,8 @@ export default function ReportsPage() {
 
               <div className="mt-6 space-y-3">
                 {followUpsByCase.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-medium text-slate-500">
                       No cases have open follow-ups.
                     </p>
                   </div>
@@ -1154,7 +1154,7 @@ export default function ReportsPage() {
                   followUpsByCase.slice(0, 6).map((item) => (
                     <div
                       key={item.caseNumber}
-                      className={`rounded-3xl border p-4 ${
+                      className={`rounded-xl border p-4 ${
                         item.overdue > 0
                           ? "border-rose-200 bg-rose-50"
                           : "border-amber-200 bg-amber-50"
@@ -1162,16 +1162,16 @@ export default function ReportsPage() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-slate-950">
+                          <p className="truncate text-sm font-semibold text-slate-900">
                             {item.caseNumber}
                           </p>
-                          <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                          <p className="mt-1 truncate text-sm font-medium text-slate-500">
                             {item.clientName}
                           </p>
                         </div>
 
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-black ${
+                          className={`chip ${
                             item.overdue > 0
                               ? "bg-rose-100 text-rose-700"
                               : "bg-amber-100 text-amber-700"
@@ -1181,7 +1181,7 @@ export default function ReportsPage() {
                         </span>
                       </div>
 
-                      <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                      <p className="mt-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         {item.overdue} overdue
                       </p>
                     </div>
@@ -1191,18 +1191,18 @@ export default function ReportsPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Upcoming Follow-ups
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Due dates
               </h2>
 
               <div className="mt-6 space-y-3">
                 {recentOpenFollowUps.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-medium text-slate-500">
                       No open follow-ups due.
                     </p>
                   </div>
@@ -1214,7 +1214,7 @@ export default function ReportsPage() {
                     return (
                       <div
                         key={note.id}
-                        className={`rounded-3xl border p-4 ${
+                        className={`rounded-xl border p-4 ${
                           overdue
                             ? "border-rose-200 bg-rose-50"
                             : "border-slate-200 bg-white"
@@ -1222,16 +1222,16 @@ export default function ReportsPage() {
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-black text-slate-950">
+                            <p className="truncate text-sm font-semibold text-slate-900">
                               {matchingCase?.case_number ?? "Unknown case"}
                             </p>
-                            <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                            <p className="mt-1 truncate text-sm font-medium text-slate-500">
                               {note.note_type ?? "Follow-up"}
                             </p>
                           </div>
 
                           <span
-                            className={`rounded-full px-3 py-1 text-xs font-black ${
+                            className={`chip ${
                               overdue
                                 ? "bg-rose-100 text-rose-700"
                                 : "bg-slate-100 text-slate-600"
@@ -1241,7 +1241,7 @@ export default function ReportsPage() {
                           </span>
                         </div>
 
-                        <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                        <p className="mt-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                           Due {formatDate(note.follow_up_date)}
                         </p>
                       </div>
@@ -1252,11 +1252,11 @@ export default function ReportsPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Document Gap Chart
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Missing items
               </h2>
 
@@ -1273,18 +1273,18 @@ export default function ReportsPage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Recent Closures
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Completed cases
               </h2>
 
               <div className="mt-6 space-y-3">
                 {recentClosures.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-medium text-slate-500">
                       No completed cases yet.
                     </p>
                   </div>
@@ -1292,25 +1292,25 @@ export default function ReportsPage() {
                   recentClosures.map((caseItem) => (
                     <div
                       key={caseItem.id}
-                      className="rounded-3xl border border-slate-200 bg-white p-4"
+                      className="rounded-xl border border-slate-200 bg-white p-4"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-slate-950">
+                          <p className="truncate text-sm font-semibold text-slate-900">
                             {caseItem.case_number}
                           </p>
-                          <p className="mt-1 truncate text-sm font-bold text-slate-500">
+                          <p className="mt-1 truncate text-sm font-medium text-slate-500">
                             {caseItem.client_first_name}{" "}
                             {caseItem.client_last_name}
                           </p>
                         </div>
 
-                        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                        <span className="chip bg-emerald-50 text-emerald-700">
                           Closed
                         </span>
                       </div>
 
-                      <p className="mt-3 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                      <p className="mt-3 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         {formatDate(caseItem.completed_at)}
                       </p>
                     </div>

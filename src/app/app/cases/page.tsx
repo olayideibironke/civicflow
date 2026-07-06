@@ -166,15 +166,15 @@ function MetricCard({
 
   return (
     <div className="premium-card">
-      <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+      <p className="eyebrow">
         {label}
       </p>
 
-      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
+      <p className={`mt-4 text-3xl font-bold tracking-tight ${valueClass}`}>
         {value}
       </p>
 
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -372,11 +372,11 @@ export default function CasesPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Cases
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold">
             Loading case queue...
           </h1>
         </section>
@@ -388,11 +388,11 @@ export default function CasesPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Supabase Error
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold">
             Case queue could not be loaded.
           </h1>
 
@@ -410,11 +410,11 @@ export default function CasesPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Case Queue
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Cases and follow-up workload
               </h1>
 
@@ -426,7 +426,7 @@ export default function CasesPage() {
 
             <Link
               href="/app/cases/new"
-              className="inline-flex h-12 w-fit items-center justify-center whitespace-nowrap rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+              className="btn btn-primary w-fit whitespace-nowrap"
             >
               Create case
             </Link>
@@ -471,16 +471,16 @@ export default function CasesPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Filters
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Find cases fast
               </h2>
             </div>
 
-            <p className="text-sm font-black text-slate-500">
+            <p className="text-sm font-medium text-slate-500">
               Showing {filteredCases.length} of {cases.length} cases
             </p>
           </div>
@@ -542,11 +542,11 @@ export default function CasesPage() {
         <section className="grid gap-4">
           {filteredCases.length === 0 ? (
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 No Results
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 No cases match these filters.
               </h2>
 
@@ -568,17 +568,17 @@ export default function CasesPage() {
                 <Link
                   key={caseItem.id}
                   href={getCaseHref(caseItem.case_number)}
-                  className="block rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl"
+                  className="block rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm card-interactive"
                 >
                   <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_420px] 2xl:items-start">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                        <span className="chip bg-slate-900 text-white">
                           {caseItem.case_number}
                         </span>
 
                         <span
-                          className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
+                          className={`chip ${getStatusStyle(
                             caseItem.status
                           )}`}
                         >
@@ -586,7 +586,7 @@ export default function CasesPage() {
                         </span>
 
                         <span
-                          className={`rounded-full border px-3 py-1 text-xs font-black ${getPriorityStyle(
+                          className={`chip ${getPriorityStyle(
                             caseItem.priority
                           )}`}
                         >
@@ -594,18 +594,18 @@ export default function CasesPage() {
                         </span>
 
                         {isUnassigned ? (
-                          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-700">
+                          <span className="chip bg-blue-100 text-blue-700">
                             Unassigned
                           </span>
                         ) : null}
                       </div>
 
-                      <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                      <h2 className="mt-4 text-lg font-semibold text-slate-900">
                         {caseItem.client_first_name}{" "}
                         {caseItem.client_last_name}
                       </h2>
 
-                      <p className="mt-2 text-sm font-bold text-slate-500">
+                      <p className="mt-2 text-sm font-medium text-slate-500">
                         {caseItem.service_category} · Assigned to{" "}
                         {caseItem.assigned_to || "Unassigned"}
                       </p>
@@ -617,7 +617,7 @@ export default function CasesPage() {
 
                     <div className="grid gap-3 sm:grid-cols-3 2xl:grid-cols-1">
                       <div
-                        className={`rounded-3xl p-4 ${
+                        className={`rounded-xl p-4 ${
                           overdueCount > 0
                             ? "bg-rose-50"
                             : followUpCount > 0
@@ -625,35 +625,35 @@ export default function CasesPage() {
                               : "bg-slate-50"
                         }`}
                       >
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                           Follow-ups
                         </p>
                         <p
-                          className={`mt-2 text-2xl font-black ${
+                          className={`mt-2 text-xl font-bold ${
                             overdueCount > 0
                               ? "text-rose-700"
                               : followUpCount > 0
                                 ? "text-amber-700"
-                                : "text-slate-950"
+                                : "text-slate-900"
                           }`}
                         >
                           {followUpCount}
                         </p>
-                        <p className="mt-1 text-xs font-bold text-slate-500">
+                        <p className="mt-1 text-xs font-medium text-slate-500">
                           {overdueCount} overdue
                         </p>
                       </div>
 
                       <div
-                        className={`rounded-3xl p-4 ${
+                        className={`rounded-xl p-4 ${
                           gapCount > 0 ? "bg-amber-50" : "bg-emerald-50"
                         }`}
                       >
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                           Document Gaps
                         </p>
                         <p
-                          className={`mt-2 text-2xl font-black ${
+                          className={`mt-2 text-xl font-bold ${
                             gapCount > 0
                               ? "text-amber-700"
                               : "text-emerald-700"
@@ -661,19 +661,19 @@ export default function CasesPage() {
                         >
                           {gapCount}
                         </p>
-                        <p className="mt-1 text-xs font-bold text-slate-500">
+                        <p className="mt-1 text-xs font-medium text-slate-500">
                           Missing or review-needed
                         </p>
                       </div>
 
-                      <div className="rounded-3xl bg-slate-50 p-4">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
+                      <div className="rounded-xl bg-slate-50 p-4">
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                           Created
                         </p>
-                        <p className="mt-2 text-sm font-black text-slate-950">
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
                           {formatDate(caseItem.created_at)}
                         </p>
-                        <p className="mt-1 text-xs font-bold text-slate-500">
+                        <p className="mt-1 text-xs font-medium text-slate-500">
                           Source: {caseItem.source}
                         </p>
                       </div>

@@ -234,17 +234,17 @@ export default function NewCasePage() {
               <div className="mb-4">
                 <Link
                   href="/app/cases"
-                  className="text-sm font-black text-slate-500 transition hover:text-slate-950"
+                  className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
                 >
                   ← Back to cases
                 </Link>
               </div>
 
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Staff Case Creation
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Create new case
               </h1>
 
@@ -254,13 +254,13 @@ export default function NewCasePage() {
               </p>
             </div>
 
-            <div className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700">
+            <div className="w-fit chip border-emerald-200 bg-emerald-50 text-emerald-700">
               Workspace aware
             </div>
           </div>
 
           {loadError ? (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+            <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
               {loadError}
             </div>
           ) : null}
@@ -269,11 +269,11 @@ export default function NewCasePage() {
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <form onSubmit={handleSubmit} noValidate className="premium-card">
             <div className="border-b border-slate-100 pb-6">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Case Details
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Client and service information
               </h2>
 
@@ -412,14 +412,14 @@ export default function NewCasePage() {
               />
             </label>
 
-            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-              <p className="text-base font-black text-slate-950">
+            <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+              <p className="text-sm font-semibold text-slate-900">
                 Workspace connection
               </p>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 This case will be created under{" "}
-                <span className="font-black text-slate-950">
+                <span className="font-semibold text-slate-900">
                   {workspace?.organization.name ?? "your organization"}
                 </span>
                 .
@@ -427,7 +427,7 @@ export default function NewCasePage() {
             </div>
 
             {formError ? (
-              <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
                 {formError}
               </div>
             ) : null}
@@ -441,11 +441,7 @@ export default function NewCasePage() {
               <button
                 type="submit"
                 disabled={saving || Boolean(loadError)}
-                className={`rounded-2xl px-6 py-3 text-sm font-black shadow-lg transition ${
-                  saving
-                    ? "bg-slate-300 text-slate-600 shadow-none"
-                    : "bg-slate-950 text-white shadow-slate-950/15 hover:bg-slate-800"
-                } disabled:cursor-not-allowed`}
+                className={`btn btn-primary px-6 py-3`}
               >
                 {saving ? "Creating case..." : "Create case"}
               </button>
@@ -454,11 +450,11 @@ export default function NewCasePage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Staff Workspace
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-white">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white">
                 {workspace?.organization.name ?? "Loading workspace"}
               </h2>
 
@@ -469,38 +465,38 @@ export default function NewCasePage() {
             </div>
 
             <div className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Staff Profile
               </p>
 
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-lg font-semibold text-slate-900">
                 {workspace ? getStaffDisplayName(workspace) : "Loading staff"}
               </h2>
 
               <div className="mt-6 space-y-3">
-                <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-slate-200/80 bg-white p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Email
                   </p>
-                  <p className="mt-2 text-sm font-black text-slate-950">
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
                     {workspace?.email ?? "Loading"}
                   </p>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-slate-200/80 bg-white p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Organization
                   </p>
-                  <p className="mt-2 text-sm font-black text-slate-950">
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
                     {workspace?.organization.name ?? "Loading"}
                   </p>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-slate-200/80 bg-white p-4">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Access
                   </p>
-                  <p className="mt-2 text-sm font-black text-slate-950">
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
                     Organization-scoped case creation
                   </p>
                 </div>

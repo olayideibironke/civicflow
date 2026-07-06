@@ -76,20 +76,17 @@ function normalizeOptions(
 
 function IntakeHeader() {
   return (
-    <header className="border-b border-slate-200/70 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-24 max-w-[1440px] items-center justify-between px-6">
+    <header className="border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-[1440px] items-center justify-between px-6">
         <Link
           href="/"
-          className="flex items-center rounded-2xl transition hover:opacity-90"
+          className="flex items-center rounded-xl transition hover:opacity-90"
           aria-label="CivicFlow home"
         >
           <CivicFlowLogo size="md" />
         </Link>
 
-        <Link
-          href="/"
-          className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-        >
+        <Link href="/" className="btn btn-secondary">
           Back home
         </Link>
       </div>
@@ -252,20 +249,22 @@ export default function PublicIntakeForm({
 
   if (loadingSettings) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+      <main className="min-h-screen">
         <IntakeHeader />
 
-        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center px-6 py-10">
-          <div className="premium-card w-full text-center">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-              Public Intake
-            </p>
+        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-3xl items-center justify-center px-6 py-10">
+          <div className="premium-card w-full text-center animate-fade-up">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+            </div>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-              Loading intake settings...
+            <p className="eyebrow mt-6">Public Intake</p>
+
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
+              Loading intake settings…
             </h1>
 
-            <p className="mt-3 text-base leading-7 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
               CivicFlow is preparing this workspace intake form.
             </p>
           </div>
@@ -276,27 +275,22 @@ export default function PublicIntakeForm({
 
   if (settingsError) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+      <main className="min-h-screen">
         <IntakeHeader />
 
-        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center px-6 py-10">
-          <div className="premium-card w-full">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
-              Intake Settings Error
-            </p>
+        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-3xl items-center justify-center px-6 py-10">
+          <div className="premium-card w-full animate-fade-up">
+            <p className="eyebrow text-rose-500">Intake Settings Error</p>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
               Public intake could not be loaded.
             </h1>
 
-            <p className="mt-3 text-base leading-7 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
               {settingsError}
             </p>
 
-            <Link
-              href="/"
-              className="mt-6 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
-            >
+            <Link href="/" className="btn btn-primary mt-6">
               Back home
             </Link>
           </div>
@@ -307,28 +301,23 @@ export default function PublicIntakeForm({
 
   if (!settings) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+      <main className="min-h-screen">
         <IntakeHeader />
 
-        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center px-6 py-10">
-          <div className="premium-card w-full">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
-              Intake Settings Missing
-            </p>
+        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-3xl items-center justify-center px-6 py-10">
+          <div className="premium-card w-full animate-fade-up">
+            <p className="eyebrow text-rose-500">Intake Settings Missing</p>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
               Public intake settings are unavailable.
             </h1>
 
-            <p className="mt-3 text-base leading-7 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
               CivicFlow could not find an organization configuration for this
               public intake form.
             </p>
 
-            <Link
-              href="/"
-              className="mt-6 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
-            >
+            <Link href="/" className="btn btn-primary mt-6">
               Back home
             </Link>
           </div>
@@ -339,34 +328,29 @@ export default function PublicIntakeForm({
 
   if (!settings.public_intake_enabled) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+      <main className="min-h-screen">
         <IntakeHeader />
 
-        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-5xl items-center justify-center px-6 py-10">
-          <div className="premium-card w-full">
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-amber-600">
-              Intake Closed
-            </p>
+        <section className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-3xl items-center justify-center px-6 py-10">
+          <div className="premium-card w-full animate-fade-up">
+            <p className="eyebrow text-amber-600">Intake Closed</p>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
               Public intake is currently closed.
             </h1>
 
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+            <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500">
               {settings.organization_name} is not accepting new public intake
               submissions through this form right now.
             </p>
 
             {settings.support_email ? (
-              <p className="mt-4 text-sm font-bold text-slate-500">
+              <p className="mt-4 text-sm font-medium text-slate-500">
                 Support contact: {settings.support_email}
               </p>
             ) : null}
 
-            <Link
-              href="/"
-              className="mt-6 inline-flex rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
-            >
+            <Link href="/" className="btn btn-primary mt-6">
               Back home
             </Link>
           </div>
@@ -376,52 +360,52 @@ export default function PublicIntakeForm({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
+    <main className="min-h-screen">
       <IntakeHeader />
 
-      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 py-8 lg:grid-cols-[420px_minmax(0,1fr)] lg:py-10">
-        <aside className="self-start rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20 lg:sticky lg:top-8">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+      <section className="mx-auto grid max-w-[1440px] gap-6 px-6 py-8 lg:grid-cols-[400px_minmax(0,1fr)] lg:py-10">
+        <aside className="premium-dark animate-fade-up self-start lg:sticky lg:top-8 lg:!p-8">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
             Public Intake
           </p>
 
-          <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
             Submit a service request.
           </h1>
 
-          <p className="mt-5 text-sm leading-7 text-slate-300">
+          <p className="mt-4 text-sm leading-7 text-slate-300">
             This intake form is configured for {settings.organization_name}.
             Complete client information is required before a request can become
             a CivicFlow case.
           </p>
 
-          <div className="mt-8 space-y-4">
-            <div className="rounded-3xl bg-white/10 p-5">
-              <p className="text-base font-black text-white">
+          <div className="mt-7 space-y-3">
+            <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+              <p className="text-sm font-semibold text-white">
                 Organization-specific intake
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-1.5 text-xs leading-5 text-slate-300">
                 This link uses the saved settings for{" "}
                 {settings.organization_slug}.
               </p>
             </div>
 
-            <div className="rounded-3xl bg-white/10 p-5">
-              <p className="text-base font-black text-white">
+            <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+              <p className="text-sm font-semibold text-white">
                 Staff-ready case creation
               </p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-1.5 text-xs leading-5 text-slate-300">
                 Valid submissions create a case, document checklist, and
                 activity log in the correct CivicFlow workspace.
               </p>
             </div>
 
             {settings.support_email ? (
-              <div className="rounded-3xl bg-white/10 p-5">
-                <p className="text-base font-black text-white">
+              <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                <p className="text-sm font-semibold text-white">
                   Support contact
                 </p>
-                <p className="mt-2 break-words text-sm leading-6 text-slate-300">
+                <p className="mt-1.5 break-words text-xs leading-5 text-slate-300">
                   {settings.support_email}
                 </p>
               </div>
@@ -432,23 +416,22 @@ export default function PublicIntakeForm({
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="rounded-[2rem] border border-slate-200 bg-white/90 p-7 shadow-xl shadow-slate-200/60 backdrop-blur"
+          className="premium-card animate-fade-up"
         >
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
-                Client Information
-              </p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <p className="eyebrow">Client Information</p>
+              <h2 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
                 Tell us who needs assistance
               </h2>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600">
                 All required fields must be completed before the intake can be
                 submitted.
               </p>
             </div>
 
-            <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-black text-emerald-700">
+            <span className="chip w-fit border-emerald-200 bg-emerald-50 text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Secure intake
             </span>
           </div>
@@ -545,24 +528,24 @@ export default function PublicIntakeForm({
             />
           </label>
 
-          <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6">
-            <p className="text-base font-black text-slate-950">
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+            <p className="text-sm font-semibold text-slate-900">
               Default case checklist
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-1.5 text-sm leading-6 text-slate-600">
               CivicFlow will create required document checklist items for the
               staff review team.
             </p>
           </div>
 
           {formError ? (
-            <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+            <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
               {formError}
             </div>
           ) : null}
 
           <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="max-w-xl text-sm leading-6 text-slate-500">
               By submitting, the request becomes a real CivicFlow case for staff
               review.
             </p>
@@ -570,13 +553,9 @@ export default function PublicIntakeForm({
             <button
               type="submit"
               disabled={submitting}
-              className={`rounded-2xl px-6 py-3 text-sm font-black shadow-lg transition ${
-                submitting
-                  ? "bg-slate-300 text-slate-600 shadow-none"
-                  : "bg-slate-950 text-white shadow-slate-950/15 hover:bg-slate-800"
-              } disabled:cursor-not-allowed`}
+              className="btn btn-primary px-6 py-3"
             >
-              {submitting ? "Submitting intake..." : "Submit intake"}
+              {submitting ? "Submitting intake…" : "Submit intake"}
             </button>
           </div>
         </form>

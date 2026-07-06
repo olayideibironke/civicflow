@@ -109,12 +109,12 @@ function StatusCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5">
-      <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>
-      <p className="mt-3 text-xl font-black text-slate-950">{value}</p>
-      <p className="mt-2 text-sm font-bold leading-6 text-slate-500">
+      <p className="mt-3 text-lg font-semibold text-slate-900">{value}</p>
+      <p className="mt-2 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -287,11 +287,11 @@ export default function SettingsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Organization Settings
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Loading workspace settings...
           </h1>
         </section>
@@ -303,11 +303,11 @@ export default function SettingsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Settings Error
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Settings could not be loaded.
           </h1>
 
@@ -328,11 +328,11 @@ export default function SettingsPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 SaaS Configuration
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Organization settings
               </h1>
 
@@ -348,7 +348,7 @@ export default function SettingsPage() {
                 href={publicIntakeUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="btn btn-secondary"
               >
                 Open intake link
               </a>
@@ -356,7 +356,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={handleCopyIntakeLink}
-                className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-black text-blue-700 shadow-sm transition hover:bg-blue-100"
+                className="btn btn-secondary"
               >
                 Copy intake link
               </button>
@@ -365,11 +365,7 @@ export default function SettingsPage() {
                 type="submit"
                 form="organization-settings-form"
                 disabled={saving}
-                className={`rounded-2xl px-5 py-3 text-sm font-black transition ${
-                  saving
-                    ? "bg-slate-200 text-slate-500"
-                    : "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
-                } disabled:cursor-not-allowed`}
+                className={`btn btn-primary`}
               >
                 {saving ? "Saving..." : "Save settings"}
               </button>
@@ -377,19 +373,19 @@ export default function SettingsPage() {
           </div>
 
           {copyMessage ? (
-            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-black text-blue-700">
+            <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
               {copyMessage}
             </div>
           ) : null}
 
           {saveMessage ? (
-            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700">
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
               {saveMessage}
             </div>
           ) : null}
 
           {formError ? (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+            <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
               {formError}
             </div>
           ) : null}
@@ -430,11 +426,11 @@ export default function SettingsPage() {
           <section className="space-y-6">
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Identity
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Workspace identity
                 </h2>
 
@@ -502,11 +498,11 @@ export default function SettingsPage() {
 
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Intake Defaults
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Public intake configuration
                 </h2>
 
@@ -517,7 +513,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="mt-6">
-                <label className="flex items-start gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <label className="flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-5">
                   <input
                     type="checkbox"
                     checked={formState.publicIntakeEnabled}
@@ -528,7 +524,7 @@ export default function SettingsPage() {
                   />
 
                   <span>
-                    <span className="block text-sm font-black text-slate-950">
+                    <span className="block text-sm font-semibold text-slate-900">
                       Public intake enabled
                     </span>
                     <span className="mt-1 block text-sm leading-6 text-slate-600">
@@ -572,11 +568,11 @@ export default function SettingsPage() {
 
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                <p className="eyebrow">
                   Branding Notes
                 </p>
 
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                   Implementation notes
                 </h2>
 
@@ -603,11 +599,11 @@ export default function SettingsPage() {
 
           <aside className="space-y-6">
             <section className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Multi-Tenant Intake
               </p>
 
-              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 Every customer now gets their own intake link.
               </h2>
 
@@ -619,11 +615,11 @@ export default function SettingsPage() {
             </section>
 
             <section className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Public Intake Link
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Shareable URL
               </h2>
 
@@ -635,14 +631,14 @@ export default function SettingsPage() {
               <input
                 readOnly
                 value={publicIntakeUrl}
-                className="mt-5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700"
+                className="mt-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
               />
 
               <div className="mt-4 grid gap-3">
                 <button
                   type="button"
                   onClick={handleCopyIntakeLink}
-                  className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                  className="btn btn-primary w-full"
                 >
                   Copy link
                 </button>
@@ -651,7 +647,7 @@ export default function SettingsPage() {
                   href={publicIntakeUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                  className="btn btn-secondary w-full"
                 >
                   Open link
                 </a>
@@ -659,17 +655,17 @@ export default function SettingsPage() {
             </section>
 
             <section className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Current Defaults
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Saved configuration
               </h2>
 
               <div className="mt-6 space-y-4">
-                <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-white p-5">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Service categories
                   </p>
 
@@ -677,7 +673,7 @@ export default function SettingsPage() {
                     {textToList(formState.serviceCategoriesText).map((item) => (
                       <span
                         key={item}
-                        className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700"
+                        className="chip bg-blue-50 text-blue-700"
                       >
                         {item}
                       </span>
@@ -685,8 +681,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-white p-5">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Priority options
                   </p>
 
@@ -694,7 +690,7 @@ export default function SettingsPage() {
                     {textToList(formState.priorityOptionsText).map((item) => (
                       <span
                         key={item}
-                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600"
+                        className="chip bg-slate-100 text-slate-600"
                       >
                         {item}
                       </span>
@@ -705,11 +701,11 @@ export default function SettingsPage() {
             </section>
 
             <section className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Next Scaling Step
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 Team management.
               </h2>
 

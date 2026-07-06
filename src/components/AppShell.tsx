@@ -21,32 +21,86 @@ const navigationItems = [
   {
     label: "Overview",
     href: "/app",
-    icon: "◆",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path
+          d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z"
+          fill="currentColor"
+        />
+      </svg>
+    ),
   },
   {
     label: "Cases",
     href: "/app/cases",
-    icon: "•",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path
+          d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
   },
   {
     label: "Demo Requests",
     href: "/app/demo-requests",
-    icon: "✦",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path
+          d="M4 6h16v10H7l-3 3V6Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
   },
   {
     label: "Public Intake",
     href: "/intake",
-    icon: "◇",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path
+          d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
   },
   {
     label: "Reports",
     href: "/app/reports",
-    icon: "▲",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path
+          d="M5 20V10m7 10V4m7 16v-7"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
   },
   {
     label: "Settings",
     href: "/app/settings",
-    icon: "●",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+        <path
+          d="M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M3 12h2m14 0h2M5.6 18.4 7 17m10-10 1.4-1.4"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
   },
 ];
 
@@ -128,18 +182,20 @@ export default function AppShell({ children }: AppShellProps) {
 
   if (checkingSession) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] px-6 py-8">
-        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
-          <div className="premium-card w-full text-center">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
-              CivicFlow Security
-            </p>
+      <main className="min-h-screen px-6 py-8">
+        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
+          <div className="premium-card w-full text-center animate-fade-up">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+              <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+            </div>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
-              Verifying staff access...
+            <p className="eyebrow mt-6">CivicFlow Security</p>
+
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
+              Verifying staff access…
             </h1>
 
-            <p className="mt-3 text-base leading-7 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
               Protected workspace pages require a signed-in staff profile.
             </p>
           </div>
@@ -150,33 +206,28 @@ export default function AppShell({ children }: AppShellProps) {
 
   if (workspaceError) {
     return (
-      <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] px-6 py-8">
-        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
-          <div className="premium-card w-full">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-rose-500">
-              Workspace Setup Required
-            </p>
+      <main className="min-h-screen px-6 py-8">
+        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
+          <div className="premium-card w-full animate-fade-up">
+            <p className="eyebrow text-rose-500">Workspace Setup Required</p>
 
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
               Staff profile could not be loaded.
             </h1>
 
-            <p className="mt-3 text-base leading-7 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-500">
               {workspaceError}
             </p>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/"
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
+              <Link href="/" className="btn btn-secondary">
                 Back home
               </Link>
 
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                className="btn btn-primary"
               >
                 Sign out
               </button>
@@ -188,35 +239,41 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)]">
-      <div className="mx-auto grid max-w-[1600px] gap-6 px-6 py-8 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="self-start rounded-[2rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur lg:sticky lg:top-8">
+    <main className="min-h-screen">
+      <div className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:py-8">
+        <aside className="self-start rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-[var(--shadow-md)] backdrop-blur lg:sticky lg:top-8">
           <Link
             href="/"
-            className="flex rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50"
+            className="flex items-center rounded-xl px-2 py-1.5 transition hover:opacity-90"
             aria-label="CivicFlow home"
           >
             <CivicFlowLogo size="md" />
           </Link>
 
-          <div className="mt-5 rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-5 text-white shadow-xl shadow-blue-950/20">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+          <div className="premium-dark mt-4 !rounded-xl !p-4">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-blue-200/80">
               Active Workspace
             </p>
 
-            <p className="mt-4 text-2xl font-black leading-tight">
+            <p className="mt-2.5 text-lg font-bold leading-tight text-white">
               {workspaceName}
             </p>
 
-            <div className="mt-5 flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <p className="text-sm font-bold text-slate-200">
+            <div className="mt-3.5 flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+              </span>
+              <p className="text-xs font-medium text-slate-300">
                 Organization access verified
               </p>
             </div>
           </div>
 
-          <nav className="mt-6 grid gap-3">
+          <nav className="mt-5 grid gap-1">
+            <p className="px-3 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+              Workspace
+            </p>
             {navigationItems.map((item) => {
               const active =
                 item.href === "/app"
@@ -227,15 +284,18 @@ export default function AppShell({ children }: AppShellProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-4 rounded-2xl px-4 py-3 text-sm font-black transition ${
+                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                     active
-                      ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
+                  {active ? (
+                    <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-blue-400" />
+                  ) : null}
                   <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xs ${
-                      active ? "bg-white/15" : "bg-slate-100"
+                    className={`flex shrink-0 items-center justify-center transition ${
+                      active ? "text-blue-300" : "text-slate-400 group-hover:text-slate-600"
                     }`}
                   >
                     {item.icon}
@@ -247,19 +307,19 @@ export default function AppShell({ children }: AppShellProps) {
             })}
           </nav>
 
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5">
+          <div className="mt-5 border-t border-slate-200/80 pt-5">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">
                   {initials}
                 </div>
 
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-black text-slate-950">
+                  <p className="truncate text-sm font-semibold text-slate-900">
                     {displayName}
                   </p>
-                  <p className="mt-1 truncate text-xs font-bold text-slate-500">
-                    {staffRole} · {workspace?.email}
+                  <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
+                    {staffRole}
                   </p>
                 </div>
               </div>
@@ -268,72 +328,62 @@ export default function AppShell({ children }: AppShellProps) {
                 type="button"
                 onClick={handleSignOut}
                 disabled={signingOut}
-                className={`mt-4 w-full rounded-2xl px-4 py-3 text-sm font-black transition ${
-                  signingOut
-                    ? "bg-slate-200 text-slate-500"
-                    : "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
-                } disabled:cursor-not-allowed`}
+                className="btn btn-secondary mt-3.5 w-full"
               >
-                {signingOut ? "Signing out..." : "Sign out"}
+                {signingOut ? "Signing out…" : "Sign out"}
               </button>
             </div>
           </div>
 
-          <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+          <div className="mt-4 rounded-xl border border-slate-200/80 bg-white p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-base font-black text-slate-950">
+              <p className="text-sm font-semibold text-slate-900">
                 Build status
               </p>
 
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-700">
+              <span className="chip border-amber-200 bg-amber-50 text-amber-700">
                 MVP
               </span>
             </div>
 
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              CivicFlow now has workspace settings, demo request management,
-              public intake, case tracking, documents, notes, follow-ups, and
-              reports.
+            <p className="mt-2.5 text-xs leading-5 text-slate-500">
+              Workspace settings, demo requests, public intake, case tracking,
+              documents, notes, follow-ups, and reports.
             </p>
           </div>
         </aside>
 
         <section className="min-w-0 space-y-6">
-          <header className="rounded-[2rem] border border-slate-200 bg-white/90 px-6 py-5 shadow-xl shadow-slate-200/60 backdrop-blur">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
-                  Westforge SaaS Workspace
-                </p>
+          <header className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-[var(--shadow-sm)] backdrop-blur md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Westforge SaaS Workspace
+              </p>
 
-                <p className="mt-2 text-base font-black text-slate-800">
-                  {workspaceName} · {staffRole}
-                </p>
-              </div>
+              <p className="mt-1 truncate text-sm font-semibold text-slate-700">
+                {workspaceName} · {staffRole}
+              </p>
+            </div>
 
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/request-demo"
-                  className="hidden rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:inline-flex"
-                >
-                  Demo form
-                </Link>
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/request-demo"
+                className="btn btn-secondary hidden sm:inline-flex"
+              >
+                Demo form
+              </Link>
 
-                <Link
-                  href="/intake"
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  Public intake
-                </Link>
+              <Link href="/intake" className="btn btn-secondary">
+                Public intake
+              </Link>
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-black text-white shadow-lg shadow-slate-950/15">
-                  {initials}
-                </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">
+                {initials}
               </div>
             </div>
           </header>
 
-          {children}
+          <div className="animate-fade-up">{children}</div>
         </section>
       </div>
     </main>

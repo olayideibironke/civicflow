@@ -109,16 +109,16 @@ function MetricCard({
             : "text-slate-950";
 
   return (
-    <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-400">
+    <div className="premium-card">
+      <p className="eyebrow">
         {label}
       </p>
 
-      <p className={`mt-4 text-5xl font-black tracking-tight ${valueClass}`}>
+      <p className={`mt-4 text-3xl font-bold tracking-tight ${valueClass}`}>
         {value}
       </p>
 
-      <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+      <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -433,11 +433,11 @@ export default function DemoRequestsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+          <p className="eyebrow">
             Demo Requests
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Loading demo request pipeline...
           </h1>
         </section>
@@ -449,11 +449,11 @@ export default function DemoRequestsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-rose-500">
+          <p className="eyebrow text-rose-500">
             Supabase Error
           </p>
 
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
             Demo requests could not be loaded.
           </h1>
 
@@ -471,11 +471,11 @@ export default function DemoRequestsPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Sales Pipeline
               </p>
 
-              <h1 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 CivicFlow demo requests
               </h1>
 
@@ -490,7 +490,7 @@ export default function DemoRequestsPage() {
               <button
                 type="button"
                 onClick={loadRequests}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                className="btn btn-secondary"
               >
                 Refresh
               </button>
@@ -498,7 +498,7 @@ export default function DemoRequestsPage() {
               <a
                 href="/request-demo"
                 target="_blank"
-                className="rounded-2xl bg-slate-950 px-5 py-3 text-center text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                className="btn btn-primary"
               >
                 Open demo form
               </a>
@@ -547,16 +547,16 @@ export default function DemoRequestsPage() {
             <section className="premium-card">
               <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 xl:flex-row xl:items-end xl:justify-between">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     Filters
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                     Search demo leads
                   </h2>
                 </div>
 
-                <p className="text-sm font-black text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   Showing {filteredRequests.length} of {requests.length} leads
                 </p>
               </div>
@@ -591,11 +591,11 @@ export default function DemoRequestsPage() {
             <section className="grid gap-4">
               {filteredRequests.length === 0 ? (
                 <div className="premium-card">
-                  <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+                  <p className="eyebrow">
                     No Results
                   </p>
 
-                  <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+                  <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
                     No demo requests match these filters.
                   </h2>
                 </div>
@@ -611,13 +611,13 @@ export default function DemoRequestsPage() {
                   return (
                     <article
                       key={request.id}
-                      className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+                      className="premium-card"
                     >
                       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span
-                              className={`rounded-full border px-3 py-1 text-xs font-black ${getStatusStyle(
+                              className={`chip ${getStatusStyle(
                                 request.status
                               )}`}
                             >
@@ -625,37 +625,37 @@ export default function DemoRequestsPage() {
                             </span>
 
                             {statusState === "saving" ? (
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">
+                              <span className="chip bg-slate-100 text-slate-500">
                                 Saving status...
                               </span>
                             ) : null}
 
                             {statusState === "saved" ? (
-                              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                              <span className="chip bg-emerald-50 text-emerald-700">
                                 Status saved ✓
                               </span>
                             ) : null}
 
                             {statusState === "error" ? (
-                              <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-black text-rose-700">
+                              <span className="chip bg-rose-50 text-rose-700">
                                 Status error
                               </span>
                             ) : null}
 
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                            <span className="chip bg-slate-100 text-slate-600">
                               {request.timeline}
                             </span>
 
-                            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-blue-700">
+                            <span className="chip bg-blue-50 text-blue-700">
                               {request.primary_need}
                             </span>
                           </div>
 
-                          <h2 className="mt-4 text-2xl font-black tracking-tight text-slate-950">
+                          <h2 className="mt-4 text-lg font-semibold tracking-tight text-slate-900">
                             {request.organization_name}
                           </h2>
 
-                          <p className="mt-2 text-sm font-bold text-slate-500">
+                          <p className="mt-2 text-sm font-medium text-slate-500">
                             {request.first_name} {request.last_name} ·{" "}
                             {request.role_title}
                           </p>
@@ -665,55 +665,55 @@ export default function DemoRequestsPage() {
                           </p>
                         </div>
 
-                        <div className="grid shrink-0 gap-2 rounded-3xl bg-slate-50 p-4 text-sm">
+                        <div className="grid shrink-0 gap-2 rounded-xl bg-slate-50 p-4 text-sm">
                           <a
                             href={`mailto:${request.work_email}`}
-                            className="font-black text-blue-700 hover:text-blue-900"
+                            className="font-semibold text-blue-700 hover:text-blue-900"
                           >
                             {request.work_email}
                           </a>
 
-                          <p className="font-bold text-slate-600">
+                          <p className="font-medium text-slate-600">
                             Phone: {formatPhone(request.phone)}
                           </p>
 
-                          <p className="font-bold text-slate-600">
+                          <p className="font-medium text-slate-600">
                             Contact: {request.preferred_contact}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-6 grid gap-4 border-t border-slate-100 pt-6 xl:grid-cols-3">
-                        <div className="rounded-3xl bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                        <div className="rounded-xl bg-slate-50 p-5">
+                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                             Organization Type
                           </p>
-                          <p className="mt-2 text-sm font-black text-slate-950">
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
                             {request.organization_type}
                           </p>
                         </div>
 
-                        <div className="rounded-3xl bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                        <div className="rounded-xl bg-slate-50 p-5">
+                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                             Team Size
                           </p>
-                          <p className="mt-2 text-sm font-black text-slate-950">
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
                             {request.team_size}
                           </p>
                         </div>
 
-                        <div className="rounded-3xl bg-slate-50 p-5">
-                          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
+                        <div className="rounded-xl bg-slate-50 p-5">
+                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                             Submitted
                           </p>
-                          <p className="mt-2 text-sm font-black text-slate-950">
+                          <p className="mt-2 text-sm font-semibold text-slate-900">
                             {formatDate(request.created_at)}
                           </p>
                         </div>
                       </div>
 
                       {cardError ? (
-                        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+                        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
                           {cardError}
                         </div>
                       ) : null}
@@ -763,7 +763,7 @@ export default function DemoRequestsPage() {
                             type="button"
                             onClick={() => saveInternalNote(request.id)}
                             disabled={noteButtonDisabled}
-                            className={`w-full rounded-2xl px-5 py-3 text-sm font-black transition ${
+                            className={`w-full rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
                               noteState === "saving"
                                 ? "bg-slate-200 text-slate-500 shadow-none"
                                 : noteState === "saved"
@@ -771,7 +771,7 @@ export default function DemoRequestsPage() {
                                   : noteState === "error"
                                     ? "bg-rose-600 text-white shadow-lg shadow-rose-600/15 hover:bg-rose-700"
                                     : hasNoteChanges
-                                      ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
+                                      ? "bg-slate-900 text-white shadow-lg shadow-slate-900/15 hover:bg-slate-800"
                                       : "bg-slate-100 text-slate-400 shadow-none"
                             } disabled:cursor-not-allowed`}
                           >
@@ -779,20 +779,20 @@ export default function DemoRequestsPage() {
                           </button>
 
                           {hasNoteChanges && noteState !== "saving" ? (
-                            <p className="text-center text-xs font-black text-amber-600">
+                            <p className="text-center text-xs font-semibold text-amber-600">
                               Unsaved changes
                             </p>
                           ) : null}
 
                           {noteState === "saved" ? (
-                            <p className="text-center text-xs font-black text-emerald-700">
+                            <p className="text-center text-xs font-semibold text-emerald-700">
                               Note saved
                             </p>
                           ) : null}
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-400">
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-slate-400">
                         <span>Source: {request.source}</span>
                         <span>·</span>
                         <span>Updated: {formatDate(request.updated_at)}</span>
@@ -810,11 +810,11 @@ export default function DemoRequestsPage() {
 
           <aside className="space-y-6">
             <section className="premium-dark">
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-blue-100">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
                 Sales Signal
               </p>
 
-              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white">
+              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 {newRequests.length > 0
                   ? "New demo leads need first contact."
                   : activePipeline.length > 0
@@ -832,18 +832,18 @@ export default function DemoRequestsPage() {
             </section>
 
             <section className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Needs Breakdown
               </p>
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
                 What prospects want
               </h2>
 
               <div className="mt-6 space-y-3">
                 {requestsByNeed.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-5">
-                    <p className="text-sm font-black text-slate-500">
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
+                    <p className="text-sm font-medium text-slate-500">
                       No request needs have been captured yet.
                     </p>
                   </div>
@@ -851,14 +851,14 @@ export default function DemoRequestsPage() {
                   requestsByNeed.map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-3xl border border-slate-200 bg-white p-5"
+                      className="rounded-xl border border-slate-200/80 bg-white p-5"
                     >
                       <div className="flex items-start justify-between gap-4">
-                        <p className="text-sm font-black leading-6 text-slate-950">
+                        <p className="text-sm font-semibold leading-6 text-slate-900">
                           {item.label}
                         </p>
 
-                        <span className="rounded-2xl bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                        <span className="chip bg-slate-900 text-white">
                           {item.count}
                         </span>
                       </div>
@@ -869,7 +869,7 @@ export default function DemoRequestsPage() {
             </section>
 
             <section className="premium-card">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-400">
+              <p className="eyebrow">
                 Pipeline Stages
               </p>
 
@@ -882,13 +882,13 @@ export default function DemoRequestsPage() {
                   return (
                     <div
                       key={status}
-                      className="flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-4"
+                      className="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4"
                     >
-                      <p className="text-sm font-black text-slate-700">
+                      <p className="text-sm font-medium text-slate-700">
                         {status}
                       </p>
 
-                      <span className="rounded-2xl bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                      <span className="chip bg-slate-100 text-slate-600">
                         {count}
                       </span>
                     </div>

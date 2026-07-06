@@ -128,60 +128,70 @@ export default function RequestDemoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#eef6ff_45%,#f8fafc_100%)] text-slate-950">
+    <main className="min-h-screen text-slate-900">
       <MarketingHeader />
 
       <section className="mx-auto grid max-w-[1440px] gap-8 px-6 py-12 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:py-16">
-        <aside className="rounded-[2rem] bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-8 text-white shadow-2xl shadow-blue-950/20 lg:sticky lg:top-32">
-          <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-blue-100">
+        <aside className="premium-dark animate-fade-up lg:sticky lg:top-28 lg:!p-9">
+          <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-blue-100">
             Personalized Platform Walkthrough
           </p>
 
-          <h1 className="mt-8 text-5xl font-black leading-[1.05] tracking-tight text-white xl:text-6xl">
+          <h1 className="mt-7 text-3xl font-bold leading-[1.1] tracking-tight text-white xl:text-4xl">
             See how CivicFlow can strengthen your operations.
           </h1>
 
-          <p className="mt-6 text-base leading-8 text-slate-300">
+          <p className="mt-5 text-base leading-7 text-slate-300">
             Request a tailored demo built around your organization’s intake
             process, case workflow, document review needs, staff follow-ups, and
             reporting responsibilities.
           </p>
 
-          <div className="mt-8 grid gap-4">
+          <div className="mt-7 grid gap-2.5">
             {[
               "Walk through public intake and staff review.",
               "Map CivicFlow to your current workflow.",
               "Review documents, notes, follow-ups, reports, and exports.",
               "Discuss implementation, pricing, and deployment options.",
             ].map((item) => (
-              <div key={item} className="rounded-3xl bg-white/10 p-5">
-                <p className="text-sm font-bold leading-7 text-blue-50">
-                  {item}
-                </p>
+              <div
+                key={item}
+                className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4"
+              >
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-300">
+                  <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3">
+                    <path d="m4 8 2.5 2.5L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <p className="text-sm leading-6 text-blue-50/90">{item}</p>
               </div>
             ))}
           </div>
 
           <Link
             href="/"
-            className="mt-8 inline-flex rounded-2xl border border-white/15 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10"
+            className="mt-7 inline-flex rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             ← Back to website
           </Link>
         </aside>
 
-        <section className="rounded-[2rem] border border-slate-200 bg-white/95 shadow-2xl shadow-slate-200/70 backdrop-blur">
+        <section className="animate-fade-up rounded-2xl border border-slate-200/80 bg-white/95 shadow-[var(--shadow-md)] backdrop-blur">
           {submitted ? (
             <div className="p-8">
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-600">
-                Request Received
-              </p>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
+                <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-emerald-600">
+                  <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
 
-              <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+              <p className="eyebrow mt-6 text-emerald-600">Request Received</p>
+
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
                 Your demo request has been submitted.
               </h2>
 
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
+              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
                 Westforge now has your CivicFlow demo request. The next step is
                 to review your organization’s workflow needs and prepare a
                 focused walkthrough.
@@ -191,15 +201,12 @@ export default function RequestDemoPage() {
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="rounded-2xl bg-slate-950 px-6 py-4 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                  className="btn btn-primary px-6 py-3"
                 >
                   Submit another request
                 </button>
 
-                <Link
-                  href="/"
-                  className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-center text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
+                <Link href="/" className="btn btn-secondary px-6 py-3">
                   Back to website
                 </Link>
               </div>
@@ -207,22 +214,20 @@ export default function RequestDemoPage() {
           ) : (
             <form onSubmit={handleSubmit} noValidate>
               <div className="border-b border-slate-100 p-8">
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-blue-700">
-                  Organization Information
-                </p>
+                <p className="eyebrow text-blue-600">Organization Information</p>
 
-                <h2 className="mt-4 text-4xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
                   Tell us about your workflow needs.
                 </h2>
 
-                <p className="mt-3 text-base leading-7 text-slate-600">
+                <p className="mt-2.5 text-base leading-7 text-slate-600">
                   Fields marked with an asterisk are required.
                 </p>
               </div>
 
               <div className="p-8">
                 <div className="border-b border-slate-100 pb-6">
-                  <h3 className="text-xl font-black text-slate-950">
+                  <h3 className="text-base font-semibold text-slate-900">
                     Contact details
                   </h3>
 
@@ -312,7 +317,7 @@ export default function RequestDemoPage() {
                 </div>
 
                 <div className="mt-6 border-b border-slate-100 pb-6">
-                  <h3 className="text-xl font-black text-slate-950">
+                  <h3 className="text-base font-semibold text-slate-900">
                     Organization details
                   </h3>
 
@@ -388,7 +393,7 @@ export default function RequestDemoPage() {
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="text-xl font-black text-slate-950">
+                  <h3 className="text-base font-semibold text-slate-900">
                     Workflow needs
                   </h3>
 
@@ -429,7 +434,7 @@ export default function RequestDemoPage() {
                 </div>
 
                 {formError ? (
-                  <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-700">
+                  <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
                     {formError}
                   </div>
                 ) : null}
@@ -443,13 +448,9 @@ export default function RequestDemoPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`rounded-2xl px-6 py-3 text-sm font-black shadow-lg transition ${
-                      submitting
-                        ? "bg-slate-300 text-slate-600 shadow-none"
-                        : "bg-slate-950 text-white shadow-slate-950/15 hover:bg-slate-800"
-                    } disabled:cursor-not-allowed`}
+                    className="btn btn-primary px-6 py-3"
                   >
-                    {submitting ? "Submitting request..." : "Request demo"}
+                    {submitting ? "Submitting request…" : "Request demo"}
                   </button>
                 </div>
               </div>
