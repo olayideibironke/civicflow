@@ -2,43 +2,46 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import CivicFlowLogo from "@/components/CivicFlowLogo";
 import { supabase } from "@/lib/supabase";
 
-const marketingNavItems = [
+type MarketingHeaderProps = {
+  activePage?: "home" | "platform" | "use-cases" | "request-demo";
+};
+
+const navItems = [
   {
     label: "Platform",
     href: "/platform",
+    key: "platform",
   },
   {
     label: "Use cases",
     href: "/use-cases",
+    key: "use-cases",
   },
   {
     label: "Request Demo",
     href: "/request-demo",
+    key: "request-demo",
   },
-];
+] as const;
 
-function getInitial(email: string) {
-  const initial = email.trim().charAt(0).toUpperCase();
-  return initial || "CF";
-}
-
-export default function MarketingHeader() {
-  const pathname = usePathname();
-
+export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
-  const [staffEmail, setStaffEmail] = useState("");
 
   useEffect(() => {
-    async function loadSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    let active = true;
 
-      setStaffEmail(session?.user.email ?? "");
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession();
+
+      if (!active) {
+        return;
+      }
+
+      setIsSignedIn(Boolean(data.session));
       setCheckingSession(false);
     }
 
@@ -47,111 +50,100 @@ export default function MarketingHeader() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setStaffEmail(session?.user.email ?? "");
+      setIsSignedIn(Boolean(session));
       setCheckingSession(false);
     });
 
     return () => {
+      active = false;
       subscription.unsubscribe();
     };
   }, []);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    setStaffEmail("");
+    setIsSignedIn(false);
   }
 
-  const isSignedIn = Boolean(staffEmail);
-
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-20 max-w-[1440px] items-center justify-between gap-6 px-6 py-3.5">
-        <Link
-          href="/"
-          className="flex shrink-0 items-center rounded-xl transition hover:opacity-90"
-          aria-label="CivicFlow home"
-        >
-          <CivicFlowLogo size="md" />
-        </Link>
-
-        <nav className="hidden rounded-full border border-slate-200/80 bg-slate-50/80 p-1 lg:flex">
-          {marketingNavItems.map((item) => {
-            const active = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  active
-                    ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="flex items-center gap-2.5">
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/92 backdrop-blur-2xl">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-5">
+        <div className="flex min-w-0 items-center justify-between gap-3">
           <Link
-            href="/intake"
-            className="btn btn-secondary hidden md:inline-flex"
+            href="/"
+            className="min-w-0 shrink-0 rounded-2xl transition hover:opacity-90"
+            aria-label="CivicFlow home"
           >
-            Public intake
+            <CivicFlowLogo size="md" />
           </Link>
 
-          {checkingSession ? (
-            <div className="rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-medium text-slate-500">
-              Checking…
-            </div>
-          ) : isSignedIn ? (
-            <>
-              <Link href="/app" className="btn btn-primary">
-                Open app
-              </Link>
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <Link
+              href="/intake/community-services"
+              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              Intake
+            </Link>
 
+            <Link
+              href={isSignedIn ? "/app" : "/login"}
+              className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+            >
+              {checkingSession ? "App" : isSignedIn ? "App" : "Login"}
+            </Link>
+          </div>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+          <nav
+            aria-label="Primary navigation"
+            className="grid w-full grid-cols-3 rounded-[1.35rem] border border-slate-200 bg-slate-50/90 p-1 shadow-sm lg:w-auto lg:min-w-[430px]"
+          >
+            {navItems.map((item) => {
+              const isActive = activePage === item.key;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`min-w-0 rounded-2xl px-2 py-2.5 text-center text-xs font-black transition sm:text-sm ${
+                    isActive
+                      ? "bg-white text-slate-950 shadow-md shadow-slate-200/80"
+                      : "text-slate-600 hover:bg-white/80 hover:text-slate-950"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-3 lg:flex">
+            <Link
+              href="/intake/community-services"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              Public intake
+            </Link>
+
+            <Link
+              href={isSignedIn ? "/app" : "/login"}
+              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+            >
+              {checkingSession ? "Open app" : isSignedIn ? "Open app" : "Staff login"}
+            </Link>
+
+            {isSignedIn ? (
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="btn btn-secondary hidden xl:inline-flex"
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 Sign out
               </button>
-
-              <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10 md:flex">
-                {getInitial(staffEmail)}
-              </div>
-            </>
-          ) : (
-            <Link href="/login" className="btn btn-primary">
-              Staff login
-            </Link>
-          )}
+            ) : null}
+          </div>
         </div>
-      </div>
-
-      <div className="border-t border-slate-100 bg-white/80 px-6 py-2.5 lg:hidden">
-        <nav className="mx-auto flex max-w-[1440px] gap-1.5 overflow-x-auto rounded-full border border-slate-200/80 bg-slate-50/80 p-1">
-          {marketingNavItems.map((item) => {
-            const active = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                  active
-                    ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
       </div>
     </header>
   );
