@@ -3,3 +3,5 @@ Allow: /
 Disallow: /app
 Disallow: /login
 Disallow: /intake
+
+Sitemap: https://www.civicflowapp.org/sitemap.xml
