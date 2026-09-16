@@ -108,22 +108,22 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-10 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-            Existing CivicFlow Workspace
+            Staff Workspace
           </p>
 
           <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
-            Sign in to the original CivicFlow staff workspace.
+            Sign in to manage cases, documents, reports, and workflow activity.
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            This legacy workspace is being preserved while Westforge validates a future legal-practice product. It is not approved for storing real legal client or matter data during the validation phase.
+            CivicFlow staff access is reserved for authorized users with an active workspace account.
           </p>
 
           <div className="mt-8 space-y-3">
             {[
-              "Uses Supabase staff authentication",
-              "Existing CivicFlow workspace remains separate from the public legal validation pages",
-              "Legal security and tenant-isolation controls must be verified before backend reuse",
+              "Supabase staff authentication",
+              "Organization-aware workspace access",
+              "Central case and document workflow",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-200">
@@ -150,7 +150,7 @@ export default function LoginPage() {
             </h2>
 
             <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600">
-              Enter a valid existing CivicFlow staff email address and password to continue.
+              Enter your authorized staff email address and password to continue.
             </p>
           </div>
 
