@@ -1,60 +1,27 @@
 import Link from "next/link";
 import MarketingHeader from "@/components/MarketingHeader";
 
-const useCaseGroups = [
+const groups = [
   {
-    title: "Public service intake",
-    description:
-      "For teams that receive requests from residents, clients, applicants, vendors, or community members and need a clean intake-to-review workflow.",
-    examples: [
-      "Community assistance requests",
-      "Eligibility screening",
-      "Resident service requests",
-      "Benefits navigation",
-    ],
+    title: "Litigation and court-heavy practices",
+    description: "Matter timelines, deadlines, discovery tracking, documents, court preparation, post-hearing actions, and mobile access are central to the concept.",
+    examples: ["Criminal defense", "Family law", "Civil litigation", "Traffic and DUI"],
   },
   {
-    title: "Document-heavy case review",
-    description:
-      "For programs that depend on collecting, reviewing, and tracking required documents before staff can make a decision.",
-    examples: [
-      "Document checklists",
-      "Missing document follow-up",
-      "Review-needed tracking",
-      "Case completion readiness",
-    ],
+    title: "Client and document-heavy practices",
+    description: "Structured intake, document collection, signatures, status communication, workflow checklists, and matter reporting can reduce repeated administrative work.",
+    examples: ["Immigration", "Estate planning", "Probate", "Business services"],
   },
   {
-    title: "Program operations tracking",
-    description:
-      "For managers who need visibility into active workload, staff assignment, blocked cases, overdue actions, and program performance.",
-    examples: [
-      "Staff workload dashboards",
-      "Follow-up accountability",
-      "Open case visibility",
-      "Excel reporting exports",
-    ],
+    title: "Flat-fee and hybrid billing firms",
+    description: "The planned economics layer connects fees collected, time consumed, direct matter costs, outstanding balances, and future pricing intelligence.",
+    examples: ["Flat-fee matters", "Payment plans", "Hybrid billing", "Matter profitability"],
   },
   {
-    title: "Referral and service coordination",
-    description:
-      "For organizations that route requests, track assignments, and coordinate service outcomes across internal or partner teams.",
-    examples: [
-      "Referral tracking",
-      "Partner service coordination",
-      "Case status visibility",
-      "Operational handoffs",
-    ],
+    title: "Growing small firms",
+    description: "The core ICP is a firm that needs more operational depth than simple case tracking but does not want enterprise implementation complexity.",
+    examples: ["Solo firms", "2-5 attorneys", "6-10 attorneys", "Lean support teams"],
   },
-];
-
-const buyerTypes = [
-  "Government program offices",
-  "County and municipal departments",
-  "Nonprofits and community organizations",
-  "Compliance and review teams",
-  "Service coordination teams",
-  "Administrative operations units",
 ];
 
 export default function UseCasesPage() {
@@ -62,123 +29,67 @@ export default function UseCasesPage() {
     <main className="min-h-screen text-slate-900">
       <MarketingHeader />
 
-      <section className="mx-auto max-w-[1440px] px-6 py-16 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <div className="animate-fade-up">
-            <p className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50 px-3.5 py-1.5 text-xs font-semibold text-blue-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Use Cases
-            </p>
-
-            <h1 className="mt-7 max-w-4xl text-4xl font-bold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl">
-              Built for teams that manage requests, documents, decisions, and
-              reporting.
+      <section className="mx-auto max-w-[1280px] px-6 py-16 lg:py-20">
+        <div className="grid gap-9 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div>
+            <p className="eyebrow text-blue-600">Who the concept is for</p>
+            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+              Start with small law firms, then deepen workflows by practice area.
             </h1>
-
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              CivicFlow is designed for organizations that have outgrown manual
-              spreadsheets, scattered inboxes, and disconnected document
-              tracking.
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              The core platform is being validated broadly for small firms. Practice-area workflows can become deeper over time without forcing every firm into the same rigid process.
             </p>
-
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/request-demo" className="btn btn-primary px-6 py-3.5 text-base">
-                Request demo
-              </Link>
-
-              <Link href="/platform" className="btn btn-secondary px-6 py-3.5 text-base">
-                Explore platform
-              </Link>
+              <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">Join early access</Link>
+              <Link href="/platform" className="btn btn-secondary px-6 py-3.5 text-base">Explore platform</Link>
             </div>
           </div>
 
-          <div className="premium-dark animate-fade-up lg:!p-9">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-              Who it supports
+          <div className="premium-dark lg:!p-9">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Initial market</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">Small firms that already understand legal SaaS but want better value.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              The broad validation target is solo to roughly ten-attorney firms, especially firms already paying for MyCase, Clio, PracticePanther, Smokeball, Filevine, or a fragmented mix of point tools.
             </p>
-
-            <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white xl:text-3xl">
-              One system that can be shaped around many operating models.
-            </h2>
-
-            <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              {buyerTypes.map((item) => (
-                <div
-                  key={item}
-                  className="rounded-xl border border-white/10 bg-white/[0.06] p-4"
-                >
-                  <p className="text-sm font-medium leading-6 text-blue-50/90">
-                    {item}
-                  </p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
-      </section>
 
-      <section className="mx-auto max-w-[1440px] px-6 pb-12">
-        <div className="premium-card">
-          <p className="eyebrow">Operating Scenarios</p>
-
-          <h2 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900">
-            Practical workflows CivicFlow can support.
-          </h2>
-
+        <section className="mt-12 premium-card">
+          <p className="eyebrow">Potential operating scenarios</p>
           <div className="mt-8 grid gap-5 lg:grid-cols-2">
-            {useCaseGroups.map((group) => (
-              <div
-                key={group.title}
-                className="rounded-2xl border border-slate-200/80 bg-white p-6 transition hover:border-blue-200 hover:shadow-[var(--shadow-md)]"
-              >
-                <p className="text-xl font-bold tracking-tight text-slate-900">
-                  {group.title}
-                </p>
-
-                <p className="mt-2.5 text-sm leading-6 text-slate-600">
-                  {group.description}
-                </p>
-
+            {groups.map((group) => (
+              <article key={group.title} className="rounded-2xl border border-slate-200/80 bg-white p-6">
+                <h2 className="text-xl font-bold tracking-tight text-slate-900">{group.title}</h2>
+                <p className="mt-2.5 text-sm leading-6 text-slate-600">{group.description}</p>
                 <div className="mt-5 grid gap-2 sm:grid-cols-2">
                   {group.examples.map((example) => (
-                    <div
-                      key={example}
-                      className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700"
-                    >
+                    <div key={example} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-700">
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
                       {example}
                     </div>
                   ))}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-[1440px] px-6 pb-20">
-        <div className="premium-dark lg:!p-9">
+        <section className="mt-8 premium-dark lg:!p-9">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-                Demo Discussion
-              </p>
-
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Still validation</p>
               <h2 className="mt-3 max-w-3xl text-2xl font-bold leading-tight tracking-tight text-white xl:text-3xl">
-                Want to see how this could fit a specific agency, program, or
-                service workflow?
+                Practice-area depth will follow evidence, not assumptions.
               </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                This page describes directions under evaluation. It does not claim that every practice-specific workflow has already been built.
+              </p>
             </div>
-
-            <Link
-              href="/request-demo"
-              className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition hover:bg-blue-50"
-            >
-              Request demo
-              <span aria-hidden>→</span>
+            <Link href="/early-access" className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition hover:bg-blue-50">
+              Join early access <span aria-hidden>→</span>
             </Link>
           </div>
-        </div>
+        </section>
       </section>
     </main>
   );
