@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import CivicFlowLogo from "@/components/CivicFlowLogo";
 
@@ -13,6 +16,23 @@ const navItems = [
 ] as const;
 
 export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
+  useEffect(() => {
+    const landingKey = "civicflow_validation_landing";
+    const referrerKey = "civicflow_validation_referrer";
+
+    if (!window.sessionStorage.getItem(landingKey)) {
+      const landing = `${window.location.pathname}${window.location.search}`;
+      window.sessionStorage.setItem(landingKey, landing);
+    }
+
+    if (!window.sessionStorage.getItem(referrerKey)) {
+      window.sessionStorage.setItem(
+        referrerKey,
+        document.referrer || "direct",
+      );
+    }
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/92 backdrop-blur-2xl">
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-5">
