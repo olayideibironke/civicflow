@@ -1,181 +1,79 @@
 import Link from "next/link";
 import MarketingHeader from "@/components/MarketingHeader";
 
-const platformModules = [
-  {
-    title: "Public intake portal",
-    description:
-      "Launch branded intake forms that collect client information, service requests, priority levels, and required details before staff review.",
-  },
-  {
-    title: "Case queue",
-    description:
-      "Give staff a structured queue for open cases, statuses, assignments, document blockers, follow-ups, and priority triage.",
-  },
-  {
-    title: "Case workspace",
-    description:
-      "Centralize notes, document tracking, workflow decisions, follow-up actions, and case activity in one operational record.",
-  },
-  {
-    title: "Document tracking",
-    description:
-      "Track missing, received, and review-needed documents with upload support and organized case-level visibility.",
-  },
-  {
-    title: "Follow-up management",
-    description:
-      "Create internal follow-ups, due dates, note types, overdue signals, and accountability views for staff action.",
-  },
-  {
-    title: "Reports and exports",
-    description:
-      "View charts, workload metrics, document gaps, follow-up metrics, and export operational data to Excel.",
-  },
-];
-
-const deliverySteps = [
-  "Discovery and workflow mapping",
-  "Portal and database configuration",
-  "Staff dashboard and case workflow setup",
-  "Reporting and export configuration",
-  "Deployment, testing, and training",
-  "Support and improvement cycle",
+const modules = [
+  ["Matter workspace", "Keep contacts, parties, notes, tasks, documents, dates, communication, and financial context around one matter record."],
+  ["Client intake", "Move from lead or prospective client information into conflicts, intake, engagement, and a clean matter without duplicate entry."],
+  ["Documents", "Plan for matter storage, document automation, OCR, eSignature, structured folders, and fast retrieval from web or mobile."],
+  ["Billing and payments", "Bring time, flat fees, invoices, payments, balances, trust workflows, and matter economics into the same system."],
+  ["Client communication", "Unify secure portal access, texting, updates, intake communication, signatures, and payment conversations."],
+  ["Workflow automation", "Turn repeatable firm procedures into simple workflows and use AI to propose administrative actions for human review."],
+  ["Reporting and intelligence", "Answer firm questions about revenue, workloads, aging matters, balances, referral performance, and profitability without building spreadsheets."],
+  ["Mobile and court workflows", "Design the phone experience for real legal work, including quick matter access and secure offline-ready workflows where appropriate."],
+  ["Migration verification", "Compare imported matters, contacts, documents, balances, tasks, and dates against the source system and surface discrepancies before cutover."],
 ];
 
 export default function PlatformPage() {
   return (
     <main className="min-h-screen text-slate-900">
-      <MarketingHeader />
+      <MarketingHeader activePage="platform" />
 
-      <section className="mx-auto max-w-[1440px] px-6 py-16 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <div className="animate-fade-up">
-            <p className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50 px-3.5 py-1.5 text-xs font-semibold text-blue-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-              Platform
-            </p>
-
-            <h1 className="mt-7 max-w-4xl text-4xl font-bold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl">
-              A complete workflow layer for intake, cases, documents, and
-              reporting.
+      <section className="mx-auto max-w-[1280px] px-6 py-16 lg:py-20">
+        <div className="grid gap-9 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
+          <div>
+            <p className="eyebrow text-blue-600">Platform concept</p>
+            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
+              A legal operating system designed around the work, not the software modules.
             </h1>
-
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              CivicFlow gives organizations the structure they need to replace
-              scattered spreadsheets, inboxes, document folders, and manual
-              follow-up tracking with one professional operating system.
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+              The validation concept combines the workflows small firms already pay multiple products or higher tiers to handle. Simplicity is a requirement, not a tradeoff for depth.
             </p>
-
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/request-demo" className="btn btn-primary px-6 py-3.5 text-base">
-                Request demo
-              </Link>
-
-              <Link href="/use-cases" className="btn btn-secondary px-6 py-3.5 text-base">
-                View use cases
-              </Link>
+              <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">Join early access</Link>
+              <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">Review pricing</Link>
             </div>
           </div>
 
-          <div className="premium-dark animate-fade-up lg:!p-9">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-              What the platform solves
+          <div className="premium-dark lg:!p-9">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Design principle</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">More capability. Fewer places to click.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              A feature only counts if an attorney or staff member can complete the full workflow reliably. The goal is to remove handoffs between separate products, spreadsheets, inboxes, and manual reconciliation wherever the economics make sense.
             </p>
-
-            <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white xl:text-3xl">
-              Cleaner operations for teams with high-volume service work.
-            </h2>
-
-            <div className="mt-7 grid gap-3">
-              {[
-                "Too many requests arrive through email or paper forms.",
-                "Staff cannot quickly see what is overdue or blocked.",
-                "Documents are tracked manually across folders and spreadsheets.",
-                "Leadership needs reliable reporting without waiting for manual summaries.",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4"
-                >
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-300">
-                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3">
-                      <path d="M8 3v6m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <p className="text-sm leading-6 text-blue-50/90">{item}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
-      </section>
 
-      <section className="mx-auto max-w-[1440px] px-6 pb-12">
-        <div className="premium-card">
-          <p className="eyebrow">Core Modules</p>
-
-          <h2 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900">
-            Everything needed to run a modern case workflow.
-          </h2>
-
+        <section className="mt-12 premium-card">
+          <p className="eyebrow">Planned system</p>
+          <h2 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900">The capabilities being validated before full development</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {platformModules.map((module) => (
-              <div
-                key={module.title}
-                className="rounded-2xl border border-slate-200/80 bg-white p-6 transition hover:border-blue-200 hover:shadow-[var(--shadow-md)]"
-              >
-                <p className="text-lg font-semibold text-slate-900">
-                  {module.title}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {module.description}
-                </p>
-              </div>
+            {modules.map(([title, description], index) => (
+              <article key={title} className="rounded-2xl border border-slate-200/80 bg-white p-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-bold text-white">{String(index + 1).padStart(2, "0")}</div>
+                <h3 className="mt-4 text-lg font-bold text-slate-900">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="mx-auto max-w-[1440px] px-6 pb-20">
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="premium-dark lg:!p-9">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-              Implementation
-            </p>
-
-            <h2 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-white xl:text-3xl">
-              Westforge can configure CivicFlow around the actual workflow.
-            </h2>
-
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              The platform can be adapted for government programs, service
-              organizations, nonprofits, compliance workflows, and internal
-              operations teams.
+        <section className="mt-8 grid gap-6 lg:grid-cols-2">
+          <div className="premium-card">
+            <p className="eyebrow">What already exists underneath</p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">CivicFlow is not starting from an empty repository.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              The current codebase already contains authentication, Supabase-backed case records, document handling, notes, follow-ups, staff workflows, reporting, exports, and production deployment. The legal product would reuse suitable foundations while replacing civic-specific data concepts with legal-domain architecture only after validation passes.
             </p>
           </div>
 
           <div className="premium-card">
-            <div className="grid gap-2.5">
-              {deliverySteps.map((step, index) => (
-                <div
-                  key={step}
-                  className="flex items-center gap-4 rounded-xl border border-slate-200/80 bg-white p-4"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
-                    {index + 1}
-                  </div>
-
-                  <p className="text-sm font-medium text-slate-800">{step}</p>
-                </div>
-              ))}
-            </div>
-
-            <Link href="/request-demo" className="btn btn-primary mt-6">
-              Request implementation discussion
-            </Link>
+            <p className="eyebrow">What is not being claimed</p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">This page is a product-direction test.</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              Billing, trust accounting, legal calendaring, conflict checking, legal-domain AI, verified migrations, and mobile court workflows are planned capabilities, not finished production features. Early Access interest helps determine whether Westforge should complete that conversion.
+            </p>
           </div>
-        </div>
+        </section>
       </section>
     </main>
   );

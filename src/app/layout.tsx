@@ -10,11 +10,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "CivicFlow | Workflow SaaS by Westforge",
+    default: "CivicFlow | Modern Law Practice Management",
     template: "%s | CivicFlow",
   },
   description:
-    "CivicFlow by Westforge helps teams manage intake, cases, documents, notes, follow-ups, and reporting in one clean workspace.",
+    "CivicFlow is an early-access law practice management concept for small firms, combining matters, billing, intake, documents, automation, client communication, reporting, mobile workflows, and AI in one platform.",
 };
 
 export default function RootLayout({
