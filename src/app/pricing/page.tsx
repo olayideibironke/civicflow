@@ -57,6 +57,13 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <p className="text-sm font-bold text-amber-950">Feature access is not the same as unlimited metered consumption.</p>
+            <p className="mt-2 text-sm leading-7 text-amber-900">
+              The validation direction is to keep everyday capabilities in the core plan while using clear, published fair-use allowances for unusually high SMS or MMS volume, very large discovery or video storage, high-volume signature requests, or unusually intensive AI processing. Firms should not need a premium feature tier just to unlock ordinary workflow capabilities.
+            </p>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -67,7 +74,7 @@ export default function PricingPage() {
 
         <div className="mt-12 rounded-2xl border border-blue-200 bg-blue-50 p-6">
           <p className="text-sm font-semibold leading-7 text-blue-900">
-            CivicFlow is currently an early-stage validation shell. The final legal product name, commercial terms, feature limits, and launch schedule have not been finalized.
+            CivicFlow is currently an early-stage validation shell. The final legal product name, commercial terms, feature limits, usage allowances, and launch schedule have not been finalized.
           </p>
         </div>
       </section>
