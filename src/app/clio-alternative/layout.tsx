@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Clio Alternative for Small Law Firms",
   description:
-    "Explore CivicFlow's early-access law practice management concept for small firms seeking a simpler, more consolidated alternative to Clio with planned pricing from $69 per attorney per month.",
+    "Explore CivicFlow as a straightforward Clio alternative for small law firms, with plans at $30 Basic, $80 Pro, and $100 Advanced per user per month.",
   alternates: {
     canonical: "/clio-alternative",
   },
