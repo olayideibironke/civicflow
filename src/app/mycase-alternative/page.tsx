@@ -1,15 +1,17 @@
 import Link from "next/link";
 import MarketingHeader from "@/components/MarketingHeader";
 
-const comparison = [
-  ["Matter and contact management", "Included", "Planned included"],
-  ["Client intake", "Pro and above", "Planned included"],
-  ["eSignature", "Pro and above", "Planned included"],
-  ["Text messaging", "Pro and above", "Planned included"],
-  ["Workflow automation", "Pro and above", "Planned included"],
-  ["Advanced AI / case assistance", "Advanced", "Planned included"],
-  ["Open API", "Advanced", "Planned included"],
-  ["Verified migration reporting", "Not positioned as a core feature", "Planned"],
+const pricing = [
+  ["Basic", "$50/user/month", "$30/user/month"],
+  ["Pro", "$100/user/month", "$80/user/month"],
+  ["Advanced", "$130/user/month", "$100/user/month"],
+];
+
+const reasons = [
+  ["Lower entry price", "CivicFlow Basic starts at $30 per user per month, giving smaller firms a lower-cost path into structured practice management."],
+  ["Simple upgrade path", "Move from Basic to Pro or Advanced as the firm needs more operational depth without jumping straight into a premium-priced plan."],
+  ["Built for small firms", "The product is centered on matters, documents, staff activity, follow-ups, intake, reporting, and day-to-day operational visibility."],
+  ["Migration help", "CivicFlow can help firms map existing case and document data into a cleaner workspace as part of onboarding."],
 ];
 
 export default function MyCaseAlternativePage() {
@@ -22,21 +24,22 @@ export default function MyCaseAlternativePage() {
           <div>
             <p className="eyebrow text-blue-600">MyCase alternative</p>
             <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-slate-900 sm:text-5xl">
-              Looking for MyCase-level simplicity without paying more to unlock everyday capabilities?
+              A lower-priced alternative for small law firms that want a clean operating workspace.
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              CivicFlow is testing a simpler pricing model for small law firms: a planned $69 per-attorney core platform with matters, billing, intake, documents, communication, automation, reporting, API access, mobile workflows, and embedded AI.
+              CivicFlow is built for firms that want organized matters, documents, staff activity, intake, follow-ups, reporting, and a simpler cost structure without paying MyCase-level prices for every user.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">Join early access</Link>
-              <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">See planned pricing</Link>
+              <Link href="/get-started" className="btn btn-primary px-6 py-3.5 text-base">Get started</Link>
+              <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">Compare plans</Link>
             </div>
           </div>
 
           <div className="premium-dark lg:!p-9">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Price context</p>
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Price comparison</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">Save on every tier.</h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              As verified on September 16, 2026, MyCase lists annual pricing of $50 per user/month for Basic, $100 for Pro, and $130 for Advanced. Monthly billing is higher. CivicFlow's $69 figure is a validation price, not a final offer.
+              MyCase currently lists annual pricing of $50 for Basic, $100 for Pro, and $130 for Advanced per user per month. CivicFlow is priced at $30, $80, and $100 respectively.
             </p>
             <a href="https://www.mycase.com/pricing/" target="_blank" rel="noreferrer" className="mt-6 inline-flex text-sm font-semibold text-white underline decoration-blue-300/50 underline-offset-4 hover:text-blue-100">
               Verify current MyCase pricing
@@ -46,10 +49,10 @@ export default function MyCaseAlternativePage() {
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-md)]">
           <div className="border-b border-slate-100 p-7">
-            <p className="eyebrow">Validation comparison</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">What we are testing against the current MyCase structure</h2>
+            <p className="eyebrow">Pricing side by side</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">A simpler way to lower the firm's software bill.</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              This is not a claim that CivicFlow already delivers every planned capability. It shows the product and pricing proposition we are validating before full development.
+              Prices shown below use MyCase's publicly listed annual-billing rates as of September 16, 2026.
             </p>
           </div>
 
@@ -57,17 +60,17 @@ export default function MyCaseAlternativePage() {
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-6 py-4 font-black">Capability</th>
-                  <th className="px-6 py-4 font-black">MyCase current positioning</th>
-                  <th className="px-6 py-4 font-black">CivicFlow validation concept</th>
+                  <th className="px-6 py-4 font-black">Plan</th>
+                  <th className="px-6 py-4 font-black">MyCase</th>
+                  <th className="px-6 py-4 font-black">CivicFlow</th>
                 </tr>
               </thead>
               <tbody>
-                {comparison.map(([feature, mycase, ours]) => (
-                  <tr key={feature} className="border-t border-slate-100">
-                    <td className="px-6 py-4 font-semibold text-slate-900">{feature}</td>
+                {pricing.map(([plan, mycase, ours]) => (
+                  <tr key={plan} className="border-t border-slate-100">
+                    <td className="px-6 py-4 font-semibold text-slate-900">{plan}</td>
                     <td className="px-6 py-4 text-slate-600">{mycase}</td>
-                    <td className="px-6 py-4 font-semibold text-blue-700">{ours}</td>
+                    <td className="px-6 py-4 font-black text-blue-700">{ours}</td>
                   </tr>
                 ))}
               </tbody>
@@ -75,10 +78,25 @@ export default function MyCaseAlternativePage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          <Card title="Keep the simplicity" text="MyCase is often praised for being approachable. Our goal is not to replace simplicity with enterprise complexity." />
-          <Card title="Reduce the feature maze" text="We are testing whether firms prefer everyday capabilities in one core plan instead of climbing multiple tiers." />
-          <Card title="Make switching safer" text="Verified migration is planned to show what moved, what matched, and what needs review rather than asking a firm to trust a black-box import." />
+        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          {reasons.map(([title, text]) => (
+            <Card key={title} title={title} text={text} />
+          ))}
+        </div>
+
+        <div className="mt-12 rounded-[2rem] bg-slate-950 p-8 text-white sm:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Considering a switch?</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight">Tell us what your firm uses today.</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                We will help you choose the right CivicFlow plan and map the information your team needs to bring over.
+              </p>
+            </div>
+            <Link href="/get-started" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-black text-slate-950 transition hover:bg-blue-50">
+              Get started
+            </Link>
+          </div>
         </div>
       </section>
     </main>
