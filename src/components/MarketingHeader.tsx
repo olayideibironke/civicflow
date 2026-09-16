@@ -5,7 +5,7 @@ import Link from "next/link";
 import CivicFlowLogo from "@/components/CivicFlowLogo";
 
 type MarketingHeaderProps = {
-  activePage?: "home" | "platform" | "pricing" | "mycase" | "clio" | "early-access";
+  activePage?: "home" | "platform" | "pricing" | "mycase" | "clio" | "get-started";
 };
 
 const navItems = [
@@ -17,8 +17,8 @@ const navItems = [
 
 export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
   useEffect(() => {
-    const landingKey = "civicflow_validation_landing";
-    const referrerKey = "civicflow_validation_referrer";
+    const landingKey = "civicflow_landing";
+    const referrerKey = "civicflow_referrer";
 
     if (!window.sessionStorage.getItem(landingKey)) {
       const landing = `${window.location.pathname}${window.location.search}`;
@@ -46,10 +46,10 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
           </Link>
 
           <Link
-            href="/early-access"
+            href="/get-started"
             className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 lg:hidden"
           >
-            Early access
+            Get started
           </Link>
         </div>
 
@@ -78,10 +78,10 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
           </nav>
 
           <Link
-            href="/early-access"
+            href="/get-started"
             className="hidden shrink-0 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 lg:inline-flex"
           >
-            Join early access
+            Get started
           </Link>
         </div>
       </div>

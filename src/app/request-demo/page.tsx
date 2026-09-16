@@ -5,17 +5,35 @@ export default function RequestDemoPage() {
   return (
     <main className="min-h-screen text-slate-900">
       <MarketingHeader />
-      <section className="mx-auto max-w-3xl px-6 py-20 text-center">
-        <p className="eyebrow text-blue-600">Validation phase</p>
-        <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900">
-          CivicFlow is currently collecting Early Access interest instead of demo requests.
+      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
+        <p className="eyebrow text-blue-600">See CivicFlow</p>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+          Tell us about your firm and we will map the right CivicFlow setup.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-          The law-practice product is still being validated. No sales call or product demo is required at this stage.
+          Whether you are moving from MyCase, Clio, another platform, or a mix of spreadsheets and shared drives, start with your firm size, current system, and the plan you want to explore.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">Join early access</Link>
-          <Link href="/" className="btn btn-secondary px-6 py-3.5 text-base">Back to home</Link>
+          <Link href="/get-started" className="btn btn-primary px-6 py-3.5 text-base">Get started</Link>
+          <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">Compare plans</Link>
+        </div>
+
+        <div className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-3">
+          <div className="premium-card">
+            <p className="text-sm font-black text-slate-950">Basic</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">$30</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">per user / month</p>
+          </div>
+          <div className="premium-card">
+            <p className="text-sm font-black text-slate-950">Pro</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">$80</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">per user / month</p>
+          </div>
+          <div className="premium-card">
+            <p className="text-sm font-black text-slate-950">Advanced</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">$100</p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">per user / month</p>
+          </div>
         </div>
       </section>
     </main>

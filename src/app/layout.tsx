@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s | CivicFlow",
   },
   description:
-    "CivicFlow is an early-access law practice management concept for small firms, combining matters, billing, intake, documents, automation, client communication, reporting, mobile workflows, and AI in one platform.",
+    "CivicFlow is modern law practice management software for small firms, bringing matter management, documents, workflows, reporting, client intake, communication, and firm operations into one platform.",
   alternates: {
     canonical: "/",
   },
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "CivicFlow",
     title: "CivicFlow | Modern Law Practice Management",
     description:
-      "An early-access law practice management concept for small firms, planned from $69 per attorney per month.",
+      "Modern law practice management for small firms with straightforward pricing from $30 per user per month.",
   },
 };
 

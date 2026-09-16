@@ -5,19 +5,19 @@ import MarketingHeader from "@/components/MarketingHeader";
 export const metadata: Metadata = {
   title: "Legal Practice Management Software for Small Law Firms",
   description:
-    "Explore CivicFlow's early-access legal practice management concept for small firms: matters, billing, intake, documents, client communication, automation, reporting, mobile workflows, AI, and migration verification in one platform.",
+    "CivicFlow gives small law firms one organized platform for matters, documents, staff activity, intake, follow-ups, reporting, and firm operations, with plans starting at $30 per user per month.",
   alternates: {
     canonical: "/legal-practice-management",
   },
 };
 
 const capabilities = [
-  ["Matter management", "Keep contacts, notes, tasks, deadlines, documents, communications, and financial context together around the matter."],
-  ["Billing and payments", "Support time-based and flat-fee work, balances, payment workflows, reporting, and planned trust-accounting capabilities."],
-  ["Client intake and communication", "Bring intake, portal access, texting, signatures, updates, and payment communication into the same operating layer."],
-  ["Documents and automation", "Organize matter documents while planning OCR, document automation, eSignature, workflow triggers, and source-grounded AI."],
-  ["Reporting and firm intelligence", "Make operational and financial questions easier to answer without forcing small firms into spreadsheets or separate reporting products."],
-  ["Mobile and court workflows", "Treat mobile work as a first-class experience, including planned secure offline-ready workflows for court-heavy practices."],
+  ["Matter management", "Keep client information, matter status, notes, assignments, documents, and follow-ups connected to the same record."],
+  ["Document tracking", "Organize documents around the matter, track document status, and make missing information easier to spot."],
+  ["Client intake", "Capture new client information in a structured workflow and keep it connected to the firm's operational process."],
+  ["Team coordination", "Give attorneys and staff shared visibility into assignments, priorities, open follow-ups, and recent activity."],
+  ["Reporting and exports", "See workload and case activity through built-in reports and export data when the firm needs deeper analysis."],
+  ["Organization workspace", "Keep firm records and staff activity organized inside one shared operating environment."],
 ];
 
 export default function LegalPracticeManagementPage() {
@@ -30,33 +30,33 @@ export default function LegalPracticeManagementPage() {
           <div>
             <p className="eyebrow text-blue-600">Legal practice management software</p>
             <h1 className="mt-4 max-w-4xl text-4xl font-bold leading-tight tracking-tight text-slate-950 sm:text-5xl">
-              Run the firm in one operating system instead of a growing stack of legal software.
+              Run your law firm in one cleaner operating workspace.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-              CivicFlow is validating a modern practice-management platform for small law firms that combines the everyday work of matters, billing, intake, documents, client communication, automation, reporting, mobile workflows, and AI without forcing routine capabilities into a maze of paid upgrades.
+              CivicFlow helps small firms organize matters, documents, intake, staff activity, follow-ups, and reporting without forcing the team to rebuild the same information across spreadsheets, inboxes, and disconnected tools.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">
-                Join early access
+              <Link href="/get-started" className="btn btn-primary px-6 py-3.5 text-base">
+                Get started
               </Link>
               <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">
-                See planned pricing
+                Compare plans
               </Link>
             </div>
           </div>
 
           <div className="premium-dark lg:!p-9">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-              Validation proposition
+              Straightforward pricing
             </p>
             <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
-              Planned from $69 per attorney per month.
+              Basic $30. Pro $80. Advanced $100.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              The price is a market-validation hypothesis, not a final commercial promise. Our direction is simple: include ordinary firm capabilities in the core product and use transparent fair-use allowances only for unusually heavy metered consumption.
+              Choose the level of workflow depth your firm needs and keep the upgrade path easy to understand.
             </p>
             <div className="mt-7 grid gap-3">
-              {["No credit card", "No sales call required", "No claim that the full product is already built", "Temporary CivicFlow name during validation"].map((item) => (
+              {["Built for solo and small firms", "Matter-centered workspace", "Structured document and follow-up tracking", "Reporting and data exports"].map((item) => (
                 <div key={item} className="rounded-xl border border-white/10 bg-white/[0.06] p-4 text-sm font-medium text-blue-50/90">
                   {item}
                 </div>
@@ -70,7 +70,7 @@ export default function LegalPracticeManagementPage() {
         <div className="premium-card">
           <p className="eyebrow">One connected workflow</p>
           <h2 className="mt-3 max-w-4xl text-3xl font-bold tracking-tight text-slate-950">
-            The goal is not more features. It is fewer handoffs between products.
+            Keep the information your team needs connected to the work.
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {capabilities.map(([title, description]) => (
@@ -87,20 +87,20 @@ export default function LegalPracticeManagementPage() {
         <div className="grid gap-5 md:grid-cols-2">
           <div className="premium-card">
             <p className="eyebrow">Considering MyCase?</p>
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">See the MyCase alternative hypothesis.</h2>
+            <h2 className="mt-3 text-2xl font-bold text-slate-950">Compare CivicFlow with MyCase pricing.</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Review the pricing and product differences we are testing for firms already evaluating MyCase alternatives.
+              See how CivicFlow's $30, $80, and $100 plans compare with MyCase's current published tiers.
             </p>
-            <Link href="/mycase-alternative" className="btn btn-primary mt-6">Compare the approach</Link>
+            <Link href="/mycase-alternative" className="btn btn-primary mt-6">Compare with MyCase</Link>
           </div>
 
           <div className="premium-card">
             <p className="eyebrow">Considering Clio?</p>
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">See the Clio alternative hypothesis.</h2>
+            <h2 className="mt-3 text-2xl font-bold text-slate-950">See another small-firm option.</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Explore whether a more consolidated product and a simpler pricing structure would be compelling enough to switch.
+              Explore CivicFlow's simpler operating model and straightforward price structure.
             </p>
-            <Link href="/clio-alternative" className="btn btn-primary mt-6">Compare the approach</Link>
+            <Link href="/clio-alternative" className="btn btn-primary mt-6">Compare with Clio</Link>
           </div>
         </div>
       </section>

@@ -5,48 +5,50 @@ const outcomes = [
   {
     title: "Run every matter",
     description:
-      "Keep matters, contacts, tasks, calendar activity, notes, and deadlines together without a maze of disconnected screens.",
+      "Keep matters, contacts, notes, assignments, documents, status, and follow-ups together in one organized workspace.",
   },
   {
-    title: "Handle the money",
+    title: "Keep documents under control",
     description:
-      "Plan for billing, trust workflows, payments, balances, flat-fee visibility, and firm reporting in the same operating system.",
+      "Track matter documents, document status, file activity, and missing items without scattering work across folders and spreadsheets.",
   },
   {
-    title: "Manage every document",
+    title: "Keep the team aligned",
     description:
-      "Bring document storage, intake, automation, eSignature, OCR, and matter context into one consistent workflow.",
+      "Give attorneys and staff a shared view of case activity, assignments, priorities, and the work that needs attention next.",
   },
   {
-    title: "Keep clients connected",
+    title: "Stay ahead of follow-ups",
     description:
-      "Unify intake, secure portal access, client updates, texting, signatures, and payment communication.",
+      "Track follow-up dates, completion status, open work, and overdue items so important tasks do not disappear into inboxes.",
   },
   {
-    title: "Work anywhere",
+    title: "See what is happening",
     description:
-      "Design mobile and court workflows as first-class experiences, including secure offline-ready access where it matters.",
+      "Use firm reporting and exports to understand workload, activity, case status, and operational trends without rebuilding the same spreadsheet every week.",
   },
   {
-    title: "Remove the busywork",
+    title: "Work in one clean system",
     description:
-      "Use workflows and embedded AI to propose updates, reports, tasks, communications, and administrative actions for review.",
+      "CivicFlow brings the everyday operating pieces of a small law firm into a simpler workspace designed to reduce unnecessary software switching.",
   },
 ];
 
 const included = [
   "Matter and contact management",
-  "Billing and payments",
-  "Client intake and portal",
-  "Document management",
-  "eSignature",
-  "Text and client communication",
-  "Workflow automation",
-  "Reporting and firm intelligence",
-  "iOS and Android experience",
-  "API and webhooks",
-  "Embedded AI",
-  "Migration verification",
+  "Document tracking",
+  "Case notes",
+  "Tasks and follow-ups",
+  "Staff assignments",
+  "Client intake workflows",
+  "Reporting and exports",
+  "Organization workspace",
+];
+
+const priceCards = [
+  ["Basic", "$50", "$30"],
+  ["Pro", "$100", "$80"],
+  ["Advanced", "$130", "$100"],
 ];
 
 export default function Home() {
@@ -58,30 +60,30 @@ export default function Home() {
         <div className="animate-fade-up">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50 px-3.5 py-1.5 text-xs font-semibold text-blue-700">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-            Early access validation
+            Modern law practice management
           </div>
 
           <h1 className="mt-7 max-w-4xl text-4xl font-bold leading-[1.06] tracking-tight text-slate-900 sm:text-5xl xl:text-6xl">
-            Everything your law firm needs. One product. One straightforward price.
+            Run your law firm with less software and a lower monthly bill.
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-            CivicFlow is being evaluated as a modern practice-management platform for small law firms. The goal is to combine matters, billing, intake, documents, automation, client communication, reporting, mobile workflows, and AI without forcing firms through an expensive feature maze.
+            CivicFlow gives small law firms one clean workspace for matters, documents, staff activity, follow-ups, intake, and reporting, with straightforward plans starting at $30 per user per month.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">
-              Join early access
+            <Link href="/get-started" className="btn btn-primary px-6 py-3.5 text-base">
+              Get started
             </Link>
             <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">
-              See planned pricing
+              Compare plans
             </Link>
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-slate-500">
-            <span className="flex items-center gap-2"><CheckIcon /> Planned from $69 per attorney/month</span>
-            <span className="flex items-center gap-2"><CheckIcon /> No credit card</span>
-            <span className="flex items-center gap-2"><CheckIcon /> Product in validation</span>
+            <span className="flex items-center gap-2"><CheckIcon /> Plans from $30/user/month</span>
+            <span className="flex items-center gap-2"><CheckIcon /> Built for small law firms</span>
+            <span className="flex items-center gap-2"><CheckIcon /> Clear upgrade path</span>
           </div>
         </div>
 
@@ -90,14 +92,14 @@ export default function Home() {
             One platform
           </p>
           <h2 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-white xl:text-3xl">
-            More capability without making the firm operate more software.
+            Give your firm one place to manage the work that keeps moving.
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            The product concept is deliberately simple: one core operating system for the everyday work of a small law firm, with transparent pricing and fewer paid feature gates.
+            CivicFlow is designed for small firms that want strong case visibility without the overhead and pricing of a heavier software stack.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            {included.slice(0, 8).map((item) => (
+            {included.map((item) => (
               <div key={item} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-blue-400/15 text-blue-200"><CheckIcon /></span>
                 <p className="text-sm font-semibold text-white">{item}</p>
@@ -106,24 +108,24 @@ export default function Home() {
           </div>
 
           <Link href="/platform" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-lg shadow-black/20 transition hover:bg-blue-50">
-            Explore the concept <span aria-hidden>→</span>
+            Explore the platform <span aria-hidden>→</span>
           </Link>
         </div>
       </section>
 
       <section id="features" className="mx-auto max-w-[1440px] px-6 pb-12">
         <div className="premium-card">
-          <p className="eyebrow">Designed around outcomes</p>
+          <p className="eyebrow">Built around daily work</p>
           <div className="mt-3 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="max-w-3xl text-3xl font-bold tracking-tight text-slate-900">
-                The feature list matters less than whether the workflow actually works.
+                Good practice management should make the firm easier to operate.
               </h2>
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                Our validation is focused on recurring gaps attorneys already report across practice-management platforms: pricing complexity, documents, billing, reporting, mobile reliability, integrations, and fragmented workflows.
+                CivicFlow focuses on the operational work small firms repeat every day: organizing matters, tracking documents, assigning work, recording activity, following up, and seeing what needs attention.
               </p>
             </div>
-            <Link href="/early-access" className="btn btn-primary shrink-0">Join early access</Link>
+            <Link href="/get-started" className="btn btn-primary shrink-0">Get started</Link>
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -141,48 +143,48 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-6 pb-12">
-        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="premium-dark lg:!p-9">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Planned pricing</p>
-            <div className="mt-4 flex items-end gap-2">
-              <span className="text-5xl font-black tracking-tight text-white">$69</span>
-              <span className="pb-1 text-sm text-slate-300">per attorney / month</span>
+        <div className="premium-dark lg:!p-9">
+          <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Competitive pricing</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">Three plans. Lower prices.</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+                Start with the essentials, add more workflow depth as you grow, and keep your software spend under control.
+              </p>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              This is a validation price, not a final commercial commitment. We are testing whether firms prefer one capable platform at a clear price instead of paying more to unlock everyday features.
-            </p>
-            <Link href="/pricing" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-blue-50">
-              Review pricing concept <span aria-hidden>→</span>
+            <Link href="/pricing" className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-blue-50">
+              View full pricing <span aria-hidden>→</span>
             </Link>
           </div>
 
-          <div className="premium-card">
-            <p className="eyebrow">Included in the concept</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {included.map((item) => (
-                <div key={item} className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-4">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><CheckIcon /></span>
-                  <p className="text-sm font-medium text-slate-800">{item}</p>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {priceCards.map(([name, oldPrice, price]) => (
+              <div key={name} className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
+                <p className="text-sm font-black text-blue-100">{name}</p>
+                <div className="mt-4 flex items-end gap-3">
+                  <span className="pb-1 text-xl font-bold text-slate-500 line-through">{oldPrice}</span>
+                  <span className="text-4xl font-black text-white">{price}</span>
                 </div>
-              ))}
-            </div>
+                <p className="mt-2 text-xs font-semibold text-slate-400">per user / month</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-[1440px] px-6 pb-20">
         <div className="premium-card text-center">
-          <p className="eyebrow">Help validate the direction</p>
+          <p className="eyebrow">A better fit for a growing small firm</p>
           <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900">
-            Already comparing practice-management platforms?
+            Comparing MyCase, Clio, or another practice-management system?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
-            Join early access if this pricing and product direction is relevant to your firm. No purchase is required, and the product is still in validation and development.
+            Compare CivicFlow's pricing and approach, then tell us what your firm needs to move forward.
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/mycase-alternative" className="btn btn-secondary">Considering MyCase alternatives?</Link>
-            <Link href="/clio-alternative" className="btn btn-secondary">Considering Clio alternatives?</Link>
-            <Link href="/early-access" className="btn btn-primary">Join early access</Link>
+            <Link href="/mycase-alternative" className="btn btn-secondary">Compare with MyCase</Link>
+            <Link href="/clio-alternative" className="btn btn-secondary">Compare with Clio</Link>
+            <Link href="/get-started" className="btn btn-primary">Get started</Link>
           </div>
         </div>
       </section>
