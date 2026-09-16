@@ -1,20 +1,55 @@
 import Link from "next/link";
 import MarketingHeader from "@/components/MarketingHeader";
 
-const included = [
-  "Matter and contact management",
-  "Tasks, notes, calendar, and deadlines",
-  "Billing and payments",
-  "Client intake and portal",
-  "Document management and automation",
-  "eSignature",
-  "Text and client communication",
-  "Workflow automation",
-  "Reporting and firm intelligence",
-  "Mobile workflows",
-  "API and webhooks",
-  "Embedded AI",
-  "Migration verification",
+const plans = [
+  {
+    name: "Basic",
+    tagline: "The essentials for running a modern small law firm.",
+    oldPrice: "$50",
+    price: "$30",
+    featured: false,
+    features: [
+      "Matter and contact management",
+      "Case notes and follow-ups",
+      "Document tracking and organization",
+      "Tasks and staff assignments",
+      "Client intake workflows",
+      "Standard reporting and exports",
+      "Secure staff workspace",
+    ],
+  },
+  {
+    name: "Pro",
+    tagline: "More workflow depth for growing firms and busy teams.",
+    oldPrice: "$100",
+    price: "$80",
+    featured: true,
+    features: [
+      "Everything in Basic",
+      "Advanced workflow tracking",
+      "Expanded intake and case routing",
+      "Team workload visibility",
+      "Advanced document workflows",
+      "Expanded reporting views",
+      "Priority onboarding support",
+    ],
+  },
+  {
+    name: "Advanced",
+    tagline: "Deeper control, reporting, and operational visibility.",
+    oldPrice: "$130",
+    price: "$100",
+    featured: false,
+    features: [
+      "Everything in Pro",
+      "Advanced firm reporting",
+      "Organization-level controls",
+      "Data export and migration assistance",
+      "Priority data onboarding",
+      "Advanced administrative controls",
+      "Priority support",
+    ],
+  },
 ];
 
 export default function PricingPage() {
@@ -22,61 +57,92 @@ export default function PricingPage() {
     <main className="min-h-screen text-slate-900">
       <MarketingHeader activePage="pricing" />
 
-      <section className="mx-auto max-w-[1180px] px-6 py-16 lg:py-20">
+      <section className="mx-auto max-w-[1380px] px-6 py-16 lg:py-20">
         <div className="text-center">
-          <p className="eyebrow text-blue-600">Validation pricing</p>
+          <p className="eyebrow text-blue-600">Straightforward pricing</p>
           <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            One capable product instead of a ladder of paid feature gates.
+            Serious law-practice software without the premium price tag.
           </h1>
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            We are testing whether small law firms prefer a straightforward full-suite plan rather than paying more each time they need intake, automation, texting, reporting, AI, or integrations.
+            Choose the level of workflow depth your firm needs. Every plan is built around the same goal: keep legal work organized, visible, and easier to manage without unnecessary complexity.
           </p>
         </div>
 
-        <div className="mx-auto mt-12 max-w-4xl rounded-[2rem] border border-slate-200 bg-white p-7 shadow-[var(--shadow-lg)] sm:p-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-blue-600">Planned core plan</p>
-              <div className="mt-4 flex items-end gap-2">
-                <span className="text-6xl font-black tracking-tight text-slate-950">$69</span>
-                <span className="pb-2 text-sm font-semibold text-slate-500">per attorney / month</span>
+        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <article
+              key={plan.name}
+              className={`relative overflow-hidden rounded-[2rem] border p-7 shadow-[var(--shadow-lg)] sm:p-8 ${
+                plan.featured
+                  ? "border-blue-300 bg-blue-50/55 ring-2 ring-blue-100"
+                  : "border-slate-200 bg-white"
+              }`}
+            >
+              {plan.featured ? (
+                <div className="absolute right-6 top-6 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white">
+                  Popular
+                </div>
+              ) : null}
+
+              <p className="text-sm font-black uppercase tracking-[0.16em] text-blue-600">
+                CivicFlow {plan.name}
+              </p>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">{plan.tagline}</h2>
+
+              <div className="mt-7 flex items-end gap-3">
+                <span className="pb-2 text-2xl font-bold text-slate-400 line-through decoration-2">
+                  {plan.oldPrice}
+                </span>
+                <span className="text-6xl font-black tracking-tight text-slate-950">{plan.price}</span>
               </div>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-slate-600">
-                Support-staff access is planned to be included on qualifying firm plans instead of charging every assistant or paralegal at the full attorney rate. Exact limits will be set only after usage economics are validated.
+              <p className="mt-1 text-sm font-semibold text-slate-500">USD / user / month</p>
+
+              <Link
+                href={`/get-started?plan=${plan.name.toLowerCase()}`}
+                className={`mt-7 inline-flex w-full items-center justify-center rounded-xl px-5 py-3.5 text-sm font-black transition ${
+                  plan.featured
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-slate-950 text-white hover:bg-slate-800"
+                }`}
+              >
+                Get started with {plan.name}
+              </Link>
+
+              <div className="mt-8 border-t border-slate-200/80 pt-7">
+                <p className="text-sm font-black text-slate-950">What you get</p>
+                <div className="mt-4 grid gap-3">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">✓</span>
+                      <p className="text-sm leading-6 text-slate-700">{feature}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <section className="mt-10 grid gap-5 md:grid-cols-3">
+          <Info title="Built for small firms" text="Designed for solo attorneys and growing firms that want strong operational visibility without enterprise complexity." />
+          <Info title="Simple upgrade path" text="Move between Basic, Pro, and Advanced as your team and workflow needs grow." />
+          <Info title="Lower cost by design" text="CivicFlow is priced to give firms more room to invest in people, client service, and growth instead of oversized software bills." />
+        </section>
+
+        <section className="mt-12 rounded-[2rem] bg-slate-950 p-8 text-white sm:p-10">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Ready to move?</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight">Bring your firm into one cleaner operating workspace.</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                Tell us about your firm, your current software, and the plan you want. We will help you map the right CivicFlow setup.
               </p>
             </div>
-
-            <Link href="/early-access" className="btn btn-primary px-6 py-3.5 text-base">Join early access</Link>
+            <Link href="/get-started" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-black text-slate-950 transition hover:bg-blue-50">
+              Get started
+            </Link>
           </div>
-
-          <div className="mt-9 grid gap-3 border-t border-slate-100 pt-8 sm:grid-cols-2 lg:grid-cols-3">
-            {included.map((item) => (
-              <div key={item} className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-                <span className="mt-0.5 text-blue-600">✓</span>
-                <p className="text-sm font-semibold leading-6 text-slate-800">{item}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-            <p className="text-sm font-bold text-amber-950">Feature access is not the same as unlimited metered consumption.</p>
-            <p className="mt-2 text-sm leading-7 text-amber-900">
-              The validation direction is to keep everyday capabilities in the core plan while using clear, published fair-use allowances for unusually high SMS or MMS volume, very large discovery or video storage, high-volume signature requests, or unusually intensive AI processing. Firms should not need a premium feature tier just to unlock ordinary workflow capabilities.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <Info title="No credit card" text="This page is testing product and price interest. Nothing is being sold yet." />
-          <Info title="No final promise" text="The $69 price is a validation hypothesis and may change before commercial launch." />
-          <Info title="No feature bait" text="Our direction is to include everyday firm capabilities in the core product rather than hide them behind avoidable upgrades." />
-        </div>
-
-        <div className="mt-12 rounded-2xl border border-blue-200 bg-blue-50 p-6">
-          <p className="text-sm font-semibold leading-7 text-blue-900">
-            CivicFlow is currently an early-stage validation shell. The final legal product name, commercial terms, feature limits, usage allowances, and launch schedule have not been finalized.
-          </p>
-        </div>
+        </section>
       </section>
     </main>
   );
