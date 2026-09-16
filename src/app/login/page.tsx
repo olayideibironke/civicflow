@@ -108,26 +108,25 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-10 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-            Staff Access
+            Existing CivicFlow Workspace
           </p>
 
           <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
-            Sign in to manage cases, documents, reports, and workflow activity.
+            Sign in to the original CivicFlow staff workspace.
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            Staff email and password are required before accessing the protected
-            workspace.
+            This legacy workspace is being preserved while Westforge validates a future legal-practice product. It is not approved for storing real legal client or matter data during the validation phase.
           </p>
 
           <div className="mt-8 space-y-3">
             {[
-              "Encrypted Supabase authentication",
-              "Organization-scoped access control",
-              "Full audit trail on every case",
+              "Uses Supabase staff authentication",
+              "Existing CivicFlow workspace remains separate from the public legal validation pages",
+              "Legal security and tenant-isolation controls must be verified before backend reuse",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3 text-sm text-slate-300">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-200">
                   <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3">
                     <path d="m4 8 2.5 2.5L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -151,7 +150,7 @@ export default function LoginPage() {
             </h2>
 
             <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600">
-              Enter a valid staff email address and password to continue.
+              Enter a valid existing CivicFlow staff email address and password to continue.
             </p>
           </div>
 
