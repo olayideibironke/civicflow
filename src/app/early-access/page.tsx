@@ -68,6 +68,15 @@ export default function EarlyAccessPage() {
     setFormError("");
 
     const { firstName, lastName } = splitName(formState.name);
+    const landingPage =
+      window.sessionStorage.getItem("civicflow_validation_landing") ||
+      `${window.location.pathname}${window.location.search}`;
+    const referrer =
+      window.sessionStorage.getItem("civicflow_validation_referrer") ||
+      document.referrer ||
+      "direct";
+    const conversionPage = `${window.location.pathname}${window.location.search}`;
+
     const { error } = await supabase.from("demo_requests").insert({
       first_name: firstName,
       last_name: lastName,
@@ -80,7 +89,13 @@ export default function EarlyAccessPage() {
       primary_need: formState.primaryReason,
       timeline: formState.currentSoftware,
       preferred_contact: "Email",
-      message: `Current practice-management software: ${formState.currentSoftware}. Primary reason for considering another platform: ${formState.primaryReason}.`,
+      message: [
+        `Current practice-management software: ${formState.currentSoftware}.`,
+        `Primary reason for considering another platform: ${formState.primaryReason}.`,
+        `Validation landing page: ${landingPage}.`,
+        `Conversion page: ${conversionPage}.`,
+        `Referrer: ${referrer}.`,
+      ].join(" "),
       source: "CivicFlow Legal Validation Early Access",
       status: "New",
     });
