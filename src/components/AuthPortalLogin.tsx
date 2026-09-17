@@ -26,10 +26,12 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
   const [checkingSession, setCheckingSession] = useState(true);
   const [signingIn, setSigningIn] = useState(false);
   const [message, setMessage] = useState("");
+  const [destination, setDestination] = useState(
+    portal === "attorney" ? "/app" : "/client"
+  );
 
   const isAttorney = portal === "attorney";
   const portalLabel = isAttorney ? "Attorney & Firm Login" : "Client Login";
-  const destination = isAttorney ? "/app" : "/client";
 
   async function verifyPortalAccess() {
     if (isAttorney) {
@@ -41,6 +43,16 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
 
   useEffect(() => {
     let active = true;
+    const params = new URLSearchParams(window.location.search);
+    const requestedRedirect = params.get("redirectTo");
+    const portalRoot = isAttorney ? "/app" : "/client";
+    const safeRedirect =
+      requestedRedirect?.startsWith(portalRoot) &&
+      !requestedRedirect.startsWith("//")
+        ? requestedRedirect
+        : portalRoot;
+
+    setDestination(safeRedirect);
 
     async function checkSession() {
       const {
@@ -63,7 +75,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
       }
 
       if (access.workspace) {
-        router.replace(destination);
+        router.replace(safeRedirect);
         return;
       }
 
@@ -76,7 +88,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, router]);
+  }, [isAttorney, router]);
 
   function validateForm() {
     return getFirstValidationError([
