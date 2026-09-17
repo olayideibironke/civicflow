@@ -5,7 +5,6 @@ const plans = [
   {
     name: "Basic",
     tagline: "The essentials for running a modern small law firm.",
-    oldPrice: "$50",
     price: "$30",
     featured: false,
     features: [
@@ -21,7 +20,6 @@ const plans = [
   {
     name: "Pro",
     tagline: "More workflow depth for growing firms and busy teams.",
-    oldPrice: "$100",
     price: "$80",
     featured: true,
     features: [
@@ -37,7 +35,6 @@ const plans = [
   {
     name: "Advanced",
     tagline: "Deeper control, reporting, and operational visibility.",
-    oldPrice: "$130",
     price: "$100",
     featured: false,
     features: [
@@ -61,7 +58,7 @@ export default function PricingPage() {
         <div className="text-center">
           <p className="eyebrow text-blue-600">Straightforward pricing</p>
           <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Serious law-practice software without the premium price tag.
+            Serious law-practice software with pricing that is easy to understand.
           </h1>
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
             Choose the level of workflow depth your firm needs. Every plan is built around the same goal: keep legal work organized, visible, and easier to manage without unnecessary complexity.
@@ -89,10 +86,7 @@ export default function PricingPage() {
               </p>
               <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">{plan.tagline}</h2>
 
-              <div className="mt-7 flex items-end gap-3">
-                <span className="pb-2 text-2xl font-bold text-slate-400 line-through decoration-2">
-                  {plan.oldPrice}
-                </span>
+              <div className="mt-7">
                 <span className="text-6xl font-black tracking-tight text-slate-950">{plan.price}</span>
               </div>
               <p className="mt-1 text-sm font-semibold text-slate-500">USD / user / month</p>
@@ -126,7 +120,7 @@ export default function PricingPage() {
         <section className="mt-10 grid gap-5 md:grid-cols-3">
           <Info title="Built for small firms" text="Designed for solo attorneys and growing firms that want strong operational visibility without enterprise complexity." />
           <Info title="Simple upgrade path" text="Move between Basic, Pro, and Advanced as your team and workflow needs grow." />
-          <Info title="Lower cost by design" text="CivicFlow is priced to give firms more room to invest in people, client service, and growth instead of oversized software bills." />
+          <Info title="Clear monthly cost" text="Know what each plan costs and choose the level of operational depth that fits your firm." />
         </section>
 
         <section className="mt-12 rounded-[2rem] bg-slate-950 p-8 text-white sm:p-10">
@@ -135,7 +129,7 @@ export default function PricingPage() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Ready to move?</p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight">Bring your firm into one cleaner operating workspace.</h2>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-                Tell us about your firm, your current software, and the plan you want. We will help you map the right CivicFlow setup.
+                Tell us about your firm, your current setup, and the plan you want. We will help you map the right CivicFlow setup.
               </p>
             </div>
             <Link href="/get-started" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-black text-slate-950 transition hover:bg-blue-50">
