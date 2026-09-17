@@ -46,9 +46,9 @@ const included = [
 ];
 
 const priceCards = [
-  ["Basic", "$50", "$30"],
-  ["Pro", "$100", "$80"],
-  ["Advanced", "$130", "$100"],
+  ["Basic", "$30"],
+  ["Pro", "$80"],
+  ["Advanced", "$100"],
 ];
 
 export default function Home() {
@@ -76,7 +76,7 @@ export default function Home() {
               Get started
             </Link>
             <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">
-              Compare plans
+              View plans
             </Link>
           </div>
 
@@ -95,7 +95,7 @@ export default function Home() {
             Give your firm one place to manage the work that keeps moving.
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            CivicFlow is designed for small firms that want strong case visibility without the overhead and pricing of a heavier software stack.
+            CivicFlow is designed for small firms that want strong case visibility, cleaner coordination, and straightforward software costs.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -146,10 +146,10 @@ export default function Home() {
         <div className="premium-dark lg:!p-9">
           <div className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Competitive pricing</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">Three plans. Lower prices.</h2>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Straightforward pricing</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">Three plans with clear monthly pricing.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                Start with the essentials, add more workflow depth as you grow, and keep your software spend under control.
+                Start with the essentials, add more workflow depth as you grow, and keep your software spend predictable.
               </p>
             </div>
             <Link href="/pricing" className="inline-flex w-fit items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-blue-50">
@@ -158,11 +158,10 @@ export default function Home() {
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {priceCards.map(([name, oldPrice, price]) => (
+            {priceCards.map(([name, price]) => (
               <div key={name} className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
                 <p className="text-sm font-black text-blue-100">{name}</p>
-                <div className="mt-4 flex items-end gap-3">
-                  <span className="pb-1 text-xl font-bold text-slate-500 line-through">{oldPrice}</span>
+                <div className="mt-4">
                   <span className="text-4xl font-black text-white">{price}</span>
                 </div>
                 <p className="mt-2 text-xs font-semibold text-slate-400">per user / month</p>
@@ -174,16 +173,16 @@ export default function Home() {
 
       <section className="mx-auto max-w-[1440px] px-6 pb-20">
         <div className="premium-card text-center">
-          <p className="eyebrow">A better fit for a growing small firm</p>
+          <p className="eyebrow">Built for the way small firms work</p>
           <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight text-slate-900">
-            Comparing MyCase, Clio, or another practice-management system?
+            Bring matters, documents, intake, follow-ups, staff activity, and reporting into one operating workspace.
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-slate-600">
-            Compare CivicFlow's pricing and approach, then tell us what your firm needs to move forward.
+            Choose the CivicFlow plan that fits your firm today and grow into deeper workflow capabilities when you need them.
           </p>
           <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/mycase-alternative" className="btn btn-secondary">Compare with MyCase</Link>
-            <Link href="/clio-alternative" className="btn btn-secondary">Compare with Clio</Link>
+            <Link href="/platform" className="btn btn-secondary">Explore the platform</Link>
+            <Link href="/pricing" className="btn btn-secondary">View pricing</Link>
             <Link href="/get-started" className="btn btn-primary">Get started</Link>
           </div>
         </div>
