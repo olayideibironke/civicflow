@@ -11,7 +11,7 @@ export default async function IntakeSuccessPage({
   searchParams,
 }: IntakeSuccessPageProps) {
   const params = await searchParams;
-  const caseNumber = params?.case ?? "New case";
+  const caseNumber = params?.case ?? "New intake";
   const clientName = params?.client ?? "Client";
 
   return (
@@ -33,23 +33,22 @@ export default async function IntakeSuccessPage({
           <p className="eyebrow mt-7 text-emerald-600">Intake Submitted</p>
 
           <h1 className="mx-auto mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
-            Your request has been received.
+            Your information has been received.
           </h1>
 
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-600">
-            CivicFlow created case{" "}
+            CivicFlow recorded intake reference{" "}
             <strong className="font-semibold text-slate-900">{caseNumber}</strong>{" "}
             for{" "}
             <strong className="font-semibold text-slate-900">{clientName}</strong>.
-            A staff member can now review the intake, verify documents, assign
-            ownership, and move the case through the workflow.
+            The legal team can now review the information and determine the next step.
           </p>
 
           <div className="mx-auto mt-8 grid max-w-2xl gap-3 md:grid-cols-3">
             {[
-              ["Step 1", "Intake saved"],
-              ["Step 2", "Case created"],
-              ["Step 3", "Staff review"],
+              ["Step 1", "Intake received"],
+              ["Step 2", "Matter recorded"],
+              ["Step 3", "Legal team review"],
             ].map(([step, label]) => (
               <div key={step} className="soft-panel p-4">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
@@ -62,13 +61,13 @@ export default async function IntakeSuccessPage({
             ))}
           </div>
 
-          <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/" className="btn btn-secondary px-6 py-3">
-              Back to homepage
-            </Link>
+          <p className="mx-auto mt-7 max-w-xl text-sm leading-6 text-slate-500">
+            Submission of this form does not by itself create an attorney-client relationship.
+          </p>
 
-            <Link href="/app/cases" className="btn btn-primary px-6 py-3">
-              View case queue
+          <div className="mt-8 flex justify-center">
+            <Link href="/" className="btn btn-primary px-6 py-3">
+              Back to homepage
             </Link>
           </div>
         </div>

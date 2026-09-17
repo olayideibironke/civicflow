@@ -59,9 +59,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!active) {
-        return;
-      }
+      if (!active) return;
 
       if (!session) {
         setCheckingSession(false);
@@ -69,10 +67,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
       }
 
       const access = await verifyPortalAccess();
-
-      if (!active) {
-        return;
-      }
+      if (!active) return;
 
       if (access.workspace) {
         router.replace(safeRedirect);
@@ -101,7 +96,6 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
     event.preventDefault();
 
     const validationError = validateForm();
-
     if (validationError) {
       setMessage(validationError);
       return;
@@ -129,7 +123,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
       setMessage(
         isAttorney
           ? "This account does not have attorney or firm workspace access. If this is a client account, use Client Login."
-          : "This account does not have client portal access. If you received an invitation, activate your client account first."
+          : "This account does not have client portal access. Client accounts are created from a secure invitation sent by your law firm."
       );
       return;
     }
@@ -141,14 +135,9 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
     return (
       <main className="min-h-screen px-6 py-8">
         <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
-          <div className="premium-card w-full text-center animate-fade-up">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-            </div>
-            <p className="eyebrow mt-6">CivicFlow Security</p>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-              Checking account access...
-            </h1>
+          <div className="w-full rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+            <p className="mt-5 text-sm font-semibold text-slate-600">Checking account access...</p>
           </div>
         </section>
       </main>
@@ -156,30 +145,30 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 sm:py-8">
-      <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <aside className="premium-dark animate-fade-up lg:!p-10">
-          <div className="w-fit rounded-2xl bg-white p-3.5 shadow-lg shadow-black/20">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6">
+      <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-5xl items-center gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+        <aside className="rounded-2xl bg-slate-950 p-8 text-white shadow-sm lg:p-10">
+          <div className="w-fit rounded-xl bg-white p-3">
             <CivicFlowLogo size="md" />
           </div>
 
-          <p className="mt-10 text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
+          <p className="mt-10 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
             {portalLabel}
           </p>
 
-          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
+          <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight">
             {isAttorney
-              ? "Your firm workspace, cases, documents, reports, and client access in one place."
-              : "Secure access to the matters and documents your legal team has shared with you."}
+              ? "Sign in to your firm workspace."
+              : "Sign in to the portal your law firm has shared with you."}
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-300">
             {isAttorney
-              ? "Only authorized firm users can enter the attorney workspace. Client accounts are kept separate."
-              : "Client access is limited to matters connected to your verified CivicFlow account."}
+              ? "Authorized attorneys and staff can access matters, documents, reports, and client portal controls."
+              : "Client access begins with a secure invitation from your attorney or law firm. Once your account is set up, return here whenever you need to view shared matter information."}
           </p>
 
-          <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-6 text-slate-300">
+          <div className="mt-8 border-t border-white/10 pt-6 text-sm text-slate-300">
             Looking for the other portal?{" "}
             <Link
               href={isAttorney ? "/client-login" : "/attorney-login"}
@@ -193,14 +182,14 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
         <form
           onSubmit={handleLogin}
           noValidate
-          className="premium-card animate-fade-up lg:!p-9"
+          className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9"
         >
           <div className="border-b border-slate-100 pb-6">
-            <p className="eyebrow">{portalLabel}</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-              Sign in to CivicFlow.
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{portalLabel}</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
+              Sign in to CivicFlow
             </h2>
-            <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600">
+            <p className="mt-2.5 text-sm leading-6 text-slate-600">
               Enter the email address and password connected to your account.
             </p>
           </div>
@@ -248,25 +237,23 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm font-semibold">
             <Link
               href={`/forgot-password?type=${portal}`}
-              className="text-slate-700 transition hover:text-slate-950"
+              className="text-slate-600 transition hover:text-slate-950"
             >
               Forgot password?
             </Link>
             <Link
               href={`/forgot-email?type=${portal}`}
-              className="text-slate-700 transition hover:text-slate-950"
+              className="text-slate-600 transition hover:text-slate-950"
             >
               Forgot email?
             </Link>
-            {!isAttorney ? (
-              <Link
-                href="/client/activate"
-                className="text-slate-700 transition hover:text-slate-950"
-              >
-                Activate client account
-              </Link>
-            ) : null}
           </div>
+
+          {!isAttorney ? (
+            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+              New client? Your attorney or law firm will send you a secure invitation link when your portal is ready. You do not create a client account from this page.
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <Link
@@ -279,7 +266,7 @@ export default function AuthPortalLogin({ portal }: AuthPortalLoginProps) {
             <button
               type="submit"
               disabled={signingIn}
-              className="btn btn-primary px-6 py-3"
+              className="rounded-lg bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
             >
               {signingIn ? "Signing in..." : "Sign in"}
             </button>

@@ -16,21 +16,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let active = true;
-
-    async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!active) {
-        return;
-      }
-
-      setHasRecoverySession(Boolean(session));
-      setCheckingSession(false);
-    }
-
-    checkSession();
+    let recoverySeen = false;
 
     const {
       data: { subscription },
@@ -39,14 +25,39 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      if (event === "PASSWORD_RECOVERY" || session) {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        recoverySeen = true;
         setHasRecoverySession(true);
         setCheckingSession(false);
+        return;
+      }
+
+      if (event === "INITIAL_SESSION") {
+        const currentUrl = new URL(window.location.href);
+        const looksLikeRecoveryLink =
+          currentUrl.hash.includes("type=recovery") ||
+          currentUrl.searchParams.get("type") === "recovery" ||
+          currentUrl.searchParams.has("code");
+
+        if (!looksLikeRecoveryLink) {
+          setHasRecoverySession(false);
+          setCheckingSession(false);
+        }
       }
     });
 
+    const timeout = window.setTimeout(() => {
+      if (!active || recoverySeen) {
+        return;
+      }
+
+      setHasRecoverySession(false);
+      setCheckingSession(false);
+    }, 3000);
+
     return () => {
       active = false;
+      window.clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);

@@ -36,7 +36,7 @@ const defaultFormState: CaseFormState = {
   lastName: "",
   email: "",
   phone: "",
-  serviceCategory: "Eligibility Review",
+  serviceCategory: "General Legal Matter",
   priority: "Medium",
   status: "New Intake",
   assignedTo: "Unassigned",
@@ -46,22 +46,22 @@ const defaultFormState: CaseFormState = {
 const defaultDocuments = [
   {
     name: "Photo identification",
-    description: "Government-issued ID or equivalent verification document.",
+    description: "Government-issued ID or equivalent identity document.",
     status: "Missing",
   },
   {
-    name: "Proof of address",
-    description: "Utility bill, lease, official mail, or another address record.",
+    name: "Engagement agreement",
+    description: "Signed representation or engagement agreement, when applicable.",
     status: "Missing",
   },
   {
-    name: "Program eligibility form",
-    description: "Signed client intake or eligibility questionnaire.",
+    name: "Client intake form",
+    description: "Signed client intake questionnaire or initial matter information form.",
     status: "Missing",
   },
   {
     name: "Supporting records",
-    description: "Additional records requested by the assigned staff member.",
+    description: "Court filings, correspondence, evidence, or other records relevant to the matter.",
     status: "Missing",
   },
 ];
@@ -122,7 +122,7 @@ export default function NewCasePage() {
       validateRequiredText(formState.lastName, "Last name"),
       validateRequiredEmail(formState.email),
       validateRequiredPhone(formState.phone),
-      validateRequiredText(formState.serviceCategory, "Service category"),
+      validateRequiredText(formState.serviceCategory, "Matter type"),
       validateRequiredText(formState.priority, "Priority"),
       validateRequiredText(formState.status, "Initial status"),
       validateRequiredText(formState.assignedTo, "Assigned staff"),
@@ -240,22 +240,19 @@ export default function NewCasePage() {
                 </Link>
               </div>
 
-              <p className="eyebrow">
-                Staff Case Creation
-              </p>
+              <p className="eyebrow">Staff Case Creation</p>
 
               <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Create new case
               </h1>
 
               <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                Staff-created cases are now tied to the signed-in staff member’s
-                organization profile.
+                Create a legal matter under the signed-in firm workspace and assign an attorney or staff owner.
               </p>
             </div>
 
             <div className="w-fit chip border-emerald-200 bg-emerald-50 text-emerald-700">
-              Workspace aware
+              Firm workspace
             </div>
           </div>
 
@@ -269,99 +266,52 @@ export default function NewCasePage() {
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <form onSubmit={handleSubmit} noValidate className="premium-card">
             <div className="border-b border-slate-100 pb-6">
-              <p className="eyebrow">
-                Case Details
-              </p>
+              <p className="eyebrow">Case Details</p>
 
               <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                Client and service information
+                Client and matter information
               </h2>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Required fields, valid email, and a 10-digit phone number must
-                be provided before staff can create a case.
+                Required fields, valid email, and a 10-digit phone number must be provided before staff can create a case.
               </p>
             </div>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <label className="input-label">
                 First name *
-                <input
-                  required
-                  value={formState.firstName}
-                  onChange={(event) =>
-                    updateField("firstName", event.target.value)
-                  }
-                  placeholder="Angela"
-                  className="input-field"
-                />
+                <input required value={formState.firstName} onChange={(event) => updateField("firstName", event.target.value)} placeholder="Angela" className="input-field" />
               </label>
 
               <label className="input-label">
                 Last name *
-                <input
-                  required
-                  value={formState.lastName}
-                  onChange={(event) =>
-                    updateField("lastName", event.target.value)
-                  }
-                  placeholder="Brooks"
-                  className="input-field"
-                />
+                <input required value={formState.lastName} onChange={(event) => updateField("lastName", event.target.value)} placeholder="Brooks" className="input-field" />
               </label>
 
               <label className="input-label">
                 Email address *
-                <input
-                  type="email"
-                  required
-                  value={formState.email}
-                  onChange={(event) => updateField("email", event.target.value)}
-                  placeholder="angela@example.org"
-                  className="input-field"
-                />
+                <input type="email" required value={formState.email} onChange={(event) => updateField("email", event.target.value)} placeholder="angela@example.org" className="input-field" />
               </label>
 
               <label className="input-label">
                 Phone number *
-                <input
-                  required
-                  inputMode="numeric"
-                  value={formState.phone}
-                  onChange={(event) => updateField("phone", event.target.value)}
-                  placeholder="202-555-0198"
-                  className="input-field"
-                />
+                <input required inputMode="numeric" value={formState.phone} onChange={(event) => updateField("phone", event.target.value)} placeholder="202-555-0198" className="input-field" />
               </label>
 
               <label className="input-label">
-                Service category *
-                <select
-                  required
-                  value={formState.serviceCategory}
-                  onChange={(event) =>
-                    updateField("serviceCategory", event.target.value)
-                  }
-                  className="input-field"
-                >
-                  <option>Eligibility Review</option>
-                  <option>Document Processing</option>
-                  <option>Benefits Navigation</option>
-                  <option>Referral Request</option>
-                  <option>General Case Support</option>
+                Matter type *
+                <select required value={formState.serviceCategory} onChange={(event) => updateField("serviceCategory", event.target.value)} className="input-field">
+                  <option>Criminal Defense</option>
+                  <option>Family Law</option>
+                  <option>Immigration</option>
+                  <option>Civil Litigation</option>
+                  <option>General Legal Matter</option>
                 </select>
               </label>
 
               <label className="input-label">
                 Priority *
-                <select
-                  required
-                  value={formState.priority}
-                  onChange={(event) =>
-                    updateField("priority", event.target.value)
-                  }
-                  className="input-field"
-                >
+                <select required value={formState.priority} onChange={(event) => updateField("priority", event.target.value)} className="input-field">
                   <option>Low</option>
                   <option>Medium</option>
                   <option>High</option>
@@ -371,14 +321,7 @@ export default function NewCasePage() {
 
               <label className="input-label">
                 Initial status *
-                <select
-                  required
-                  value={formState.status}
-                  onChange={(event) =>
-                    updateField("status", event.target.value)
-                  }
-                  className="input-field"
-                >
+                <select required value={formState.status} onChange={(event) => updateField("status", event.target.value)} className="input-field">
                   <option>New Intake</option>
                   <option>In Review</option>
                   <option>Assigned</option>
@@ -388,61 +331,32 @@ export default function NewCasePage() {
 
               <label className="input-label">
                 Assigned staff *
-                <input
-                  required
-                  value={formState.assignedTo}
-                  onChange={(event) =>
-                    updateField("assignedTo", event.target.value)
-                  }
-                  placeholder="Assigned staff or queue"
-                  className="input-field"
-                />
+                <input required value={formState.assignedTo} onChange={(event) => updateField("assignedTo", event.target.value)} placeholder="Assigned attorney or staff member" className="input-field" />
               </label>
             </div>
 
             <label className="input-label mt-6">
               Case summary *
-              <textarea
-                required
-                value={formState.summary}
-                onChange={(event) => updateField("summary", event.target.value)}
-                rows={6}
-                placeholder="Describe the client need, known documents, deadlines, and next action."
-                className="input-field resize-y leading-7"
-              />
+              <textarea required value={formState.summary} onChange={(event) => updateField("summary", event.target.value)} rows={6} placeholder="Describe the legal issue, known documents, court dates or deadlines, and next action." className="input-field resize-y leading-7" />
             </label>
 
             <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-900">
-                Workspace connection
-              </p>
-
+              <p className="text-sm font-semibold text-slate-900">Firm workspace</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                This case will be created under{" "}
-                <span className="font-semibold text-slate-900">
-                  {workspace?.organization.name ?? "your organization"}
-                </span>
-                .
+                This case will be created under <span className="font-semibold text-slate-900">{workspace?.organization.name ?? "your firm"}</span>.
               </p>
             </div>
 
             {formError ? (
-              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                {formError}
-              </div>
+              <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{formError}</div>
             ) : null}
 
             <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                After creation, the new validated case appears in the staff case
-                queue for this workspace.
+                After creation, the matter appears in the firm’s case queue with the standard document checklist.
               </p>
 
-              <button
-                type="submit"
-                disabled={saving || Boolean(loadError)}
-                className={`btn btn-primary px-6 py-3`}
-              >
+              <button type="submit" disabled={saving || Boolean(loadError)} className="btn btn-primary px-6 py-3">
                 {saving ? "Creating case..." : "Create case"}
               </button>
             </div>
@@ -450,55 +364,31 @@ export default function NewCasePage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-                Staff Workspace
-              </p>
-
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white">
-                {workspace?.organization.name ?? "Loading workspace"}
-              </h2>
-
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Firm Workspace</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white">{workspace?.organization.name ?? "Loading workspace"}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                Staff-created cases now use the signed-in staff profile instead
-                of a hardcoded demo organization.
+                Cases created here are scoped to the signed-in firm and the authenticated staff profile.
               </p>
             </div>
 
             <div className="premium-card">
-              <p className="eyebrow">
-                Staff Profile
-              </p>
-
-              <h2 className="mt-3 text-lg font-semibold text-slate-900">
-                {workspace ? getStaffDisplayName(workspace) : "Loading staff"}
-              </h2>
+              <p className="eyebrow">Staff Profile</p>
+              <h2 className="mt-3 text-lg font-semibold text-slate-900">{workspace ? getStaffDisplayName(workspace) : "Loading staff"}</h2>
 
               <div className="mt-6 space-y-3">
                 <div className="rounded-xl border border-slate-200/80 bg-white p-4">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Email
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {workspace?.email ?? "Loading"}
-                  </p>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Email</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{workspace?.email ?? "Loading"}</p>
                 </div>
 
                 <div className="rounded-xl border border-slate-200/80 bg-white p-4">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Organization
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    {workspace?.organization.name ?? "Loading"}
-                  </p>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Firm</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{workspace?.organization.name ?? "Loading"}</p>
                 </div>
 
                 <div className="rounded-xl border border-slate-200/80 bg-white p-4">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Access
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
-                    Organization-scoped case creation
-                  </p>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Access</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">Firm-scoped case creation</p>
                 </div>
               </div>
             </div>
