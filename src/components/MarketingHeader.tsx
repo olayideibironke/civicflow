@@ -94,16 +94,34 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
             <CivicFlowLogo size="md" />
           </Link>
 
-          <div className="flex shrink-0 items-center gap-2 lg:hidden">
-            <Link
-              href="/login"
-              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              {checkingSession ? "Login" : isSignedIn ? "Open workspace" : "Login"}
-            </Link>
+          <div className="flex min-w-0 shrink-0 items-center gap-1.5 lg:hidden">
+            {isSignedIn ? (
+              <Link
+                href="/login"
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
+              >
+                Workspace
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/attorney-login"
+                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
+                >
+                  Attorney
+                </Link>
+                <Link
+                  href="/client-login"
+                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
+                >
+                  Client
+                </Link>
+              </>
+            )}
+
             <Link
               href="/get-started"
-              className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+              className="rounded-xl bg-slate-950 px-2.5 py-2 text-[11px] font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 sm:px-3 sm:text-xs"
             >
               Get started
             </Link>
@@ -135,23 +153,43 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
           </nav>
 
           <div className="hidden shrink-0 items-center gap-2 lg:flex">
-            <Link
-              href="/login"
-              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              {checkingSession ? "Login" : isSignedIn ? "Open workspace" : "Login"}
-            </Link>
-
-            {isSignedIn ? (
-              <button
-                type="button"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-              >
-                {signingOut ? "Signing out..." : "Sign out"}
-              </button>
-            ) : null}
+            {checkingSession ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-500 shadow-sm">
+                Checking account...
+              </div>
+            ) : isSignedIn ? (
+              <>
+                <Link
+                  href="/login"
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Open workspace
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {signingOut ? "Signing out..." : "Sign out"}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/attorney-login"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Attorney login
+                </Link>
+                <Link
+                  href="/client-login"
+                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+                >
+                  Client login
+                </Link>
+              </>
+            )}
 
             <Link
               href="/get-started"
