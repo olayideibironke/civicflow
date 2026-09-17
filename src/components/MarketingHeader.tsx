@@ -36,8 +36,10 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
     const referrerKey = "civicflow_referrer";
 
     if (!window.sessionStorage.getItem(landingKey)) {
-      const landing = `${window.location.pathname}${window.location.search}`;
-      window.sessionStorage.setItem(landingKey, landing);
+      window.sessionStorage.setItem(
+        landingKey,
+        `${window.location.pathname}${window.location.search}`,
+      );
     }
 
     if (!window.sessionStorage.getItem(referrerKey)) {
@@ -83,123 +85,96 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/92 backdrop-blur-2xl">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:py-5">
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="min-w-0 shrink-0 rounded-2xl transition hover:opacity-90"
-            aria-label="CivicFlow home"
-          >
-            <CivicFlowLogo size="md" />
-          </Link>
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-[1380px] items-center justify-between gap-6 px-5 py-4 sm:px-6 lg:px-8">
+        <Link
+          href="/"
+          className="shrink-0 transition hover:opacity-90"
+          aria-label="CivicFlow home"
+        >
+          <CivicFlowLogo size="md" />
+        </Link>
 
-          <div className="flex min-w-0 shrink-0 items-center gap-1.5 lg:hidden">
-            {isSignedIn ? (
+        <nav
+          aria-label="Primary navigation"
+          className="hidden items-center gap-7 lg:flex"
+        >
+          {navItems.map((item) => {
+            const isActive = activePage === item.key;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`text-sm font-semibold transition ${
+                  isActive
+                    ? "text-slate-950"
+                    : "text-slate-500 hover:text-slate-950"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2.5">
+          {checkingSession ? (
+            <span className="hidden text-sm font-semibold text-slate-400 sm:inline">
+              Checking account...
+            </span>
+          ) : isSignedIn ? (
+            <>
               <Link
                 href="/login"
-                className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50"
               >
                 Workspace
               </Link>
-            ) : (
-              <>
-                <Link
-                  href="/attorney-login"
-                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
-                >
-                  Attorney
-                </Link>
-                <Link
-                  href="/client-login"
-                  className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50 sm:px-3 sm:text-xs"
-                >
-                  Client
-                </Link>
-              </>
-            )}
-
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="hidden rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-500 transition hover:text-slate-950 disabled:opacity-60 sm:inline-flex"
+              >
+                {signingOut ? "Signing out..." : "Sign out"}
+              </button>
+            </>
+          ) : (
             <Link
-              href="/get-started"
-              className="rounded-xl bg-slate-950 px-2.5 py-2 text-[11px] font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 sm:px-3 sm:text-xs"
+              href="/login"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50"
             >
-              Get started
+              Login
             </Link>
-          </div>
-        </div>
+          )}
 
-        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
-          <nav
-            aria-label="Primary navigation"
-            className="grid w-full grid-cols-2 gap-1 rounded-[1.35rem] border border-slate-200 bg-slate-50/90 p-1 shadow-sm sm:grid-cols-4 lg:w-auto"
+          <Link
+            href="/get-started"
+            className="rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
           >
-            {navItems.map((item) => {
-              const isActive = activePage === item.key;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`min-w-0 rounded-2xl px-3 py-2.5 text-center text-xs font-black transition sm:text-sm ${
-                    isActive
-                      ? "bg-white text-slate-950 shadow-md shadow-slate-200/80"
-                      : "text-slate-600 hover:bg-white/80 hover:text-slate-950"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="hidden shrink-0 items-center gap-2 lg:flex">
-            {checkingSession ? (
-              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-500 shadow-sm">
-                Checking account...
-              </div>
-            ) : isSignedIn ? (
-              <>
-                <Link
-                  href="/login"
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  Open workspace
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  disabled={signingOut}
-                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
-                >
-                  {signingOut ? "Signing out..." : "Sign out"}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/attorney-login"
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  Attorney login
-                </Link>
-                <Link
-                  href="/client-login"
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
-                >
-                  Client login
-                </Link>
-              </>
-            )}
-
-            <Link
-              href="/get-started"
-              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
-            >
-              Get started
-            </Link>
-          </div>
+            Get started
+          </Link>
         </div>
       </div>
+
+      <nav
+        aria-label="Mobile navigation"
+        className="flex gap-5 overflow-x-auto border-t border-slate-100 px-5 py-3 text-sm font-semibold text-slate-500 lg:hidden"
+      >
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`whitespace-nowrap transition ${
+              activePage === item.key
+                ? "text-slate-950"
+                : "hover:text-slate-950"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }
