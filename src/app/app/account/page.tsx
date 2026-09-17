@@ -74,6 +74,11 @@ export default function StaffAccountPage() {
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!workspace?.email) {
+      setPasswordMessage("Account email could not be loaded.");
+      return;
+    }
+
     if (!currentPassword) {
       setPasswordMessage("Current password is required.");
       return;
@@ -92,9 +97,19 @@ export default function StaffAccountPage() {
     setChangingPassword(true);
     setPasswordMessage("");
 
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: workspace.email,
+      password: currentPassword,
+    });
+
+    if (reauthError) {
+      setChangingPassword(false);
+      setPasswordMessage("Current password is incorrect.");
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
-      currentPassword,
     });
 
     setChangingPassword(false);
