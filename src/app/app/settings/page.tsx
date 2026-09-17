@@ -127,8 +127,7 @@ export default function SettingsPage() {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [siteOrigin, setSiteOrigin] = useState("https://civicflowapp.org");
   const [copyMessage, setCopyMessage] = useState("");
-  const [formState, setFormState] =
-    useState<SettingsFormState>(defaultFormState);
+  const [formState, setFormState] = useState<SettingsFormState>(defaultFormState);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -149,15 +148,12 @@ export default function SettingsPage() {
       const workspaceResult = await loadStaffWorkspace();
 
       if (workspaceResult.error || !workspaceResult.workspace) {
-        setLoadError(
-          workspaceResult.error || "Unable to load organization workspace."
-        );
+        setLoadError(workspaceResult.error || "Unable to load firm workspace.");
         setLoading(false);
         return;
       }
 
-      const workspaceOrganizationId =
-        workspaceResult.workspace.organization.id;
+      const workspaceOrganizationId = workspaceResult.workspace.organization.id;
 
       const { data, error } = await supabase
         .from("organizations")
@@ -186,7 +182,7 @@ export default function SettingsPage() {
   }, []);
 
   const publicIntakeUrl = `${siteOrigin}/intake/${
-    organizationSlug || "community-services"
+    organizationSlug || "legal-workspace"
   }`;
 
   function updateField<K extends keyof SettingsFormState>(
@@ -205,28 +201,19 @@ export default function SettingsPage() {
 
   function validateForm() {
     return getFirstValidationError([
-      validateRequiredText(formState.name, "Organization name"),
+      validateRequiredText(formState.name, "Firm name"),
       validateRequiredText(formState.primaryContactName, "Primary contact name"),
-      validateRequiredEmail(
-        formState.primaryContactEmail,
-        "Primary contact email"
-      ),
+      validateRequiredEmail(formState.primaryContactEmail, "Primary contact email"),
       validateOptionalEmail(formState.supportEmail, "Support email"),
-      validateRequiredText(
-        formState.serviceCategoriesText,
-        "Default service categories"
-      ),
-      validateRequiredText(
-        formState.priorityOptionsText,
-        "Default priority options"
-      ),
+      validateRequiredText(formState.serviceCategoriesText, "Default matter types"),
+      validateRequiredText(formState.priorityOptionsText, "Default priority options"),
     ]);
   }
 
   async function handleCopyIntakeLink() {
     try {
       await navigator.clipboard.writeText(publicIntakeUrl);
-      setCopyMessage("Public intake link copied.");
+      setCopyMessage("Client intake link copied.");
       window.setTimeout(() => setCopyMessage(""), 2000);
     } catch {
       setCopyMessage("Copy failed. You can manually copy the link.");
@@ -279,7 +266,7 @@ export default function SettingsPage() {
     setOrganizationSlug(updatedOrganization.slug);
     setLastUpdatedAt(updatedOrganization.updated_at);
     setFormState(formFromOrganization(updatedOrganization));
-    setSaveMessage("Organization settings saved.");
+    setSaveMessage("Firm settings saved.");
     setSaving(false);
   }
 
@@ -287,10 +274,7 @@ export default function SettingsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="eyebrow">
-            Organization Settings
-          </p>
-
+          <p className="eyebrow">Firm Settings</p>
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Loading workspace settings...
           </h1>
@@ -303,17 +287,11 @@ export default function SettingsPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="eyebrow text-rose-500">
-            Settings Error
-          </p>
-
+          <p className="eyebrow text-rose-500">Settings Error</p>
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Settings could not be loaded.
           </h1>
-
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            {loadError}
-          </p>
+          <p className="mt-3 text-base leading-7 text-slate-600">{loadError}</p>
         </section>
       </AppShell>
     );
@@ -328,239 +306,105 @@ export default function SettingsPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="eyebrow">
-                SaaS Configuration
-              </p>
-
+              <p className="eyebrow">Firm Configuration</p>
               <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                Organization settings
+                Firm settings
               </h1>
-
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Manage the workspace identity, public intake link, default
-                intake categories, priority options, contact details, and
-                implementation notes for this CivicFlow organization.
+                Manage firm identity, the client intake link, matter types, priority options, contact details, and workspace notes.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <a
-                href={publicIntakeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary"
-              >
+              <a href={publicIntakeUrl} target="_blank" rel="noreferrer" className="btn btn-secondary">
                 Open intake link
               </a>
-
-              <button
-                type="button"
-                onClick={handleCopyIntakeLink}
-                className="btn btn-secondary"
-              >
+              <button type="button" onClick={handleCopyIntakeLink} className="btn btn-secondary">
                 Copy intake link
               </button>
-
-              <button
-                type="submit"
-                form="organization-settings-form"
-                disabled={saving}
-                className={`btn btn-primary`}
-              >
+              <button type="submit" form="organization-settings-form" disabled={saving} className="btn btn-primary">
                 {saving ? "Saving..." : "Save settings"}
               </button>
             </div>
           </div>
 
           {copyMessage ? (
-            <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
-              {copyMessage}
-            </div>
+            <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">{copyMessage}</div>
           ) : null}
-
           {saveMessage ? (
-            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-              {saveMessage}
-            </div>
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{saveMessage}</div>
           ) : null}
-
           {formError ? (
-            <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {formError}
-            </div>
+            <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{formError}</div>
           ) : null}
         </section>
 
         <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-          <StatusCard
-            label="Workspace"
-            value={formState.name || "Unnamed workspace"}
-            detail={`Slug: ${organizationSlug || "not set"}`}
-          />
-
-          <StatusCard
-            label="Public Intake"
-            value={formState.publicIntakeEnabled ? "Enabled" : "Disabled"}
-            detail="Controls whether this organization accepts public intake."
-          />
-
-          <StatusCard
-            label="Service Categories"
-            value={`${serviceCategoryCount}`}
-            detail="Options shown on this organization’s public intake form."
-          />
-
-          <StatusCard
-            label="Last Updated"
-            value={formatDate(lastUpdatedAt)}
-            detail="Latest organization settings update."
-          />
+          <StatusCard label="Workspace" value={formState.name || "Unnamed workspace"} detail={`Slug: ${organizationSlug || "not set"}`} />
+          <StatusCard label="Client Intake" value={formState.publicIntakeEnabled ? "Enabled" : "Disabled"} detail="Controls whether this firm accepts new intake submissions." />
+          <StatusCard label="Matter Types" value={`${serviceCategoryCount}`} detail="Options shown on the firm’s client intake form." />
+          <StatusCard label="Last Updated" value={formatDate(lastUpdatedAt)} detail="Latest firm settings update." />
         </section>
 
-        <form
-          id="organization-settings-form"
-          onSubmit={handleSubmit}
-          noValidate
-          className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]"
-        >
+        <form id="organization-settings-form" onSubmit={handleSubmit} noValidate className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <section className="space-y-6">
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="eyebrow">
-                  Identity
-                </p>
-
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                  Workspace identity
-                </h2>
-
+                <p className="eyebrow">Identity</p>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Firm identity</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  These settings control how this customer workspace is named
-                  and who should be contacted for operational questions.
+                  These settings control how the firm workspace is named and who should be contacted for operational questions.
                 </p>
               </div>
 
               <div className="mt-6 grid gap-5 xl:grid-cols-2">
                 <label className="input-label">
-                  Organization name *
-                  <input
-                    required
-                    value={formState.name}
-                    onChange={(event) =>
-                      updateField("name", event.target.value)
-                    }
-                    placeholder="Community Services"
-                    className="input-field"
-                  />
+                  Firm name *
+                  <input required value={formState.name} onChange={(event) => updateField("name", event.target.value)} placeholder="Your Firm Name" className="input-field" />
                 </label>
-
                 <label className="input-label">
                   Primary contact name *
-                  <input
-                    required
-                    value={formState.primaryContactName}
-                    onChange={(event) =>
-                      updateField("primaryContactName", event.target.value)
-                    }
-                    placeholder="Program Director"
-                    className="input-field"
-                  />
+                  <input required value={formState.primaryContactName} onChange={(event) => updateField("primaryContactName", event.target.value)} placeholder="Managing Partner" className="input-field" />
                 </label>
-
                 <label className="input-label">
                   Primary contact email *
-                  <input
-                    type="email"
-                    required
-                    value={formState.primaryContactEmail}
-                    onChange={(event) =>
-                      updateField("primaryContactEmail", event.target.value)
-                    }
-                    placeholder="director@organization.org"
-                    className="input-field"
-                  />
+                  <input type="email" required value={formState.primaryContactEmail} onChange={(event) => updateField("primaryContactEmail", event.target.value)} placeholder="contact@lawfirm.com" className="input-field" />
                 </label>
-
                 <label className="input-label">
                   Support email
-                  <input
-                    type="email"
-                    value={formState.supportEmail}
-                    onChange={(event) =>
-                      updateField("supportEmail", event.target.value)
-                    }
-                    placeholder="support@organization.org"
-                    className="input-field"
-                  />
+                  <input type="email" value={formState.supportEmail} onChange={(event) => updateField("supportEmail", event.target.value)} placeholder="support@lawfirm.com" className="input-field" />
                 </label>
               </div>
             </div>
 
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="eyebrow">
-                  Intake Defaults
-                </p>
-
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                  Public intake configuration
-                </h2>
-
+                <p className="eyebrow">Intake Defaults</p>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Client intake configuration</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  These values power the organization-specific public intake
-                  link. Put one option per line.
+                  These values power the firm-specific client intake link. Put one option per line.
                 </p>
               </div>
 
               <div className="mt-6">
                 <label className="flex items-start gap-4 rounded-xl border border-slate-200 bg-slate-50 p-5">
-                  <input
-                    type="checkbox"
-                    checked={formState.publicIntakeEnabled}
-                    onChange={(event) =>
-                      updateField("publicIntakeEnabled", event.target.checked)
-                    }
-                    className="mt-1 h-5 w-5 rounded border-slate-300"
-                  />
-
+                  <input type="checkbox" checked={formState.publicIntakeEnabled} onChange={(event) => updateField("publicIntakeEnabled", event.target.checked)} className="mt-1 h-5 w-5 rounded border-slate-300" />
                   <span>
-                    <span className="block text-sm font-semibold text-slate-900">
-                      Public intake enabled
-                    </span>
+                    <span className="block text-sm font-semibold text-slate-900">Client intake enabled</span>
                     <span className="mt-1 block text-sm leading-6 text-slate-600">
-                      When disabled, this organization’s public intake link will
-                      show an intake closed message.
+                      When disabled, the firm’s intake link shows an intake closed message.
                     </span>
                   </span>
                 </label>
 
                 <div className="mt-5 grid gap-5 xl:grid-cols-2">
                   <label className="input-label">
-                    Default service categories *
-                    <textarea
-                      required
-                      value={formState.serviceCategoriesText}
-                      onChange={(event) =>
-                        updateField("serviceCategoriesText", event.target.value)
-                      }
-                      rows={8}
-                      placeholder="Eligibility Review"
-                      className="input-field resize-y leading-7"
-                    />
+                    Default matter types *
+                    <textarea required value={formState.serviceCategoriesText} onChange={(event) => updateField("serviceCategoriesText", event.target.value)} rows={8} placeholder="General Legal Matter" className="input-field resize-y leading-7" />
                   </label>
-
                   <label className="input-label">
                     Default priority options *
-                    <textarea
-                      required
-                      value={formState.priorityOptionsText}
-                      onChange={(event) =>
-                        updateField("priorityOptionsText", event.target.value)
-                      }
-                      rows={8}
-                      placeholder="Standard"
-                      className="input-field resize-y leading-7"
-                    />
+                    <textarea required value={formState.priorityOptionsText} onChange={(event) => updateField("priorityOptionsText", event.target.value)} rows={8} placeholder="Standard" className="input-field resize-y leading-7" />
                   </label>
                 </div>
               </div>
@@ -568,152 +412,63 @@ export default function SettingsPage() {
 
             <div className="premium-card">
               <div className="border-b border-slate-100 pb-6">
-                <p className="eyebrow">
-                  Branding Notes
-                </p>
-
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                  Implementation notes
-                </h2>
-
+                <p className="eyebrow">Workspace Notes</p>
+                <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Firm implementation notes</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  Use this space to store customer-specific branding,
-                  onboarding, implementation, or workflow notes.
+                  Store firm-specific branding, onboarding, implementation, or workflow notes.
                 </p>
               </div>
-
               <label className="input-label mt-6">
                 Notes
-                <textarea
-                  value={formState.brandingNotes}
-                  onChange={(event) =>
-                    updateField("brandingNotes", event.target.value)
-                  }
-                  rows={7}
-                  placeholder="Example: client wants intake wording to mention resident assistance, document upload instructions, and program-specific contact details."
-                  className="input-field resize-y leading-7"
-                />
+                <textarea value={formState.brandingNotes} onChange={(event) => updateField("brandingNotes", event.target.value)} rows={7} placeholder="Example: preferred intake wording, document instructions, office contact details, or workflow notes." className="input-field resize-y leading-7" />
               </label>
             </div>
           </section>
 
           <aside className="space-y-6">
             <section className="premium-dark">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-                Multi-Tenant Intake
-              </p>
-
-              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
-                Every customer now gets their own intake link.
-              </h2>
-
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Firm Intake</p>
+              <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">A dedicated intake link for this firm.</h2>
               <p className="mt-5 text-sm leading-7 text-slate-300">
-                The public intake URL uses the organization slug, loads that
-                organization’s settings, and submits cases into the correct
-                workspace.
+                The intake URL uses the firm slug, loads the saved settings, and routes submitted matters into the correct workspace.
               </p>
             </section>
 
             <section className="premium-card">
-              <p className="eyebrow">
-                Public Intake Link
-              </p>
-
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                Shareable URL
-              </h2>
-
+              <p className="eyebrow">Client Intake Link</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Shareable URL</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                This is the organization-specific intake link for{" "}
-                {formState.name || "this workspace"}.
+                This is the firm-specific intake link for {formState.name || "this workspace"}.
               </p>
-
-              <input
-                readOnly
-                value={publicIntakeUrl}
-                className="mt-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
-              />
-
+              <input readOnly value={publicIntakeUrl} className="mt-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700" />
               <div className="mt-4 grid gap-3">
-                <button
-                  type="button"
-                  onClick={handleCopyIntakeLink}
-                  className="btn btn-primary w-full"
-                >
-                  Copy link
-                </button>
-
-                <a
-                  href={publicIntakeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-secondary w-full"
-                >
-                  Open link
-                </a>
+                <button type="button" onClick={handleCopyIntakeLink} className="btn btn-primary w-full">Copy link</button>
+                <a href={publicIntakeUrl} target="_blank" rel="noreferrer" className="btn btn-secondary w-full">Open link</a>
               </div>
             </section>
 
             <section className="premium-card">
-              <p className="eyebrow">
-                Current Defaults
-              </p>
-
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                Saved configuration
-              </h2>
-
+              <p className="eyebrow">Current Defaults</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Saved configuration</h2>
               <div className="mt-6 space-y-4">
                 <div className="rounded-xl border border-slate-200 bg-white p-5">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Service categories
-                  </p>
-
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Matter types</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {textToList(formState.serviceCategoriesText).map((item) => (
-                      <span
-                        key={item}
-                        className="chip bg-blue-50 text-blue-700"
-                      >
-                        {item}
-                      </span>
+                      <span key={item} className="chip bg-blue-50 text-blue-700">{item}</span>
                     ))}
                   </div>
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white p-5">
-                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Priority options
-                  </p>
-
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Priority options</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {textToList(formState.priorityOptionsText).map((item) => (
-                      <span
-                        key={item}
-                        className="chip bg-slate-100 text-slate-600"
-                      >
-                        {item}
-                      </span>
+                      <span key={item} className="chip bg-slate-100 text-slate-600">{item}</span>
                     ))}
                   </div>
                 </div>
               </div>
-            </section>
-
-            <section className="premium-card">
-              <p className="eyebrow">
-                Next Scaling Step
-              </p>
-
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                Team management.
-              </h2>
-
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                After this is clean, we build the staff/team layer so each
-                organization can manage users instead of manually creating them
-                in Supabase.
-              </p>
             </section>
           </aside>
         </form>
