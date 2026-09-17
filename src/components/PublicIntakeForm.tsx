@@ -44,11 +44,11 @@ type PublicIntakeSettings = {
 };
 
 const fallbackServiceCategories = [
-  "Eligibility Review",
-  "Document Processing",
-  "Benefits Navigation",
-  "Referral Request",
-  "General Case Support",
+  "Criminal Defense",
+  "Family Law",
+  "Immigration",
+  "Civil Litigation",
+  "General Legal Matter",
 ];
 
 const fallbackPriorityOptions = ["Standard", "Medium", "Urgent"];
@@ -135,7 +135,7 @@ export default function PublicIntakeForm({
       const loadedSettings = (data?.[0] ?? null) as PublicIntakeSettings | null;
 
       if (!loadedSettings) {
-        setSettingsError("Public intake settings could not be found.");
+        setSettingsError("Client intake settings could not be found.");
         setLoadingSettings(false);
         return;
       }
@@ -191,9 +191,9 @@ export default function PublicIntakeForm({
       validateRequiredText(formState.lastName, "Last name"),
       validateRequiredEmail(formState.email),
       validateRequiredPhone(formState.phone),
-      validateRequiredText(formState.serviceCategory, "Service category"),
+      validateRequiredText(formState.serviceCategory, "Matter type"),
       validateRequiredText(formState.priority, "Priority"),
-      validateRequiredText(formState.details, "Request details"),
+      validateRequiredText(formState.details, "Matter details"),
     ]);
   }
 
@@ -201,7 +201,7 @@ export default function PublicIntakeForm({
     event.preventDefault();
 
     if (!settings?.public_intake_enabled) {
-      setFormError("Public intake is currently closed for this workspace.");
+      setFormError("Client intake is currently closed for this firm.");
       return;
     }
 
@@ -236,7 +236,7 @@ export default function PublicIntakeForm({
 
     if (!response) {
       setSubmitting(false);
-      setFormError("The intake was submitted, but no case number was returned.");
+      setFormError("The intake was submitted, but no reference number was returned.");
       return;
     }
 
@@ -258,14 +258,14 @@ export default function PublicIntakeForm({
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
             </div>
 
-            <p className="eyebrow mt-6">Public Intake</p>
+            <p className="eyebrow mt-6">Client Intake</p>
 
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
               Loading intake settings…
             </h1>
 
             <p className="mt-2.5 text-sm leading-6 text-slate-500">
-              CivicFlow is preparing this workspace intake form.
+              CivicFlow is preparing this firm’s intake form.
             </p>
           </div>
         </section>
@@ -283,7 +283,7 @@ export default function PublicIntakeForm({
             <p className="eyebrow text-rose-500">Intake Settings Error</p>
 
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-              Public intake could not be loaded.
+              Client intake could not be loaded.
             </h1>
 
             <p className="mt-2.5 text-sm leading-6 text-slate-500">
@@ -309,12 +309,11 @@ export default function PublicIntakeForm({
             <p className="eyebrow text-rose-500">Intake Settings Missing</p>
 
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-              Public intake settings are unavailable.
+              Client intake settings are unavailable.
             </h1>
 
             <p className="mt-2.5 text-sm leading-6 text-slate-500">
-              CivicFlow could not find an organization configuration for this
-              public intake form.
+              CivicFlow could not find a firm configuration for this intake form.
             </p>
 
             <Link href="/" className="btn btn-primary mt-6">
@@ -336,17 +335,16 @@ export default function PublicIntakeForm({
             <p className="eyebrow text-amber-600">Intake Closed</p>
 
             <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-              Public intake is currently closed.
+              Client intake is currently closed.
             </h1>
 
             <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500">
-              {settings.organization_name} is not accepting new public intake
-              submissions through this form right now.
+              {settings.organization_name} is not accepting new intake submissions through this form right now.
             </p>
 
             {settings.support_email ? (
               <p className="mt-4 text-sm font-medium text-slate-500">
-                Support contact: {settings.support_email}
+                Contact: {settings.support_email}
               </p>
             ) : null}
 
@@ -366,44 +364,40 @@ export default function PublicIntakeForm({
       <section className="mx-auto grid max-w-[1440px] gap-6 px-6 py-8 lg:grid-cols-[400px_minmax(0,1fr)] lg:py-10">
         <aside className="premium-dark animate-fade-up self-start lg:sticky lg:top-8 lg:!p-8">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-            Public Intake
+            Client Intake
           </p>
 
           <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white">
-            Submit a service request.
+            Request legal assistance.
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            This intake form is configured for {settings.organization_name}.
-            Complete client information is required before a request can become
-            a CivicFlow case.
+            This intake form is configured for {settings.organization_name}. Complete the required information so the legal team can review the prospective matter.
           </p>
 
           <div className="mt-7 space-y-3">
             <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
               <p className="text-sm font-semibold text-white">
-                Organization-specific intake
+                Firm-specific intake
               </p>
               <p className="mt-1.5 text-xs leading-5 text-slate-300">
-                This link uses the saved settings for{" "}
-                {settings.organization_slug}.
+                Your submission is routed to the firm connected to this secure intake link.
               </p>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
               <p className="text-sm font-semibold text-white">
-                Staff-ready case creation
+                Matter-ready intake
               </p>
               <p className="mt-1.5 text-xs leading-5 text-slate-300">
-                Valid submissions create a case, document checklist, and
-                activity log in the correct CivicFlow workspace.
+                Valid submissions create a matter record, document checklist, and activity log for the legal team.
               </p>
             </div>
 
             {settings.support_email ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
                 <p className="text-sm font-semibold text-white">
-                  Support contact
+                  Contact
                 </p>
                 <p className="mt-1.5 break-words text-xs leading-5 text-slate-300">
                   {settings.support_email}
@@ -420,13 +414,12 @@ export default function PublicIntakeForm({
         >
           <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="eyebrow">Client Information</p>
+              <p className="eyebrow">Prospective Client</p>
               <h2 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900">
-                Tell us who needs assistance
+                Tell us about the prospective client
               </h2>
               <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600">
-                All required fields must be completed before the intake can be
-                submitted.
+                All required fields must be completed before the intake can be submitted.
               </p>
             </div>
 
@@ -486,7 +479,7 @@ export default function PublicIntakeForm({
             </label>
 
             <label className="input-label">
-              Service category *
+              Matter type *
               <select
                 required
                 value={formState.serviceCategory}
@@ -517,24 +510,23 @@ export default function PublicIntakeForm({
           </div>
 
           <label className="input-label mt-6">
-            Request details *
+            Matter details *
             <textarea
               required
               value={formState.details}
               onChange={(event) => updateField("details", event.target.value)}
               rows={6}
-              placeholder="Briefly describe what help is needed, what documents are available, and any important deadlines."
+              placeholder="Briefly describe the legal issue, known documents, court dates or deadlines, and any urgent concerns."
               className="input-field resize-y leading-7"
             />
           </label>
 
           <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
             <p className="text-sm font-semibold text-slate-900">
-              Default case checklist
+              Initial matter checklist
             </p>
             <p className="mt-1.5 text-sm leading-6 text-slate-600">
-              CivicFlow will create required document checklist items for the
-              staff review team.
+              CivicFlow will create the firm’s standard document checklist for staff review.
             </p>
           </div>
 
@@ -546,8 +538,7 @@ export default function PublicIntakeForm({
 
           <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-xl text-sm leading-6 text-slate-500">
-              By submitting, the request becomes a real CivicFlow case for staff
-              review.
+              Submitting this form sends the information to the legal team for review. It does not by itself create an attorney-client relationship.
             </p>
 
             <button
