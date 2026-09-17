@@ -5,14 +5,24 @@ import Link from "next/link";
 import CivicFlowLogo from "@/components/CivicFlowLogo";
 
 type MarketingHeaderProps = {
-  activePage?: "home" | "platform" | "pricing" | "mycase" | "clio" | "get-started";
+  activePage?:
+    | "home"
+    | "platform"
+    | "pricing"
+    | "use-cases"
+    | "practice-management"
+    | "get-started";
 };
 
 const navItems = [
   { label: "Platform", href: "/platform", key: "platform" },
   { label: "Pricing", href: "/pricing", key: "pricing" },
-  { label: "MyCase alternative", href: "/mycase-alternative", key: "mycase" },
-  { label: "Clio alternative", href: "/clio-alternative", key: "clio" },
+  { label: "Use cases", href: "/use-cases", key: "use-cases" },
+  {
+    label: "Practice management",
+    href: "/legal-practice-management",
+    key: "practice-management",
+  },
 ] as const;
 
 export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
