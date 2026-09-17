@@ -2,6 +2,12 @@ User-agent: *
 Allow: /
 Disallow: /app
 Disallow: /login
+Disallow: /attorney-login
+Disallow: /client-login
+Disallow: /client
+Disallow: /forgot-password
+Disallow: /forgot-email
+Disallow: /reset-password
 Disallow: /intake
 
 Sitemap: https://www.civicflowapp.org/sitemap.xml
