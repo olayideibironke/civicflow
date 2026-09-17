@@ -25,7 +25,7 @@ const defaultState: FormState = {
   workEmail: "",
   firmName: "",
   firmSize: "Solo",
-  currentSoftware: "MyCase",
+  currentSoftware: "Another practice-management platform",
   selectedPlan: "Basic",
   primaryNeed: "Matter management",
 };
@@ -67,7 +67,7 @@ export default function GetStartedPage() {
       validateRequiredEmail(formState.workEmail, "Work email"),
       validateRequiredText(formState.firmName, "Firm name"),
       validateRequiredText(formState.firmSize, "Firm size"),
-      validateRequiredText(formState.currentSoftware, "Current software"),
+      validateRequiredText(formState.currentSoftware, "Current setup"),
       validateRequiredText(formState.selectedPlan, "Plan"),
       validateRequiredText(formState.primaryNeed, "Primary need"),
     ]);
@@ -104,7 +104,7 @@ export default function GetStartedPage() {
       preferred_contact: "Email",
       message: [
         `Selected plan: ${formState.selectedPlan}.`,
-        `Current practice-management software: ${formState.currentSoftware}.`,
+        `Current setup: ${formState.currentSoftware}.`,
         `Primary need: ${formState.primaryNeed}.`,
         `Landing page: ${landingPage}.`,
         `Conversion page: ${conversionPage}.`,
@@ -138,7 +138,7 @@ export default function GetStartedPage() {
             Tell us about your firm and the CivicFlow plan you want.
           </h1>
           <p className="mt-5 text-base leading-7 text-slate-300">
-            We will use your firm size, current software, and primary workflow need to help map the right setup and onboarding path.
+            We will use your firm size, current setup, and primary workflow need to help map the right setup and onboarding path.
           </p>
 
           <div className="mt-7 grid gap-2.5">
@@ -209,15 +209,13 @@ export default function GetStartedPage() {
                   </label>
 
                   <label className="input-label">
-                    Current practice-management software *
+                    Current setup *
                     <select required value={formState.currentSoftware} onChange={(event) => updateField("currentSoftware", event.target.value)} className="input-field">
-                      <option>MyCase</option>
-                      <option>Clio</option>
-                      <option>PracticePanther</option>
-                      <option>Smokeball</option>
-                      <option>Filevine</option>
-                      <option>Other</option>
+                      <option>Another practice-management platform</option>
+                      <option>Spreadsheets and shared drives</option>
+                      <option>Mixed tools / no single system</option>
                       <option>None</option>
+                      <option>Other</option>
                     </select>
                   </label>
 
