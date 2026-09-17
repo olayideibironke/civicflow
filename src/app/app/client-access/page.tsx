@@ -229,13 +229,13 @@ export default function ClientAccessPage() {
       row.invite_token
     )}`;
 
+    await loadCaseAccess(selectedCase.id);
     setActivationUrl(url);
     setInviteMessage(
       `Secure invitation created for ${row.invite_email}. It expires ${formatDate(
         row.expires_at
       )}.`
     );
-    await loadCaseAccess(selectedCase.id);
   }
 
   async function copyActivationLink() {
