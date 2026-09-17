@@ -180,14 +180,10 @@ function MetricCard({
 
   return (
     <div className="premium-card">
-      <p className="eyebrow">
-        {label}
-      </p>
-
+      <p className="eyebrow">{label}</p>
       <p className={`mt-3 text-3xl font-bold tracking-tight ${valueClass}`}>
         {value}
       </p>
-
       <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
         {detail}
       </p>
@@ -385,20 +381,17 @@ export default function DashboardPage() {
   const workflowQueues = [
     {
       label: "New Intake",
-      count: cases.filter((caseItem) => caseItem.status === "New Intake")
-        .length,
+      count: cases.filter((caseItem) => caseItem.status === "New Intake").length,
       detail: "Cases waiting for first review",
     },
     {
       label: "In Review",
-      count: cases.filter((caseItem) => caseItem.status === "In Review")
-        .length,
+      count: cases.filter((caseItem) => caseItem.status === "In Review").length,
       detail: "Cases under staff review",
     },
     {
       label: "Waiting on Client",
-      count: cases.filter((caseItem) => caseItem.status === "Waiting on Client")
-        .length,
+      count: cases.filter((caseItem) => caseItem.status === "Waiting on Client").length,
       detail: "Cases blocked by client action",
     },
     {
@@ -412,10 +405,7 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="eyebrow">
-            Dashboard
-          </p>
-
+          <p className="eyebrow">Dashboard</p>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Loading CivicFlow workspace…
           </h1>
@@ -428,17 +418,11 @@ export default function DashboardPage() {
     return (
       <AppShell>
         <section className="premium-card">
-          <p className="eyebrow text-rose-500">
-            Supabase Error
-          </p>
-
+          <p className="eyebrow text-rose-500">Supabase Error</p>
           <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Dashboard could not be loaded.
           </h1>
-
-          <p className="mt-3 text-base leading-7 text-slate-600">
-            {loadError}
-          </p>
+          <p className="mt-3 text-base leading-7 text-slate-600">{loadError}</p>
         </section>
       </AppShell>
     );
@@ -450,65 +434,31 @@ export default function DashboardPage() {
         <section className="premium-card">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <p className="eyebrow">
-                Operations Dashboard
-              </p>
-
+              <p className="eyebrow">Operations Dashboard</p>
               <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                 Staff command center
               </h1>
-
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Track open cases, overdue follow-ups, document blockers,
-                assignment gaps, and recent intake activity from one workspace.
+                Track open cases, overdue follow-ups, document blockers, assignment gaps, and recent client intake activity from one workspace.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/app/cases/new"
-                className="btn btn-primary"
-              >
+              <Link href="/app/cases/new" className="btn btn-primary">
                 Create case
               </Link>
-
-              <Link
-                href="/intake"
-                className="btn btn-secondary"
-              >
-                Public intake
+              <Link href="/intake" className="btn btn-secondary">
+                Client intake
               </Link>
             </div>
           </div>
         </section>
 
         <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-          <MetricCard
-            label="Open Cases"
-            value={openCases.length}
-            detail="Active case workload"
-          />
-
-          <MetricCard
-            label="Open Follow-ups"
-            value={openFollowUps.length}
-            detail="Staff actions still pending"
-            tone={openFollowUps.length > 0 ? "amber" : "emerald"}
-          />
-
-          <MetricCard
-            label="Overdue Follow-ups"
-            value={overdueFollowUps.length}
-            detail="Past due staff actions"
-            tone={overdueFollowUps.length > 0 ? "rose" : "emerald"}
-          />
-
-          <MetricCard
-            label="Document Gaps"
-            value={documentGaps.length}
-            detail="Missing or review-needed documents"
-            tone={documentGaps.length > 0 ? "amber" : "emerald"}
-          />
+          <MetricCard label="Open Cases" value={openCases.length} detail="Active case workload" />
+          <MetricCard label="Open Follow-ups" value={openFollowUps.length} detail="Staff actions still pending" tone={openFollowUps.length > 0 ? "amber" : "emerald"} />
+          <MetricCard label="Overdue Follow-ups" value={overdueFollowUps.length} detail="Past due staff actions" tone={overdueFollowUps.length > 0 ? "rose" : "emerald"} />
+          <MetricCard label="Document Gaps" value={documentGaps.length} detail="Missing or review-needed documents" tone={documentGaps.length > 0 ? "amber" : "emerald"} />
         </section>
 
         <section className="grid items-start gap-6 2xl:grid-cols-[minmax(0,1fr)_430px]">
@@ -516,27 +466,13 @@ export default function DashboardPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="eyebrow">
-                    Needs Attention
-                  </p>
-
-                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                    Follow-ups and assignment gaps
-                  </h2>
-
+                  <p className="eyebrow">Needs Attention</p>
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Follow-ups and assignment gaps</h2>
                   <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
-                    Staff can quickly see which cases need action before opening
-                    individual case records.
+                    Staff can quickly see which cases need action before opening individual case records.
                   </p>
                 </div>
-
-                <span
-                  className={`chip w-fit ${
-                    attentionItems.length > 0
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-emerald-50 text-emerald-700"
-                  }`}
-                >
+                <span className={`chip w-fit ${attentionItems.length > 0 ? "bg-amber-100 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
                   {attentionItems.length} attention items
                 </span>
               </div>
@@ -544,48 +480,23 @@ export default function DashboardPage() {
               <div className="mt-6 grid gap-3">
                 {attentionItems.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                    <p className="text-sm font-medium text-slate-500">
-                      No overdue follow-ups, open follow-ups, or unassigned
-                      cases need attention right now.
-                    </p>
+                    <p className="text-sm font-medium text-slate-500">No overdue follow-ups, open follow-ups, or unassigned cases need attention right now.</p>
                   </div>
                 ) : (
                   attentionItems.map((item) => {
                     const styles = getAttentionStyle(item.tone);
-
                     return (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        className={`card-interactive block rounded-xl border p-5 ${styles.card}`}
-                      >
+                      <Link key={item.id} href={item.href} className={`card-interactive block rounded-xl border p-5 ${styles.card}`}>
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="chip bg-slate-900 text-white">
-                                {item.caseNumber}
-                              </span>
-
-                              <span
-                                className={`chip ${styles.badge}`}
-                              >
-                                {item.badge}
-                              </span>
+                              <span className="chip bg-slate-900 text-white">{item.caseNumber}</span>
+                              <span className={`chip ${styles.badge}`}>{item.badge}</span>
                             </div>
-
-                            <p className="mt-4 text-lg font-semibold text-slate-900">
-                              {item.title}
-                            </p>
-
-                            <p className="mt-1 text-sm font-medium text-slate-600">
-                              {item.clientName}
-                            </p>
-
-                            <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">
-                              {item.detail}
-                            </p>
+                            <p className="mt-4 text-lg font-semibold text-slate-900">{item.title}</p>
+                            <p className="mt-1 text-sm font-medium text-slate-600">{item.clientName}</p>
+                            <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-600">{item.detail}</p>
                           </div>
-
                           <div className="shrink-0 rounded-2xl bg-white/75 px-4 py-3 text-sm font-semibold text-slate-700">
                             Due: {formatDate(item.dueDate)}
                           </div>
@@ -600,100 +511,39 @@ export default function DashboardPage() {
             <div className="premium-card">
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div>
-                  <p className="eyebrow">
-                    Recent Cases
-                  </p>
-
-                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                    Latest case activity
-                  </h2>
-
-                  <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
-                    Recent cases with document blockers and follow-up counts.
-                  </p>
+                  <p className="eyebrow">Recent Cases</p>
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Latest case activity</h2>
+                  <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">Recent cases with document blockers and follow-up counts.</p>
                 </div>
-
-                <Link
-                  href="/app/cases"
-                  className="btn btn-secondary w-fit"
-                >
-                  View all cases
-                </Link>
+                <Link href="/app/cases" className="btn btn-secondary w-fit">View all cases</Link>
               </div>
 
               <div className="mt-6 grid gap-3">
                 {recentCases.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6">
-                    <p className="text-sm font-medium text-slate-500">
-                      No cases have been created yet.
-                    </p>
+                    <p className="text-sm font-medium text-slate-500">No cases have been created yet.</p>
                   </div>
                 ) : (
                   recentCases.map((caseItem) => {
                     const gapCount = documentGapsByCase.get(caseItem.id) ?? 0;
                     const followUpCount = followUpsByCase.get(caseItem.id) ?? 0;
-
                     return (
-                      <Link
-                        key={caseItem.id}
-                        href={getCaseHref(caseItem.case_number)}
-                        className="card-interactive block rounded-xl border border-slate-200/80 bg-white p-5"
-                      >
+                      <Link key={caseItem.id} href={getCaseHref(caseItem.case_number)} className="card-interactive block rounded-xl border border-slate-200/80 bg-white p-5">
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="chip bg-slate-900 text-white">
-                                {caseItem.case_number}
-                              </span>
-
-                              <span
-                                className={`chip ${getStatusStyle(
-                                  caseItem.status
-                                )}`}
-                              >
-                                {caseItem.status}
-                              </span>
-
-                              <span
-                                className={`chip ${getPriorityStyle(
-                                  caseItem.priority
-                                )}`}
-                              >
-                                {caseItem.priority}
-                              </span>
+                              <span className="chip bg-slate-900 text-white">{caseItem.case_number}</span>
+                              <span className={`chip ${getStatusStyle(caseItem.status)}`}>{caseItem.status}</span>
+                              <span className={`chip ${getPriorityStyle(caseItem.priority)}`}>{caseItem.priority}</span>
                             </div>
-
-                            <p className="mt-4 text-lg font-semibold text-slate-900">
-                              {caseItem.client_first_name}{" "}
-                              {caseItem.client_last_name}
-                            </p>
-
+                            <p className="mt-4 text-lg font-semibold text-slate-900">{caseItem.client_first_name} {caseItem.client_last_name}</p>
                             <p className="mt-1 text-sm font-medium text-slate-500">
-                              {caseItem.service_category} · Assigned to{" "}
-                              {caseItem.assigned_to || "Unassigned"}
+                              {caseItem.service_category} · Assigned to {caseItem.assigned_to || "Unassigned"}
                             </p>
                           </div>
-
                           <div className="flex flex-wrap gap-2 xl:justify-end">
-                            <span
-                              className={`chip ${
-                                gapCount > 0
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-emerald-50 text-emerald-700"
-                              }`}
-                            >
-                              {gapCount} doc gaps
-                            </span>
-
-                            <span
-                              className={`chip ${
-                                followUpCount > 0
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-slate-100 text-slate-500"
-                              }`}
-                            >
-                              {followUpCount} follow-ups
-                            </span>
+                            <span className={`chip ${gapCount > 0 ? "bg-amber-100 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>{gapCount} doc gaps</span>
+                            <span className={`chip ${followUpCount > 0 ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"}`}>{followUpCount} follow-ups</span>
                           </div>
                         </div>
                       </Link>
@@ -706,10 +556,7 @@ export default function DashboardPage() {
 
           <aside className="space-y-6">
             <div className="premium-dark">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">
-                Operating Signal
-              </p>
-
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Operating Signal</p>
               <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 {overdueFollowUps.length > 0
                   ? "Overdue follow-ups need action."
@@ -719,7 +566,6 @@ export default function DashboardPage() {
                       ? "Document gaps need attention."
                       : "Workspace is under control."}
               </h2>
-
               <p className="mt-5 text-sm leading-7 text-slate-300">
                 {overdueFollowUps.length > 0
                   ? "Start with overdue follow-ups before reviewing new intake."
@@ -729,65 +575,34 @@ export default function DashboardPage() {
                       ? "Missing or review-needed documents may slow down case completion."
                       : "There are no major blockers in the current workspace."}
               </p>
-
               <div className="mt-8 grid gap-3">
                 <div className="rounded-xl bg-white/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Open Follow-ups
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-white">
-                    {openFollowUps.length}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Open Follow-ups</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{openFollowUps.length}</p>
                 </div>
-
                 <div className="rounded-xl bg-white/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Overdue Follow-ups
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-white">
-                    {overdueFollowUps.length}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Overdue Follow-ups</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{overdueFollowUps.length}</p>
                 </div>
-
                 <div className="rounded-xl bg-white/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Unassigned Cases
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-white">
-                    {unassignedCases.length}
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Unassigned Cases</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{unassignedCases.length}</p>
                 </div>
               </div>
             </div>
 
             <div className="premium-card">
-              <p className="eyebrow">
-                Workflow Queues
-              </p>
-
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                Case stages
-              </h2>
-
+              <p className="eyebrow">Workflow Queues</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">Case stages</h2>
               <div className="mt-6 grid gap-3">
                 {workflowQueues.map((queue) => (
-                  <div
-                    key={queue.label}
-                    className="rounded-xl border border-slate-200/80 bg-white p-5"
-                  >
+                  <div key={queue.label} className="rounded-xl border border-slate-200/80 bg-white p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {queue.label}
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-slate-500">
-                          {queue.detail}
-                        </p>
+                        <p className="text-sm font-semibold text-slate-900">{queue.label}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{queue.detail}</p>
                       </div>
-
-                      <span className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                        {queue.count}
-                      </span>
+                      <span className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">{queue.count}</span>
                     </div>
                   </div>
                 ))}
@@ -795,31 +610,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="premium-card">
-              <p className="eyebrow">
-                Quick Links
-              </p>
-
+              <p className="eyebrow">Quick Links</p>
               <div className="mt-5 grid gap-3">
-                <Link
-                  href="/app/cases"
-                  className="btn btn-secondary"
-                >
-                  Open case queue
-                </Link>
-
-                <Link
-                  href="/app/reports"
-                  className="btn btn-secondary"
-                >
-                  View reports
-                </Link>
-
-                <Link
-                  href="/app/cases/new"
-                  className="btn btn-primary"
-                >
-                  Create staff case
-                </Link>
+                <Link href="/app/cases" className="btn btn-secondary">Open case queue</Link>
+                <Link href="/app/reports" className="btn btn-secondary">View reports</Link>
+                <Link href="/app/cases/new" className="btn btn-primary">Create staff case</Link>
               </div>
             </div>
           </aside>
