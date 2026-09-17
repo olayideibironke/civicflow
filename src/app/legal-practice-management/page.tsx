@@ -23,7 +23,7 @@ const capabilities = [
 export default function LegalPracticeManagementPage() {
   return (
     <main className="min-h-screen text-slate-900">
-      <MarketingHeader />
+      <MarketingHeader activePage="practice-management" />
 
       <section className="mx-auto max-w-[1240px] px-6 py-16 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
@@ -40,7 +40,7 @@ export default function LegalPracticeManagementPage() {
                 Get started
               </Link>
               <Link href="/pricing" className="btn btn-secondary px-6 py-3.5 text-base">
-                Compare plans
+                View plans
               </Link>
             </div>
           </div>
@@ -86,21 +86,21 @@ export default function LegalPracticeManagementPage() {
       <section className="mx-auto max-w-[1240px] px-6 pb-20">
         <div className="grid gap-5 md:grid-cols-2">
           <div className="premium-card">
-            <p className="eyebrow">Considering MyCase?</p>
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">Compare CivicFlow with MyCase pricing.</h2>
+            <p className="eyebrow">Built for daily legal work</p>
+            <h2 className="mt-3 text-2xl font-bold text-slate-950">See the matter, the team activity, and the next action in one place.</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              See how CivicFlow's $30, $80, and $100 plans compare with MyCase's current published tiers.
+              CivicFlow keeps the operational picture visible so attorneys and staff spend less time reconstructing what happened and what needs attention next.
             </p>
-            <Link href="/mycase-alternative" className="btn btn-primary mt-6">Compare with MyCase</Link>
+            <Link href="/platform" className="btn btn-primary mt-6">Explore the platform</Link>
           </div>
 
           <div className="premium-card">
-            <p className="eyebrow">Considering Clio?</p>
-            <h2 className="mt-3 text-2xl font-bold text-slate-950">See another small-firm option.</h2>
+            <p className="eyebrow">Move with confidence</p>
+            <h2 className="mt-3 text-2xl font-bold text-slate-950">Choose a plan that fits the firm you run today.</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Explore CivicFlow's simpler operating model and straightforward price structure.
+              Start with the workflow depth you need, bring over the information that matters, and expand the workspace as your team grows.
             </p>
-            <Link href="/clio-alternative" className="btn btn-primary mt-6">Compare with Clio</Link>
+            <Link href="/get-started" className="btn btn-primary mt-6">Get started</Link>
           </div>
         </div>
       </section>
