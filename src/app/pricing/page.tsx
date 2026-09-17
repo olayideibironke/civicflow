@@ -4,8 +4,9 @@ import MarketingHeader from "@/components/MarketingHeader";
 const plans = [
   {
     name: "Basic",
-    tagline: "The essentials for running a modern small law firm.",
+    tagline: "Organize the essentials and keep daily firm work moving.",
     price: "$30",
+    compareAt: "$50",
     featured: false,
     features: [
       "Matter and contact management",
@@ -19,8 +20,9 @@ const plans = [
   },
   {
     name: "Pro",
-    tagline: "More workflow depth for growing firms and busy teams.",
+    tagline: "Add deeper workflows, visibility, and team coordination.",
     price: "$80",
+    compareAt: "$100",
     featured: true,
     features: [
       "Everything in Basic",
@@ -34,8 +36,9 @@ const plans = [
   },
   {
     name: "Advanced",
-    tagline: "Deeper control, reporting, and operational visibility.",
+    tagline: "Give larger or more complex firms stronger operational control.",
     price: "$100",
+    compareAt: "$130",
     featured: false,
     features: [
       "Everything in Pro",
@@ -51,91 +54,122 @@ const plans = [
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen text-slate-900">
+    <main className="min-h-screen bg-white text-slate-950">
       <MarketingHeader activePage="pricing" />
 
-      <section className="mx-auto max-w-[1380px] px-6 py-16 lg:py-20">
-        <div className="text-center">
-          <p className="eyebrow text-blue-600">Straightforward pricing</p>
-          <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Serious law-practice software with pricing that is easy to understand.
+      <section className="mx-auto max-w-[1280px] px-5 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-sm font-semibold text-slate-600">CivicFlow plans</p>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+            Clear pricing for the way your firm works.
           </h1>
-          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            Choose the level of workflow depth your firm needs. Every plan is built around the same goal: keep legal work organized, visible, and easier to manage without unnecessary complexity.
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600">
+            Start with the workflow depth your firm needs today and move up when your team needs more control, reporting, or coordination.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+        <div className="mt-12 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-3">
+          {plans.map((plan, index) => (
             <article
               key={plan.name}
-              className={`relative overflow-hidden rounded-[2rem] border p-7 shadow-[var(--shadow-lg)] sm:p-8 ${
-                plan.featured
-                  ? "border-blue-300 bg-blue-50/55 ring-2 ring-blue-100"
-                  : "border-slate-200 bg-white"
-              }`}
+              className={`relative p-7 sm:p-8 ${
+                index > 0 ? "border-t border-slate-200 lg:border-l lg:border-t-0" : ""
+              } ${plan.featured ? "bg-slate-50/70" : "bg-white"}`}
             >
               {plan.featured ? (
-                <div className="absolute right-6 top-6 rounded-full bg-blue-600 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white">
-                  Popular
+                <div className="absolute left-0 right-0 top-0 bg-slate-950 py-1.5 text-center text-xs font-semibold text-white">
+                  Most popular
                 </div>
               ) : null}
 
-              <p className="text-sm font-black uppercase tracking-[0.16em] text-blue-600">
-                CivicFlow {plan.name}
-              </p>
-              <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-950">{plan.tagline}</h2>
+              <div className={plan.featured ? "pt-4" : ""}>
+                <h2 className="text-2xl font-bold tracking-tight text-slate-950">
+                  CivicFlow {plan.name}
+                </h2>
+                <p className="mt-3 min-h-[3.5rem] text-sm leading-6 text-slate-600">
+                  {plan.tagline}
+                </p>
 
-              <div className="mt-7">
-                <span className="text-6xl font-black tracking-tight text-slate-950">{plan.price}</span>
-              </div>
-              <p className="mt-1 text-sm font-semibold text-slate-500">USD / user / month</p>
+                <div className="mt-7 flex items-end gap-3">
+                  <span className="text-5xl font-bold tracking-tight text-slate-950">
+                    {plan.price}
+                  </span>
+                  <span className="pb-1.5 text-lg font-semibold text-slate-400 line-through decoration-2">
+                    {plan.compareAt}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-slate-500">USD / user / month</p>
 
-              <Link
-                href={`/get-started?plan=${plan.name.toLowerCase()}`}
-                className={`mt-7 inline-flex w-full items-center justify-center rounded-xl px-5 py-3.5 text-sm font-black transition ${
-                  plan.featured
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-slate-950 text-white hover:bg-slate-800"
-                }`}
-              >
-                Get started with {plan.name}
-              </Link>
+                <Link
+                  href={`/get-started?plan=${plan.name.toLowerCase()}`}
+                  className={`mt-7 flex w-full items-center justify-center rounded-lg border px-5 py-3 text-sm font-semibold transition ${
+                    plan.featured
+                      ? "border-slate-950 bg-slate-950 text-white hover:bg-slate-800"
+                      : "border-slate-300 bg-white text-slate-950 hover:border-slate-400 hover:bg-slate-50"
+                  }`}
+                >
+                  Get started
+                </Link>
 
-              <div className="mt-8 border-t border-slate-200/80 pt-7">
-                <p className="text-sm font-black text-slate-950">What you get</p>
-                <div className="mt-4 grid gap-3">
-                  {plan.features.map((feature) => (
-                    <div key={feature} className="flex items-start gap-3">
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-black text-emerald-700">✓</span>
-                      <p className="text-sm leading-6 text-slate-700">{feature}</p>
-                    </div>
-                  ))}
+                <div className="mt-8 border-t border-slate-200 pt-6">
+                  <p className="text-sm font-semibold text-slate-950">What you get</p>
+                  <ul className="mt-4 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3 text-sm leading-6 text-slate-700">
+                        <svg
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          className="mt-1 h-4 w-4 shrink-0 text-slate-700"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="m5 10.5 3.2 3.2L15 7"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </article>
           ))}
         </div>
 
-        <section className="mt-10 grid gap-5 md:grid-cols-3">
-          <Info title="Built for small firms" text="Designed for solo attorneys and growing firms that want strong operational visibility without enterprise complexity." />
-          <Info title="Simple upgrade path" text="Move between Basic, Pro, and Advanced as your team and workflow needs grow." />
-          <Info title="Clear monthly cost" text="Know what each plan costs and choose the level of operational depth that fits your firm." />
+        <section className="mt-10 grid border-y border-slate-200 py-8 md:grid-cols-3">
+          <Info
+            title="Built for small firms"
+            text="A focused workspace for firms that want strong day-to-day visibility without enterprise complexity."
+          />
+          <Info
+            title="Simple upgrade path"
+            text="Move between Basic, Pro, and Advanced as your team and workflow needs grow."
+          />
+          <Info
+            title="Predictable monthly cost"
+            text="Straightforward per-user pricing keeps budgeting simple as your firm adds people."
+          />
         </section>
 
-        <section className="mt-12 rounded-[2rem] bg-slate-950 p-8 text-white sm:p-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-200">Ready to move?</p>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight">Bring your firm into one cleaner operating workspace.</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-                Tell us about your firm, your current setup, and the plan you want. We will help you map the right CivicFlow setup.
-              </p>
-            </div>
-            <Link href="/get-started" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3.5 text-sm font-black text-slate-950 transition hover:bg-blue-50">
-              Get started
-            </Link>
+        <section className="mt-12 flex flex-col gap-6 rounded-2xl bg-slate-950 px-7 py-8 text-white sm:px-9 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Ready to set up your firm?
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-300">
+              Tell us about your team and the plan you want, and we will help you map the right CivicFlow setup.
+            </p>
           </div>
+          <Link
+            href="/get-started"
+            className="inline-flex shrink-0 items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
+          >
+            Get started
+          </Link>
         </section>
       </section>
     </main>
@@ -144,8 +178,8 @@ export default function PricingPage() {
 
 function Info({ title, text }: { title: string; text: string }) {
   return (
-    <div className="premium-card">
-      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+    <div className="px-4 py-4 first:pl-0 last:pr-0 md:border-l md:border-slate-200 md:px-7 md:first:border-l-0">
+      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
     </div>
   );
