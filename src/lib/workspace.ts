@@ -18,6 +18,7 @@ export type StaffWorkspace = {
   email: string;
   profile: StaffProfile;
   organization: StaffOrganization;
+  isPlatformAdmin: boolean;
 };
 
 type StaffWorkspaceRpcRow = {
@@ -54,7 +55,10 @@ export async function loadStaffWorkspace(): Promise<{
     };
   }
 
-  const { data, error } = await supabase.rpc("get_staff_workspace");
+  const [{ data, error }, platformAdminResult] = await Promise.all([
+    supabase.rpc("get_staff_workspace"),
+    supabase.rpc("is_platform_admin"),
+  ]);
 
   if (error) {
     return {
@@ -75,7 +79,7 @@ export async function loadStaffWorkspace(): Promise<{
 
   return {
     workspace: {
-      email: row.email || session.user.email || "staff@civicflow.local",
+      email: row.email || session.user.email || "",
       profile: {
         id: row.profile_id,
         organization_id: row.organization_id,
@@ -88,6 +92,9 @@ export async function loadStaffWorkspace(): Promise<{
         name: row.organization_name,
         slug: row.organization_slug,
       },
+      isPlatformAdmin: platformAdminResult.error
+        ? false
+        : Boolean(platformAdminResult.data),
     },
     error: "",
   };
