@@ -53,7 +53,7 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
-    label: "Public Intake",
+    label: "Client Intake",
     href: "/intake",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
@@ -94,7 +94,7 @@ const navigationItems: NavigationItem[] = [
 
 const platformItems: NavigationItem[] = [
   {
-    label: "Demo Requests",
+    label: "Firm Inquiries",
     href: "/app/demo-requests",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
@@ -170,7 +170,7 @@ export default function AppShell({ children }: AppShellProps) {
   const initials = useMemo(() => getStaffInitials(workspace), [workspace]);
   const displayName = useMemo(() => getStaffDisplayName(workspace), [workspace]);
   const staffRole = workspace ? formatStaffRole(workspace.profile.role) : "Staff";
-  const workspaceName = workspace?.organization.name ?? "Workspace";
+  const workspaceName = workspace?.organization.name ?? "Legal Workspace";
   const visibleNavigation = useMemo(
     () => workspace?.isPlatformAdmin ? [...navigationItems, ...platformItems] : navigationItems,
     [workspace?.isPlatformAdmin]
@@ -233,7 +233,7 @@ export default function AppShell({ children }: AppShellProps) {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <p className="text-xs font-medium text-slate-300">Organization access verified</p>
+              <p className="text-xs font-medium text-slate-300">Firm access verified</p>
             </div>
           </div>
 
@@ -273,8 +273,8 @@ export default function AppShell({ children }: AppShellProps) {
               <p className="mt-1 truncate text-sm font-semibold text-slate-700">{workspaceName} · {staffRole}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
-              {workspace?.isPlatformAdmin ? <Link href="/request-demo" className="btn btn-secondary hidden sm:inline-flex">Demo form</Link> : null}
-              <Link href="/intake" className="btn btn-secondary">Public intake</Link>
+              {workspace?.isPlatformAdmin ? <Link href="/request-demo" className="btn btn-secondary hidden sm:inline-flex">Firm inquiry form</Link> : null}
+              <Link href="/intake" className="btn btn-secondary">Client intake</Link>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">{initials}</div>
             </div>
           </header>
