@@ -16,12 +16,5 @@
   },
   "cache": {
     "enabled": false
-  },
-  "services": [
-    {
-      "binding": "RESPONSE_STORE",
-      "service": "civicflow-response-store",
-      "entrypoint": "ResponseStoreService"
-    }
-  ]
+  }
 }
