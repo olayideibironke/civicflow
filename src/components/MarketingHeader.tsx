@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import CivicFlowLogo from "@/components/CivicFlowLogo";
+import { supabase } from "@/lib/supabase";
 
 type MarketingHeaderProps = {
   activePage?:
@@ -26,6 +27,10 @@ const navItems = [
 ] as const;
 
 export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+
   useEffect(() => {
     const landingKey = "civicflow_landing";
     const referrerKey = "civicflow_referrer";
@@ -41,7 +46,41 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
         document.referrer || "direct",
       );
     }
+
+    let active = true;
+
+    async function loadSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!active) return;
+      setIsSignedIn(Boolean(session));
+      setCheckingSession(false);
+    }
+
+    loadSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setIsSignedIn(Boolean(session));
+      setCheckingSession(false);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await supabase.auth.signOut();
+    setIsSignedIn(false);
+    setSigningOut(false);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/92 backdrop-blur-2xl">
@@ -55,12 +94,20 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
             <CivicFlowLogo size="md" />
           </Link>
 
-          <Link
-            href="/get-started"
-            className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 lg:hidden"
-          >
-            Get started
-          </Link>
+          <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <Link
+              href="/login"
+              className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              {checkingSession ? "Login" : isSignedIn ? "Open workspace" : "Login"}
+            </Link>
+            <Link
+              href="/get-started"
+              className="rounded-2xl bg-slate-950 px-3 py-2 text-xs font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
@@ -87,12 +134,32 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
             })}
           </nav>
 
-          <Link
-            href="/get-started"
-            className="hidden shrink-0 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800 lg:inline-flex"
-          >
-            Get started
-          </Link>
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Link
+              href="/login"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              {checkingSession ? "Login" : isSignedIn ? "Open workspace" : "Login"}
+            </Link>
+
+            {isSignedIn ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                {signingOut ? "Signing out..." : "Sign out"}
+              </button>
+            ) : null}
+
+            <Link
+              href="/get-started"
+              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </div>
     </header>
