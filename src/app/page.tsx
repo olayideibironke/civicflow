@@ -59,15 +59,15 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">CivicFlow workspace</p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">See the firm clearly.</h2>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Active</span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Practice workspace</span>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {[
-              ["Open matters", "42"],
-              ["Follow-ups due", "8"],
-              ["Documents pending", "11"],
-              ["Client updates", "6"],
+              ["Matter management", "Organized"],
+              ["Documents", "Centralized"],
+              ["Client access", "Controlled"],
+              ["Reporting", "Exportable"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="text-sm text-slate-500">{label}</p>
