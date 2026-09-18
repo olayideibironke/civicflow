@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 
-type DemoRequest = {
+type FirmInquiry = {
   id: string;
   first_name: string;
   last_name: string;
@@ -31,7 +31,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 const statusOptions = [
   "New",
   "Contacted",
-  "Demo Scheduled",
+  "Consultation Scheduled",
   "Proposal Sent",
   "Won",
   "Lost",
@@ -75,7 +75,7 @@ function getStatusStyle(status: string) {
     return "bg-rose-50 text-rose-700 border-rose-200";
   }
 
-  if (status === "Proposal Sent" || status === "Demo Scheduled") {
+  if (status === "Proposal Sent" || status === "Consultation Scheduled") {
     return "bg-blue-50 text-blue-700 border-blue-200";
   }
 
@@ -125,8 +125,8 @@ function MetricCard({
   );
 }
 
-export default function DemoRequestsPage() {
-  const [requests, setRequests] = useState<DemoRequest[]>([]);
+export default function FirmInquiriesPage() {
+  const [requests, setRequests] = useState<FirmInquiry[]>([]);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [noteSaveStates, setNoteSaveStates] = useState<Record<string, SaveState>>(
     {}
@@ -155,7 +155,7 @@ export default function DemoRequestsPage() {
       return;
     }
 
-    const loadedRequests = (data ?? []) as DemoRequest[];
+    const loadedRequests = (data ?? []) as FirmInquiry[];
     const drafts: Record<string, string> = {};
     const noteStates: Record<string, SaveState> = {};
     const statusStates: Record<string, SaveState> = {};
@@ -220,7 +220,7 @@ export default function DemoRequestsPage() {
   const activePipeline = useMemo(
     () =>
       requests.filter((request) =>
-        ["Contacted", "Demo Scheduled", "Proposal Sent"].includes(request.status)
+        ["Contacted", "Consultation Scheduled", "Proposal Sent"].includes(request.status)
       ),
     [requests]
   );
@@ -250,14 +250,14 @@ export default function DemoRequestsPage() {
       .sort((a, b) => b.count - a.count);
   }, [requests]);
 
-  function noteHasChanges(request: DemoRequest) {
+  function noteHasChanges(request: FirmInquiry) {
     const savedNote = request.internal_note ?? "";
     const draftNote = noteDrafts[request.id] ?? "";
 
     return draftNote.trim() !== savedNote.trim();
   }
 
-  function getNoteButtonLabel(request: DemoRequest) {
+  function getNoteButtonLabel(request: FirmInquiry) {
     const saveState = noteSaveStates[request.id] ?? "idle";
 
     if (saveState === "saving") {
@@ -434,11 +434,11 @@ export default function DemoRequestsPage() {
       <AppShell>
         <section className="premium-card">
           <p className="eyebrow">
-            Demo Requests
+            Firm Inquiries
           </p>
 
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-            Loading demo request pipeline...
+            Loading firm inquiry pipeline...
           </h1>
         </section>
       </AppShell>
@@ -454,7 +454,7 @@ export default function DemoRequestsPage() {
           </p>
 
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-            Demo requests could not be loaded.
+            Firm inquiries could not be loaded.
           </h1>
 
           <p className="mt-3 text-base leading-7 text-slate-600">
@@ -476,11 +476,11 @@ export default function DemoRequestsPage() {
               </p>
 
               <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                CivicFlow demo requests
+                CivicFlow firm inquiries
               </h1>
 
               <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Track website demo leads, organization needs, contact details,
+                Track website firm inquiries, organization needs, contact details,
                 sales status, internal notes, and follow-up activity for
                 Westforge.
               </p>
@@ -496,11 +496,11 @@ export default function DemoRequestsPage() {
               </button>
 
               <a
-                href="/request-demo"
+                href="/get-started"
                 target="_blank"
                 className="btn btn-primary"
               >
-                Open demo form
+                Open inquiry form
               </a>
             </div>
           </div>
@@ -510,7 +510,7 @@ export default function DemoRequestsPage() {
           <MetricCard
             label="Total Leads"
             value={requests.length}
-            detail="All demo requests"
+            detail="All firm inquiries"
           />
 
           <MetricCard
@@ -552,7 +552,7 @@ export default function DemoRequestsPage() {
                   </p>
 
                   <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
-                    Search demo leads
+                    Search firm inquiries
                   </h2>
                 </div>
 
@@ -596,7 +596,7 @@ export default function DemoRequestsPage() {
                   </p>
 
                   <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-                    No demo requests match these filters.
+                    No firm inquiries match these filters.
                   </h2>
                 </div>
               ) : (
@@ -816,18 +816,18 @@ export default function DemoRequestsPage() {
 
               <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">
                 {newRequests.length > 0
-                  ? "New demo leads need first contact."
+                  ? "New firm inquiries need first contact."
                   : activePipeline.length > 0
                     ? "Active opportunities are moving."
-                    : "Demo pipeline is ready."}
+                    : "Inquiry pipeline is ready."}
               </h2>
 
               <p className="mt-5 text-sm leading-7 text-slate-300">
                 {newRequests.length > 0
-                  ? "Start by contacting new organizations and moving qualified leads to Contacted or Demo Scheduled."
+                  ? "Start by contacting new organizations and moving qualified leads to Contacted or Consultation Scheduled."
                   : activePipeline.length > 0
-                    ? "Track scheduled demos and proposals carefully so Westforge can convert opportunities into paid work."
-                    : "New demo requests from the website will appear here for Westforge review."}
+                    ? "Track scheduled consultations and proposals carefully so Westforge can convert opportunities into paid work."
+                    : "New firm inquiries from the website will appear here for Westforge review."}
               </p>
             </section>
 

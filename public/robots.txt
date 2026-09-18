@@ -10,4 +10,4 @@ Disallow: /forgot-email
 Disallow: /reset-password
 Disallow: /intake
 
-Sitemap: https://www.civicflowapp.org/sitemap.xml
+Sitemap: https://civicflowapp.org/sitemap.xml
