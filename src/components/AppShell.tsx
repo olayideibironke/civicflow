@@ -95,7 +95,7 @@ const navigationItems: NavigationItem[] = [
 const platformItems: NavigationItem[] = [
   {
     label: "Firm Inquiries",
-    href: "/app/demo-requests",
+    href: "/app/firm-inquiries",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
         <path d="M4 6h16v10H7l-3 3V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -273,7 +273,7 @@ export default function AppShell({ children }: AppShellProps) {
               <p className="mt-1 truncate text-sm font-semibold text-slate-700">{workspaceName} · {staffRole}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
-              {workspace?.isPlatformAdmin ? <Link href="/request-demo" className="btn btn-secondary hidden sm:inline-flex">Firm inquiry form</Link> : null}
+              {workspace?.isPlatformAdmin ? <Link href="/get-started" className="btn btn-secondary hidden sm:inline-flex">Firm inquiry form</Link> : null}
               <Link href="/intake" className="btn btn-secondary">Client intake</Link>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">{initials}</div>
             </div>
