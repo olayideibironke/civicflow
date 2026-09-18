@@ -496,11 +496,11 @@ export default function FirmInquiriesPage() {
               </button>
 
               <a
-                href="/request-demo"
+                href="/get-started"
                 target="_blank"
                 className="btn btn-primary"
               >
-                Open demo form
+                Open inquiry form
               </a>
             </div>
           </div>
