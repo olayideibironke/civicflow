@@ -19,6 +19,17 @@ import {
   validateRequiredText,
 } from "@/lib/validation";
 
+type ConflictMatch = {
+  source_type: string;
+  case_id: string;
+  case_number: string;
+  matched_name: string;
+  party_role: string;
+  matched_email: string | null;
+  match_reason: string;
+  score: number;
+};
+
 type CaseFormState = {
   firstName: string;
   lastName: string;
@@ -85,6 +96,11 @@ export default function NewCasePage() {
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
+  const [conflictMatches, setConflictMatches] = useState<ConflictMatch[]>([]);
+  const [conflictChecked, setConflictChecked] = useState(false);
+  const [conflictAcknowledged, setConflictAcknowledged] = useState(false);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState("");
 
   useEffect(() => {
     async function loadWorkspace() {
@@ -113,7 +129,66 @@ export default function NewCasePage() {
       [field]: field === "phone" ? formatPhoneInput(value) : value,
     }));
 
+    if (field === "firstName" || field === "lastName" || field === "email") {
+      setConflictChecked(false);
+      setConflictAcknowledged(false);
+      setConflictMatches([]);
+      setConflictMessage("");
+    }
+
     setFormError("");
+  }
+
+  async function handleConflictCheck() {
+    const clientName = `${formState.firstName.trim()} ${formState.lastName.trim()}`.trim();
+    const clientEmail = formState.email.trim();
+    const queries = Array.from(
+      new Set([clientName, clientEmail].filter((value) => value.length >= 2))
+    );
+
+    if (!queries.length) {
+      setConflictMessage("Enter the prospective client's name or email before running a conflict check.");
+      return;
+    }
+
+    setCheckingConflicts(true);
+    setConflictMessage("");
+    setConflictAcknowledged(false);
+
+    const collected: ConflictMatch[] = [];
+
+    for (const query of queries) {
+      const { data, error } = await supabase.rpc("search_conflicts", {
+        p_query: query,
+      });
+
+      if (error) {
+        setCheckingConflicts(false);
+        setConflictChecked(false);
+        setConflictMessage(error.message);
+        return;
+      }
+
+      collected.push(...((data ?? []) as ConflictMatch[]));
+    }
+
+    const uniqueMatches = Array.from(
+      new Map(
+        collected.map((match) => [
+          `${match.source_type}:${match.case_id}:${match.matched_name}:${match.party_role}`,
+          match,
+        ])
+      ).values()
+    ).sort((left, right) => right.score - left.score);
+
+    setConflictMatches(uniqueMatches);
+    setConflictChecked(true);
+    setCheckingConflicts(false);
+    setConflictMessage(
+      uniqueMatches.length
+        ? "Potential firm records matched this prospective client. Review them before creating the matter."
+        : "No potential matches were found for the prospective client's name or email."
+    );
   }
 
   function validateForm() {
@@ -142,6 +217,16 @@ export default function NewCasePage() {
 
     if (validationError) {
       setFormError(validationError);
+      return;
+    }
+
+    if (!conflictChecked) {
+      setFormError("Run the preliminary conflict check before creating this matter.");
+      return;
+    }
+
+    if (conflictMatches.length > 0 && !conflictAcknowledged) {
+      setFormError("Review and acknowledge the potential conflict matches before continuing.");
       return;
     }
 
@@ -340,6 +425,94 @@ export default function NewCasePage() {
               <textarea required value={formState.summary} onChange={(event) => updateField("summary", event.target.value)} rows={6} placeholder="Describe the legal issue, known documents, court dates or deadlines, and next action." className="input-field resize-y leading-7" />
             </label>
 
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="eyebrow">Preliminary conflict check</p>
+                  <h3 className="mt-2 text-base font-semibold text-slate-900">
+                    Search firm records before creating this matter
+                  </h3>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                    CivicFlow checks the prospective client&apos;s name and email against existing clients, parties, organizations, and aliases. A match is a review signal, not a legal determination.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleConflictCheck}
+                  disabled={checkingConflicts}
+                  className="btn btn-secondary shrink-0"
+                >
+                  {checkingConflicts ? "Checking..." : conflictChecked ? "Run again" : "Run conflict check"}
+                </button>
+              </div>
+
+              {conflictMessage ? (
+                <div className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                  conflictChecked && conflictMatches.length === 0
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : conflictMatches.length > 0
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : "border-slate-200 bg-white text-slate-700"
+                }`}>
+                  {conflictMessage}
+                </div>
+              ) : null}
+
+              {conflictMatches.length > 0 ? (
+                <div className="mt-4 space-y-3">
+                  {conflictMatches.slice(0, 6).map((match, index) => (
+                    <div
+                      key={`${match.source_type}-${match.case_id}-${match.matched_name}-${index}`}
+                      className={`rounded-xl border p-4 ${
+                        match.score >= 90
+                          ? "border-rose-200 bg-rose-50"
+                          : "border-amber-200 bg-amber-50"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-slate-950">{match.matched_name}</span>
+                            <span className="chip bg-white/80 text-slate-700">{match.party_role}</span>
+                            <span className="chip bg-white/80 text-slate-700">
+                              {match.score >= 90 ? "Strong record match" : "Possible record match"}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-700">
+                            {match.match_reason}
+                            {match.matched_email ? ` · ${match.matched_email}` : ""}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">Matter {match.case_number}</p>
+                        </div>
+                        <Link
+                          href={`/app/cases/${encodeURIComponent(match.case_number)}`}
+                          target="_blank"
+                          className="btn btn-secondary"
+                        >
+                          Review matter
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+
+                  <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-700">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={conflictAcknowledged}
+                      onChange={(event) => {
+                        setConflictAcknowledged(event.target.checked);
+                        setFormError("");
+                      }}
+                    />
+                    <span>
+                      I reviewed the potential matches shown above and want to continue creating this matter.
+                    </span>
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
             <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
               <p className="text-sm font-semibold text-slate-900">Firm workspace</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -353,7 +526,7 @@ export default function NewCasePage() {
 
             <div className="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                After creation, the matter appears in the firm’s case queue with the standard document checklist.
+                After the preliminary conflict review, the matter appears in the firm’s case queue with the standard document checklist.
               </p>
 
               <button type="submit" disabled={saving || Boolean(loadError)} className="btn btn-primary px-6 py-3">
