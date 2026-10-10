@@ -5,6 +5,33 @@ import Link from "next/link";
 import AuthLayout, { AuthChecking, AuthHeading } from "@/components/marketing/AuthLayout";
 import { supabase } from "@/lib/supabase";
 
+function isFreshRecoverySession(user: {
+  recovery_sent_at?: string;
+  last_sign_in_at?: string;
+} | null | undefined) {
+  if (!user?.recovery_sent_at || !user.last_sign_in_at) return false;
+
+  const recoverySentAt = Date.parse(user.recovery_sent_at);
+  const lastSignInAt = Date.parse(user.last_sign_in_at);
+  const now = Date.now();
+
+  if (!Number.isFinite(recoverySentAt) || !Number.isFinite(lastSignInAt)) {
+    return false;
+  }
+
+  const maxWindowMs = 20 * 60 * 1000;
+  const signInAfterRecoveryMs = lastSignInAt - recoverySentAt;
+
+  return (
+    now - recoverySentAt >= 0 &&
+    now - recoverySentAt <= maxWindowMs &&
+    now - lastSignInAt >= 0 &&
+    now - lastSignInAt <= maxWindowMs &&
+    signInAfterRecoveryMs >= 0 &&
+    signInAfterRecoveryMs <= 10 * 60 * 1000
+  );
+}
+
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -64,8 +91,13 @@ export default function ResetPasswordPage() {
       if (
         event === "INITIAL_SESSION" &&
         session &&
-        (looksLikeRecoveryLink || hasRecoveryMarker())
+        (
+          looksLikeRecoveryLink ||
+          hasRecoveryMarker() ||
+          isFreshRecoverySession(session.user)
+        )
       ) {
+        window.sessionStorage.setItem(recoveryMarkerKey, "pending");
         acceptRecoverySession();
         return;
       }
@@ -80,8 +112,13 @@ export default function ResetPasswordPage() {
       if (
         active &&
         data.session &&
-        (looksLikeRecoveryLink || hasRecoveryMarker())
+        (
+          looksLikeRecoveryLink ||
+          hasRecoveryMarker() ||
+          isFreshRecoverySession(data.session.user)
+        )
       ) {
+        window.sessionStorage.setItem(recoveryMarkerKey, "pending");
         acceptRecoverySession();
       }
     });
