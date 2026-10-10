@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 import { loadStaffWorkspace, type StaffWorkspace } from "@/lib/workspace";
@@ -103,6 +104,8 @@ function badge(status: string) {
 }
 
 export default function BillingPage() {
+  const searchParams = useSearchParams();
+  const requestedMatterId = searchParams.get("matter")?.trim() ?? "";
   const [workspace, setWorkspace] = useState<StaffWorkspace | null>(null);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -173,10 +176,13 @@ export default function BillingPage() {
     setPayments((paymentResult.data ?? []) as Payment[]);
     setRetainers((retainerResult.data ?? []) as Retainer[]);
 
-    if (!invoiceCaseId && loadedMatters[0]) setInvoiceCaseId(loadedMatters[0].id);
-    if (!retainerCaseId && loadedMatters[0]) {
-      setRetainerCaseId(loadedMatters[0].id);
-      setRetainerEmail(loadedMatters[0].client_email ?? "");
+    const requestedMatter = loadedMatters.find((matter) => matter.id === requestedMatterId);
+    const defaultMatter = requestedMatter ?? loadedMatters[0];
+
+    if (!invoiceCaseId && defaultMatter) setInvoiceCaseId(defaultMatter.id);
+    if (!retainerCaseId && defaultMatter) {
+      setRetainerCaseId(defaultMatter.id);
+      setRetainerEmail(defaultMatter.client_email ?? "");
     }
     setLoading(false);
   }
@@ -200,8 +206,9 @@ export default function BillingPage() {
 
   const draftInvoices = invoices.filter((invoice) => invoice.status === "draft");
   const payableInvoices = invoices.filter((invoice) => invoice.status === "sent" || invoice.status === "partially_paid");
-  const outstanding = invoices.reduce((sum, invoice) => sum + (invoice.status === "void" ? 0 : invoice.balance_cents), 0);
+  const outstanding = payableInvoices.reduce((sum, invoice) => sum + invoice.balance_cents, 0);
   const collected = invoices.reduce((sum, invoice) => sum + invoice.amount_paid_cents, 0);
+  const overdueInvoices = payableInvoices.filter((invoice) => invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10));
   const awaitingSignature = retainers.filter((retainer) => retainer.status === "sent").length;
 
   async function createInvoice(event: FormEvent) {
@@ -273,6 +280,7 @@ export default function BillingPage() {
     if (!invoice || !workspace) return setMessage("Choose an outstanding invoice.");
     const amount = dollarsToCents(paymentAmount);
     if (amount <= 0) return setMessage("Enter a valid payment amount.");
+    if (amount > invoice.balance_cents) return setMessage(`Payment cannot exceed the remaining balance of ${money(invoice.balance_cents)}.`);
 
     setBusy(true);
     const { error } = await supabase.from("billing_payments").insert({
@@ -346,10 +354,26 @@ export default function BillingPage() {
 
         {message ? <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">{message}</div> : null}
 
+        {requestedMatterId && matterById.get(requestedMatterId) ? (
+          <section className="rounded-2xl border border-blue-200 bg-blue-50/70 px-5 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">Matter context</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">
+                  {matterById.get(requestedMatterId)?.case_number} · {matterById.get(requestedMatterId)?.client_first_name} {matterById.get(requestedMatterId)?.client_last_name}
+                </p>
+              </div>
+              <Link href={`/app/cases/${encodeURIComponent(matterById.get(requestedMatterId)?.case_number ?? "")}`} className="btn btn-secondary">
+                Back to matter
+              </Link>
+            </div>
+          </section>
+        ) : null}
+
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="premium-card !p-5"><p className="eyebrow">Outstanding</p><p className="mt-3 text-2xl font-bold text-slate-950">{money(outstanding)}</p></div>
           <div className="premium-card !p-5"><p className="eyebrow">Collected</p><p className="mt-3 text-2xl font-bold text-emerald-700">{money(collected)}</p></div>
-          <div className="premium-card !p-5"><p className="eyebrow">Open invoices</p><p className="mt-3 text-2xl font-bold text-slate-950">{payableInvoices.length}</p></div>
+          <div className="premium-card !p-5"><p className="eyebrow">Open invoices</p><p className="mt-3 text-2xl font-bold text-slate-950">{payableInvoices.length}</p><p className="mt-2 text-xs text-slate-500">{overdueInvoices.length ? `${overdueInvoices.length} overdue` : "None overdue"}</p></div>
           <div className="premium-card !p-5"><p className="eyebrow">Awaiting signature</p><p className="mt-3 text-2xl font-bold text-slate-950">{awaitingSignature}</p></div>
         </section>
 
@@ -362,7 +386,7 @@ export default function BillingPage() {
         {!loading && matters.length > 0 ? (
           <>
             <section className="grid gap-6 2xl:grid-cols-2">
-              <form onSubmit={createInvoice} className="premium-card space-y-5">
+              <form id="new-invoice" onSubmit={createInvoice} className="premium-card scroll-mt-8 space-y-5">
                 <div><p className="eyebrow">New Invoice</p><h2 className="mt-3 text-xl font-bold text-slate-950">Create a matter-linked invoice</h2></div>
                 <label className="input-label">Matter<select className="input-field" value={invoiceCaseId} onChange={(e) => setInvoiceCaseId(e.target.value)}>{matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}</select></label>
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -379,7 +403,7 @@ export default function BillingPage() {
                 <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Working..." : "Create draft invoice"}</button>
               </form>
 
-              <form onSubmit={createRetainer} className="premium-card space-y-5">
+              <form id="new-retainer" onSubmit={createRetainer} className="premium-card scroll-mt-8 space-y-5">
                 <div><p className="eyebrow">Retainer eSignature</p><h2 className="mt-3 text-xl font-bold text-slate-950">Prepare an agreement for secure client signing</h2></div>
                 <label className="input-label">Matter<select className="input-field" value={retainerCaseId} onChange={(e) => { const id=e.target.value; setRetainerCaseId(id); setRetainerEmail(matterById.get(id)?.client_email ?? ""); }}>{matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}</select></label>
                 <div className="grid gap-4 sm:grid-cols-2">

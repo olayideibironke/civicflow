@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [recoveryError, setRecoveryError] = useState("");
   const [complete, setComplete] = useState(false);
 
   useEffect(() => {
@@ -19,6 +20,16 @@ export default function ResetPasswordPage() {
     let recoverySeen = false;
     const recoveryMarkerKey = "civicflow_password_recovery";
     const currentUrl = new URL(window.location.href);
+    const hashParams = new URLSearchParams(currentUrl.hash.replace(/^#/, ""));
+    const errorCode = currentUrl.searchParams.get("error_code") || hashParams.get("error_code");
+    const errorDescription = currentUrl.searchParams.get("error_description") || hashParams.get("error_description");
+    if (errorCode || errorDescription) {
+      setRecoveryError(
+        errorCode === "otp_expired"
+          ? "This password reset link has expired or has already been used. Request a new reset email and open the newest link once."
+          : "This password reset link is no longer valid. Request a new reset email and try again."
+      );
+    }
     const looksLikeRecoveryLink =
       currentUrl.hash.includes("type=recovery") ||
       currentUrl.searchParams.get("type") === "recovery" ||
@@ -141,7 +152,7 @@ export default function ResetPasswordPage() {
       ) : !hasRecoverySession ? (
         <div className="mt-8">
           <div className="mk-alert mk-alert-warn" role="alert">
-            This reset link is missing, invalid, or expired. Request a new password reset email.
+            {recoveryError || "This reset link is missing, invalid, or expired. Request a new password reset email."}
           </div>
           <Link href="/forgot-password" className="mk-btn mk-btn-primary mk-btn-lg mt-6 w-full">
             Request a new reset link

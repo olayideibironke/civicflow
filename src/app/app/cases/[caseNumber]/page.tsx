@@ -957,6 +957,40 @@ export default function DynamicCaseDetailPage() {
           ))}
         </section>
 
+        <section className="premium-card">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="eyebrow">Commercial workflow</p>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
+                Move this matter from conflict review to engagement and payment
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                Keep the business side attached to this matter. Each action below carries the current matter into the next protected workspace.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[560px]">
+              <Link
+                href={`/app/conflicts?matter=${encodeURIComponent(caseRecord.id)}`}
+                className="btn btn-secondary"
+              >
+                1. Conflict check
+              </Link>
+              <Link
+                href={`/app/billing?matter=${encodeURIComponent(caseRecord.id)}#new-retainer`}
+                className="btn btn-secondary"
+              >
+                2. Prepare retainer
+              </Link>
+              <Link
+                href={`/app/billing?matter=${encodeURIComponent(caseRecord.id)}#new-invoice`}
+                className="btn btn-primary"
+              >
+                3. Create invoice
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <div className="space-y-6">
             <div className="premium-card">
