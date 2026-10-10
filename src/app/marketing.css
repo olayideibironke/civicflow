@@ -435,3 +435,231 @@ select.mk-field {
 .mk-frame-float > div > .mk-panel {
   border-color: transparent;
 }
+
+
+/* Premium rotating homepage hero */
+.mk-hero {
+  background:
+    radial-gradient(58% 66% at 87% 26%, rgba(47, 91, 234, 0.09), transparent 68%),
+    radial-gradient(42% 48% at 8% 88%, rgba(15, 30, 61, 0.035), transparent 72%),
+    var(--color-ivory);
+}
+
+.mk-hero-stage {
+  position: relative;
+  min-height: 520px;
+  isolation: isolate;
+}
+
+.mk-hero-stage-glow {
+  position: absolute;
+  inset: 8% 3% 4% 7%;
+  border-radius: 42% 58% 48% 52%;
+  background: radial-gradient(circle at 48% 44%, rgba(47, 91, 234, 0.13), rgba(47, 91, 234, 0.035) 46%, transparent 72%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.mk-hero-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  animation: mk-hero-scene 20s cubic-bezier(0.22, 0.72, 0.2, 1) infinite both;
+  will-change: opacity, transform;
+}
+
+.mk-hero-scene:nth-of-type(3) {
+  animation-delay: -5s;
+}
+
+.mk-hero-scene:nth-of-type(4) {
+  animation-delay: -10s;
+}
+
+.mk-hero-scene:nth-of-type(5) {
+  animation-delay: -15s;
+}
+
+.mk-hero-window {
+  width: min(100%, 650px);
+  max-height: 470px;
+}
+
+.mk-hero-window > :last-child {
+  max-height: 430px;
+  overflow: hidden;
+}
+
+.mk-hero-scene-tag {
+  position: absolute;
+  z-index: 5;
+  left: 1.15rem;
+  top: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(15, 30, 61, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 24px -16px rgba(8, 18, 42, 0.4);
+  padding: 0.44rem 0.72rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-navy);
+  backdrop-filter: blur(12px);
+}
+
+.mk-hero-support {
+  z-index: 4;
+  animation: mk-hero-support 4.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.mk-hero-cycle {
+  position: absolute;
+  z-index: 8;
+  right: 1rem;
+  bottom: 0.35rem;
+  display: flex;
+  gap: 0.38rem;
+}
+
+.mk-hero-cycle span {
+  width: 1.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(15, 30, 61, 0.14);
+  overflow: hidden;
+}
+
+.mk-hero-cycle span::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--color-cobalt);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: mk-hero-progress 20s linear infinite both;
+}
+
+.mk-hero-cycle span:nth-child(2)::after {
+  animation-delay: -5s;
+}
+
+.mk-hero-cycle span:nth-child(3)::after {
+  animation-delay: -10s;
+}
+
+.mk-hero-cycle span:nth-child(4)::after {
+  animation-delay: -15s;
+}
+
+@keyframes mk-hero-scene {
+  0%,
+  20% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    opacity: 0;
+    transform: translate3d(-10px, -7px, 0) scale(0.988);
+  }
+  94% {
+    opacity: 0;
+    transform: translate3d(12px, 9px, 0) scale(0.988);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes mk-hero-support {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes mk-hero-progress {
+  0% {
+    transform: scaleX(0);
+  }
+  20% {
+    transform: scaleX(1);
+  }
+  20.01%,
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+@media (min-width: 1024px) {
+  .mk-hero-stage {
+    min-height: 590px;
+  }
+
+  .mk-hero-window {
+    max-height: 520px;
+  }
+
+  .mk-hero-window > :last-child {
+    max-height: 480px;
+  }
+}
+
+@media (max-width: 639px) {
+  .mk-hero-stage {
+    min-height: 390px;
+    margin-inline: -0.25rem;
+  }
+
+  .mk-hero-window {
+    max-height: 360px;
+  }
+
+  .mk-hero-window > :last-child {
+    max-height: 320px;
+  }
+
+  .mk-hero-scene-tag {
+    left: 0.7rem;
+    top: 0.7rem;
+  }
+
+  .mk-hero-cycle {
+    right: 0.65rem;
+    bottom: 0.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-hero-scene {
+    display: none;
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .mk-hero-scene:first-of-type {
+    display: flex;
+  }
+
+  .mk-hero-support,
+  .mk-hero-cycle span::after {
+    animation: none;
+  }
+
+  .mk-hero-cycle {
+    display: none;
+  }
+}
