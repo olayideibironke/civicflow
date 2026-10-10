@@ -1,5 +1,6 @@
 import Link from "next/link";
-import MarketingHeader from "@/components/MarketingHeader";\nimport HomeHero from "@/components/marketing/HomeHero";
+import MarketingHeader from "@/components/MarketingHeader";
+import HomeHero from "@/components/marketing/HomeHero";
 import ClosingCta from "@/components/marketing/ClosingCta";
 import SiteFooter from "@/components/marketing/SiteFooter";
 import { plans, securityControls } from "@/components/marketing/content";
@@ -9,7 +10,6 @@ import {
   CaseDetailScreen,
   ClientAccessCard,
   ClientPortalScreen,
-  DashboardScreen,
   DocumentChecklist,
   ExportCard,
   FloatCard,
@@ -19,10 +19,8 @@ import {
   ReportsScreen,
 } from "@/components/marketing/product";
 import {
-  ButtonLink,
   CheckList,
   Container,
-  Eyebrow,
   Icon,
   IconTile,
   SectionIntro,
@@ -43,7 +41,9 @@ export default function Home() {
     <main className="mk min-h-screen">
       <MarketingHeader activePage="home" />
 
-      <HomeHero />\n\n      {/* Trust strip */}
+      <HomeHero />
+
+      {/* Trust strip */}
       <section className="mk-dark border-t border-white/10">
         <Container>
           <ul className="grid gap-px overflow-hidden py-10 sm:grid-cols-2 lg:grid-cols-4 lg:py-12">
