@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 import { loadStaffWorkspace, type StaffWorkspace } from "@/lib/workspace";
@@ -104,8 +103,7 @@ function badge(status: string) {
 }
 
 export default function BillingPage() {
-  const searchParams = useSearchParams();
-  const requestedMatterId = searchParams.get("matter")?.trim() ?? "";
+  const [requestedMatterId, setRequestedMatterId] = useState("");
   const [workspace, setWorkspace] = useState<StaffWorkspace | null>(null);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -142,7 +140,7 @@ export default function BillingPage() {
   const [retainerExpires, setRetainerExpires] = useState("");
   const [retainerText, setRetainerText] = useState("");
 
-  async function loadData() {
+  async function loadData(preferredMatterId = requestedMatterId) {
     setLoading(true);
     setMessage("");
 
@@ -176,7 +174,7 @@ export default function BillingPage() {
     setPayments((paymentResult.data ?? []) as Payment[]);
     setRetainers((retainerResult.data ?? []) as Retainer[]);
 
-    const requestedMatter = loadedMatters.find((matter) => matter.id === requestedMatterId);
+    const requestedMatter = loadedMatters.find((matter) => matter.id === preferredMatterId);
     const defaultMatter = requestedMatter ?? loadedMatters[0];
 
     if (!invoiceCaseId && defaultMatter) setInvoiceCaseId(defaultMatter.id);
@@ -188,7 +186,10 @@ export default function BillingPage() {
   }
 
   useEffect(() => {
-    loadData();
+    const params = new URLSearchParams(window.location.search);
+    const preferredMatterId = params.get("matter")?.trim() ?? "";
+    setRequestedMatterId(preferredMatterId);
+    loadData(preferredMatterId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

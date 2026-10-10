@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/lib/supabase";
 import { loadStaffWorkspace, type StaffWorkspace } from "@/lib/workspace";
@@ -18,13 +17,11 @@ function matchTone(score: number) {
 }
 
 export default function ConflictsPage() {
-  const searchParams = useSearchParams();
-  const requestedMatterId = searchParams.get("matter")?.trim() ?? "";
-  const requestedQuery = searchParams.get("q")?.trim() ?? "";
+  const [requestedMatterId, setRequestedMatterId] = useState("");
   const [workspace, setWorkspace] = useState<StaffWorkspace | null>(null);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
-  const [query, setQuery] = useState(requestedQuery);
+  const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<ConflictMatch[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +33,7 @@ export default function ConflictsPage() {
   const [partyPhone, setPartyPhone] = useState("");
   const [partyNotes, setPartyNotes] = useState("");
 
-  async function loadData() {
+  async function loadData(preferredMatterId = requestedMatterId) {
     const ws = await loadStaffWorkspace();
     if (!ws.workspace) return setMessage(ws.error || "Unable to load workspace.");
     const [matterResult, partyResult] = await Promise.all([
@@ -48,11 +45,19 @@ export default function ConflictsPage() {
     setWorkspace(ws.workspace);
     setMatters(loaded);
     setParties((partyResult.data ?? []) as Party[]);
-    const requestedMatter = loaded.find((matter) => matter.id === requestedMatterId);
+    const requestedMatter = loaded.find((matter) => matter.id === preferredMatterId);
     if (!partyCaseId && (requestedMatter || loaded[0])) setPartyCaseId((requestedMatter || loaded[0]).id);
   }
 
-  useEffect(() => { loadData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const preferredMatterId = params.get("matter")?.trim() ?? "";
+    const preferredQuery = params.get("q")?.trim() ?? "";
+    setRequestedMatterId(preferredMatterId);
+    setQuery(preferredQuery);
+    loadData(preferredMatterId);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   async function runSearch(event: FormEvent) {
     event.preventDefault();
