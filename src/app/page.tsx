@@ -1,5 +1,5 @@
 import Link from "next/link";
-import MarketingHeader from "@/components/MarketingHeader";
+import MarketingHeader from "@/components/MarketingHeader";\nimport HomeHero from "@/components/marketing/HomeHero";
 import ClosingCta from "@/components/marketing/ClosingCta";
 import SiteFooter from "@/components/marketing/SiteFooter";
 import { plans, securityControls } from "@/components/marketing/content";
@@ -43,72 +43,7 @@ export default function Home() {
     <main className="mk min-h-screen">
       <MarketingHeader activePage="home" />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mk-hairline-grid pointer-events-none absolute inset-x-0 top-0 h-[640px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true" />
-        <Container className="relative pt-14 sm:pt-20 lg:pt-24">
-          <div className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-12">
-            <div className="mk-rise lg:col-span-7">
-              <Eyebrow>Law practice management</Eyebrow>
-              <h1 className="mk-h1 mt-6 text-ink">
-                Run every matter from first intake to final decision.
-              </h1>
-            </div>
-            <div className="mk-rise mk-rise-1 lg:col-span-5 lg:pb-2">
-              <p className="mk-lead">
-                CivicFlow gives attorneys and staff one disciplined workspace for intake, matters, documents and follow-ups, a secure portal for clients, and reporting that shows exactly where work stands.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <ButtonLink href="/get-started" size="lg" arrow>
-                  Get started
-                </ButtonLink>
-                <ButtonLink href="/platform" variant="outline" size="lg">
-                  Explore the platform
-                </ButtonLink>
-              </div>
-              <p className="mt-5 text-sm text-slate-500">
-                Plans from $30 per user per month.{" "}
-                <Link href="/pricing" className="font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">
-                  See pricing
-                </Link>
-              </p>
-            </div>
-          </div>
-        </Container>
-
-        {/* Product stage */}
-        <div className="relative mt-14 sm:mt-20">
-          <div className="mk-dark absolute inset-x-0 bottom-0 top-[42%]" aria-hidden="true">
-            <div className="mk-dark-grid absolute inset-0 opacity-70" />
-          </div>
-          <Container className="relative">
-            <div className="mk-rise mk-rise-2 relative mx-auto max-w-[1120px] pb-16 sm:pb-24">
-              <AppWindow
-                url="civicflowapp.org/app"
-                label="CivicFlow operations dashboard showing open cases, follow-ups, document gaps and workflow queues"
-              >
-                <DashboardScreen />
-              </AppWindow>
-
-              <FloatCard
-                label="Case document checklist with received, needs review and missing items"
-                className="absolute -right-6 top-[46%] hidden w-[300px] xl:block 2xl:-right-16"
-              >
-                <DocumentChecklist compact />
-              </FloatCard>
-
-              <FloatCard
-                label="New matter created from client intake"
-                className="absolute -left-10 bottom-[10%] hidden w-[268px] xl:block 2xl:-left-20"
-              >
-                <IntakeArrivalCard />
-              </FloatCard>
-            </div>
-          </Container>
-        </div>
-      </section>
-
-      {/* Trust strip */}
+      <HomeHero />\n\n      {/* Trust strip */}
       <section className="mk-dark border-t border-white/10">
         <Container>
           <ul className="grid gap-px overflow-hidden py-10 sm:grid-cols-2 lg:grid-cols-4 lg:py-12">
