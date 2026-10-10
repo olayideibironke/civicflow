@@ -43,6 +43,25 @@ const navigationItems: NavigationItem[] = [
     ),
   },
   {
+    label: "Billing & Retainers",
+    href: "/app/billing",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <path d="M4 5h16v14H4V5Zm3 4h10M7 13h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: "Conflict Check",
+    href: "/app/conflicts",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+        <circle cx="10" cy="10" r="5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="m14 14 5 5M10 7v3l2 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Client Portal",
     href: "/app/client-access",
     icon: (

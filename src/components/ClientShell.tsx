@@ -27,6 +27,15 @@ const navigationItems = [
     ),
   },
   {
+    label: "Billing & agreements",
+    href: "/client/billing",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]" aria-hidden="true">
+        <path d="M5 4h14v16H5V4Zm3 4h8m-8 4h8m-8 4h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     label: "Account",
     href: "/client/account",
     icon: (
