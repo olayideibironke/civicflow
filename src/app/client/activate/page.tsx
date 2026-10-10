@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
+import AuthLayout, { AuthChecking, AuthHeading } from "@/components/marketing/AuthLayout";
 import { useRouter } from "next/navigation";
-import CivicFlowLogo from "@/components/CivicFlowLogo";
 import { supabase } from "@/lib/supabase";
 import { validateRequiredEmail, validateRequiredText } from "@/lib/validation";
 
@@ -153,120 +152,102 @@ export default function ClientActivatePage() {
   }
 
   if (checking) {
-    return (
-      <main className="min-h-screen px-6 py-8">
-        <section className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl items-center justify-center">
-          <div className="premium-card w-full text-center">
-            <div className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-            <p className="mt-5 text-sm font-semibold text-slate-600">Checking client invitation...</p>
-          </div>
-        </section>
-      </main>
-    );
+    return <AuthChecking message="Checking client invitation..." />;
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 sm:py-8">
-      <section className="mx-auto max-w-3xl">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="rounded-2xl transition hover:opacity-90">
-            <CivicFlowLogo size="md" />
-          </Link>
-          <Link href="/client-login" className="btn btn-secondary">
-            Client Login
-          </Link>
+    <AuthLayout variant="client" topLink={{ label: "Client Login", href: "/client-login" }}>
+      <AuthHeading
+        eyebrow="Client portal activation"
+        title="Activate secure client access"
+        description="Use the email address that received your CivicFlow invitation. Your account will only connect to matters specifically shared by your legal team."
+      />
+
+      {emailSent ? (
+        <div className="mk-alert mk-alert-success mt-8" role="status">
+          Check your email and confirm your address. The confirmation link will return you here and finish connecting your client portal.
         </div>
+      ) : (
+        <>
+          <div className="mt-8 grid grid-cols-2 gap-1 rounded-[10px] border border-line bg-porcelain p-1" role="group" aria-label="Account type">
+            <button
+              type="button"
+              aria-pressed={mode === "signup"}
+              onClick={() => {
+                setMode("signup");
+                setMessage("");
+              }}
+              className={`mk-focus rounded-[7px] px-3 py-2.5 text-sm font-semibold transition ${mode === "signup" ? "bg-white text-ink shadow-[0_1px_2px_rgba(8,18,42,0.1)]" : "text-slate-500 hover:text-ink"}`}
+            >
+              New client account
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "signin"}
+              onClick={() => {
+                setMode("signin");
+                setMessage("");
+              }}
+              className={`mk-focus rounded-[7px] px-3 py-2.5 text-sm font-semibold transition ${mode === "signin" ? "bg-white text-ink shadow-[0_1px_2px_rgba(8,18,42,0.1)]" : "text-slate-500 hover:text-ink"}`}
+            >
+              Existing account
+            </button>
+          </div>
 
-        <div className="premium-card mx-auto mt-12 max-w-xl sm:mt-16">
-          <p className="eyebrow">Client Portal Activation</p>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">
-            Activate secure client access.
-          </h1>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            Use the email address that received your CivicFlow invitation. Your account will only connect to matters specifically shared by your legal team.
-          </p>
+          <form onSubmit={handleSubmit} noValidate className="mt-6 grid gap-5">
+            <label className="mk-label">
+              Email address
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setMessage("");
+                }}
+                placeholder="name@example.com"
+                className="mk-field"
+              />
+            </label>
 
-          {emailSent ? (
-            <div className="mt-7 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-800">
-              Check your email and confirm your address. The confirmation link will return you here and finish connecting your client portal.
-            </div>
-          ) : (
-            <>
-              <div className="mt-7 grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signup");
-                    setMessage("");
-                  }}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-bold ${mode === "signup" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}
-                >
-                  New client account
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode("signin");
-                    setMessage("");
-                  }}
-                  className={`rounded-xl px-4 py-2.5 text-sm font-bold ${mode === "signin" ? "bg-white text-slate-950 shadow-sm" : "text-slate-500"}`}
-                >
-                  Existing account
-                </button>
+            <label className="mk-label">
+              Password
+              <input
+                type="password"
+                autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                required
+                minLength={mode === "signup" ? 12 : undefined}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setMessage("");
+                }}
+                placeholder={mode === "signup" ? "At least 12 characters" : "Enter password"}
+                className="mk-field"
+              />
+            </label>
+
+            {message ? (
+              <div className="mk-alert mk-alert-error" role="alert">
+                {message}
               </div>
+            ) : null}
 
-              <form onSubmit={handleSubmit} noValidate className="mt-6 grid gap-5">
-                <label className="input-label">
-                  Email address *
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      setMessage("");
-                    }}
-                    placeholder="name@example.com"
-                    className="input-field"
-                  />
-                </label>
+            <button type="submit" disabled={working || !token} className="mk-btn mk-btn-primary mk-btn-lg w-full">
+              {working
+                ? "Activating..."
+                : mode === "signup"
+                  ? "Create and activate account"
+                  : "Sign in and activate"}
+            </button>
+          </form>
+        </>
+      )}
 
-                <label className="input-label">
-                  Password *
-                  <input
-                    type="password"
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                    required
-                    minLength={mode === "signup" ? 12 : undefined}
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value);
-                      setMessage("");
-                    }}
-                    placeholder={mode === "signup" ? "At least 12 characters" : "Enter password"}
-                    className="input-field"
-                  />
-                </label>
-
-                {message ? (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium leading-6 text-rose-700">
-                    {message}
-                  </div>
-                ) : null}
-
-                <button type="submit" disabled={working || !token} className="btn btn-primary py-3">
-                  {working
-                    ? "Activating..."
-                    : mode === "signup"
-                      ? "Create and activate account"
-                      : "Sign in and activate"}
-                </button>
-              </form>
-            </>
-          )}
-        </div>
-      </section>
-    </main>
+      <div className="mt-8 border-t border-line pt-6 text-sm leading-6 text-slate-600">
+        Invitation links are single-use and expire after seven days. If yours has expired, ask your law firm to send a new one.
+      </div>
+    </AuthLayout>
   );
 }

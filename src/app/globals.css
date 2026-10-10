@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./marketing.css";
 
 :root {
   --background: #f4f7fb;
@@ -20,6 +21,22 @@
 
 @theme inline {
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), "Iowan Old Style", Georgia, serif;
+}
+
+/* Marketing palette: midnight, porcelain, stone, cobalt */
+@theme static {
+  --color-midnight: #08122a;
+  --color-navy: #0f1e3d;
+  --color-navy-800: #15284f;
+  --color-cobalt: #2f5bea;
+  --color-cobalt-soft: #e8eefd;
+  --color-porcelain: #f6f5f1;
+  --color-ivory: #fbfaf7;
+  --color-line: #e3e1da;
+  --color-line-strong: #d3d0c7;
+  --color-ink: #0b1220;
+  --color-muted: #5b6474;
 }
 
 * {
