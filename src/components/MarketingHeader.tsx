@@ -26,6 +26,33 @@ const navItems = [
   },
 ] as const;
 
+function isFreshRecoverySession(user: {
+  recovery_sent_at?: string;
+  last_sign_in_at?: string;
+} | null | undefined) {
+  if (!user?.recovery_sent_at || !user.last_sign_in_at) return false;
+
+  const recoverySentAt = Date.parse(user.recovery_sent_at);
+  const lastSignInAt = Date.parse(user.last_sign_in_at);
+  const now = Date.now();
+
+  if (!Number.isFinite(recoverySentAt) || !Number.isFinite(lastSignInAt)) {
+    return false;
+  }
+
+  const maxWindowMs = 20 * 60 * 1000;
+  const signInAfterRecoveryMs = lastSignInAt - recoverySentAt;
+
+  return (
+    now - recoverySentAt >= 0 &&
+    now - recoverySentAt <= maxWindowMs &&
+    now - lastSignInAt >= 0 &&
+    now - lastSignInAt <= maxWindowMs &&
+    signInAfterRecoveryMs >= 0 &&
+    signInAfterRecoveryMs <= 10 * 60 * 1000
+  );
+}
+
 export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -70,6 +97,17 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
       } = await supabase.auth.getSession();
 
       if (!active) return;
+
+      if (
+        session &&
+        window.location.pathname === "/" &&
+        isFreshRecoverySession(session.user)
+      ) {
+        window.sessionStorage.setItem("civicflow_password_recovery", "pending");
+        window.location.replace("/reset-password");
+        return;
+      }
+
       setIsSignedIn(Boolean(session));
       setCheckingSession(false);
     }
@@ -81,7 +119,16 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
 
-      if (event === "PASSWORD_RECOVERY" && session) {
+      if (
+        session &&
+        (
+          event === "PASSWORD_RECOVERY" ||
+          (
+            window.location.pathname === "/" &&
+            isFreshRecoverySession(session.user)
+          )
+        )
+      ) {
         window.sessionStorage.setItem("civicflow_password_recovery", "pending");
         window.location.replace("/reset-password");
         return;
