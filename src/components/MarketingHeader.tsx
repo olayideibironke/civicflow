@@ -138,6 +138,19 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
       );
     }
 
+    const currentUrl = new URL(window.location.href);
+    const looksLikeRecoveryLink =
+      currentUrl.hash.includes("type=recovery") ||
+      currentUrl.searchParams.get("type") === "recovery";
+
+    if (looksLikeRecoveryLink) {
+      window.sessionStorage.setItem("civicflow_password_recovery", "pending");
+      window.location.replace(
+        `/reset-password${currentUrl.search}${currentUrl.hash}`,
+      );
+      return;
+    }
+
     let active = true;
 
     async function loadSession() {
@@ -154,8 +167,15 @@ export default function MarketingHeader({ activePage }: MarketingHeaderProps) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
+
+      if (event === "PASSWORD_RECOVERY" && session) {
+        window.sessionStorage.setItem("civicflow_password_recovery", "pending");
+        window.location.replace("/reset-password");
+        return;
+      }
+
       setIsSignedIn(Boolean(session));
       setCheckingSession(false);
     });

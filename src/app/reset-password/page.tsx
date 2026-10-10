@@ -17,6 +17,25 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let active = true;
     let recoverySeen = false;
+    const recoveryMarkerKey = "civicflow_password_recovery";
+    const currentUrl = new URL(window.location.href);
+    const looksLikeRecoveryLink =
+      currentUrl.hash.includes("type=recovery") ||
+      currentUrl.searchParams.get("type") === "recovery" ||
+      currentUrl.searchParams.has("code");
+
+    if (looksLikeRecoveryLink) {
+      window.sessionStorage.setItem(recoveryMarkerKey, "pending");
+    }
+
+    const hasRecoveryMarker = () =>
+      window.sessionStorage.getItem(recoveryMarkerKey) === "pending";
+
+    const acceptRecoverySession = () => {
+      recoverySeen = true;
+      setHasRecoverySession(true);
+      setCheckingSession(false);
+    };
 
     const {
       data: { subscription },
@@ -26,23 +45,33 @@ export default function ResetPasswordPage() {
       }
 
       if (event === "PASSWORD_RECOVERY" && session) {
-        recoverySeen = true;
-        setHasRecoverySession(true);
-        setCheckingSession(false);
+        window.sessionStorage.setItem(recoveryMarkerKey, "pending");
+        acceptRecoverySession();
         return;
       }
 
-      if (event === "INITIAL_SESSION") {
-        const currentUrl = new URL(window.location.href);
-        const looksLikeRecoveryLink =
-          currentUrl.hash.includes("type=recovery") ||
-          currentUrl.searchParams.get("type") === "recovery" ||
-          currentUrl.searchParams.has("code");
+      if (
+        event === "INITIAL_SESSION" &&
+        session &&
+        (looksLikeRecoveryLink || hasRecoveryMarker())
+      ) {
+        acceptRecoverySession();
+        return;
+      }
 
-        if (!looksLikeRecoveryLink) {
-          setHasRecoverySession(false);
-          setCheckingSession(false);
-        }
+      if (event === "INITIAL_SESSION" && !looksLikeRecoveryLink && !hasRecoveryMarker()) {
+        setHasRecoverySession(false);
+        setCheckingSession(false);
+      }
+    });
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (
+        active &&
+        data.session &&
+        (looksLikeRecoveryLink || hasRecoveryMarker())
+      ) {
+        acceptRecoverySession();
       }
     });
 
@@ -86,6 +115,7 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    window.sessionStorage.removeItem("civicflow_password_recovery");
     await supabase.auth.signOut();
     setSaving(false);
     setComplete(true);
