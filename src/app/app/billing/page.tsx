@@ -70,6 +70,8 @@ type Retainer = {
   signer_name: string | null;
   signer_email: string | null;
   signed_at: string | null;
+  signed_pdf_path: string | null;
+  signed_pdf_created_at: string | null;
   created_at: string;
 };
 
@@ -113,6 +115,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [archiveBusyId, setArchiveBusyId] = useState("");
 
   const [invoiceCaseId, setInvoiceCaseId] = useState("");
   const [invoiceDescription, setInvoiceDescription] = useState("Legal services");
@@ -327,6 +330,41 @@ export default function BillingPage() {
     await loadData();
   }
 
+  async function openSignedRetainerPdf(retainer: Retainer) {
+    setArchiveBusyId(retainer.id);
+    setMessage("");
+
+    let path = retainer.signed_pdf_path;
+
+    if (!path) {
+      const { data, error } = await supabase.functions.invoke("render-signed-retainer", {
+        body: { request_id: retainer.id },
+      });
+
+      if (error || !data?.path) {
+        setArchiveBusyId("");
+        setMessage(error?.message ?? "Unable to archive the signed agreement PDF.");
+        return;
+      }
+
+      path = data.path as string;
+      await loadData();
+    }
+
+    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      .from("case-documents")
+      .createSignedUrl(path, 60);
+
+    setArchiveBusyId("");
+
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      setMessage(signedUrlError?.message ?? "Unable to open the signed agreement PDF.");
+      return;
+    }
+
+    window.open(signedUrlData.signedUrl, "_blank", "noopener,noreferrer");
+  }
+
   async function updateRetainerStatus(id: string, status: "sent" | "voided") {
     setBusy(true);
     const { error } = await supabase.from("retainer_signature_requests").update({ status }).eq("id", id);
@@ -454,7 +492,7 @@ export default function BillingPage() {
 
             <section className="premium-card">
               <div className="border-b border-slate-100 pb-5"><p className="eyebrow">Retainers</p><h2 className="mt-3 text-xl font-bold text-slate-950">Signature queue</h2></div>
-              <div className="mt-6 space-y-4">{retainers.length === 0 ? <p className="text-sm text-slate-500">No retainers yet.</p> : retainers.map((retainer) => { const matter=matterById.get(retainer.case_id); return <div key={retainer.id} className="rounded-2xl border border-slate-200 p-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{retainer.title}</span><span className={`chip border ${badge(retainer.status)}`}>{retainer.status}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">SHA-256 {retainer.agreement_sha256.slice(0, 18)}...</p></div><div className="text-sm text-slate-500">{retainer.signed_at ? <>Signed {shortDate(retainer.signed_at)} by <strong className="text-slate-800">{retainer.signer_name}</strong></> : retainer.sent_at ? <>Sent {shortDate(retainer.sent_at)}</> : <>Draft created {shortDate(retainer.created_at)}</>}</div></div><details className="mt-4 rounded-xl bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">View agreement text</summary><pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-7 text-slate-600">{retainer.agreement_text}</pre></details><div className="mt-5 flex flex-wrap gap-2">{retainer.status === "draft" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "sent")} className="btn btn-primary" type="button">Send for signature</button> : null}{retainer.status === "draft" || retainer.status === "sent" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "voided")} className="btn btn-secondary" type="button">Void</button> : null}<Link href={`/app/cases/${encodeURIComponent(matter?.case_number ?? "")}`} className="btn btn-secondary">Open matter</Link></div></div>; })}</div>
+              <div className="mt-6 space-y-4">{retainers.length === 0 ? <p className="text-sm text-slate-500">No retainers yet.</p> : retainers.map((retainer) => { const matter=matterById.get(retainer.case_id); return <div key={retainer.id} className="rounded-2xl border border-slate-200 p-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{retainer.title}</span><span className={`chip border ${badge(retainer.status)}`}>{retainer.status}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">SHA-256 {retainer.agreement_sha256.slice(0, 18)}...</p></div><div className="text-sm text-slate-500">{retainer.signed_at ? <>Signed {shortDate(retainer.signed_at)} by <strong className="text-slate-800">{retainer.signer_name}</strong></> : retainer.sent_at ? <>Sent {shortDate(retainer.sent_at)}</> : <>Draft created {shortDate(retainer.created_at)}</>}</div></div><details className="mt-4 rounded-xl bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">View agreement text</summary><pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-7 text-slate-600">{retainer.agreement_text}</pre></details><div className="mt-5 flex flex-wrap gap-2">{retainer.status === "draft" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "sent")} className="btn btn-primary" type="button">Send for signature</button> : null}{retainer.status === "draft" || retainer.status === "sent" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "voided")} className="btn btn-secondary" type="button">Void</button> : null}{retainer.status === "signed" ? <button disabled={archiveBusyId === retainer.id} onClick={() => openSignedRetainerPdf(retainer)} className="btn btn-primary" type="button">{archiveBusyId === retainer.id ? "Preparing PDF..." : retainer.signed_pdf_path ? "Download signed PDF" : "Archive signed PDF"}</button> : null}<Link href={`/app/cases/${encodeURIComponent(matter?.case_number ?? "")}`} className="btn btn-secondary">Open matter</Link></div>{retainer.signed_pdf_created_at ? <p className="mt-3 text-xs text-slate-400">Signed PDF archived {shortDate(retainer.signed_pdf_created_at)} in private case documents.</p> : null}</div>; })}</div>
             </section>
           </>
         ) : null}
