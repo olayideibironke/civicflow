@@ -30,13 +30,17 @@ function responseError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-async function getStripeCredential() {
-  const oidc = process.env.VERCEL_OIDC_TOKEN;
+async function getStripeCredential(request: Request) {
+  const oidc =
+    request.headers.get("x-vercel-oidc-token") ??
+    process.env.VERCEL_OIDC_TOKEN ??
+    "";
+
   if (!oidc) {
     return {
       token: "",
       error:
-        "Stripe Checkout is available from the CivicFlow Vercel Preview environment. The local server does not have a Vercel Connect identity.",
+        "Stripe Checkout could not obtain the Vercel deployment identity required for the CivicFlow Stripe connector.",
     };
   }
 
@@ -164,7 +168,7 @@ export async function POST(request: Request) {
     return responseError("This invoice has no remaining balance.", 409);
   }
 
-  const credential = await getStripeCredential();
+  const credential = await getStripeCredential(request);
   if (!credential.token) {
     return responseError(credential.error, 503);
   }
