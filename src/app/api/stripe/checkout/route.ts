@@ -45,10 +45,14 @@ async function getStripeCredential() {
     {
       method: "POST",
       headers: {
+        Accept: "application/json",
         Authorization: `Bearer ${oidc}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ subject: { type: "app" } }),
+      body: JSON.stringify({
+        subject: { type: "app" },
+        scopes: ["*"],
+      }),
       cache: "no-store",
     }
   );
