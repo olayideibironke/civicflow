@@ -13,6 +13,13 @@
   --cf-canvas-glow-soft: rgba(181, 151, 118, 0.055);
   --cf-warm-border: rgba(92, 70, 47, 0.10);
 
+  /* Universal responsive geometry */
+  --cf-page-max: 1680px;
+  --cf-page-gutter: clamp(0.75rem, 1.65vw, 1.75rem);
+  --cf-section-gap: clamp(0.8rem, 1.2vw, 1.25rem);
+  --cf-sidebar-width: clamp(224px, 15.2vw, 276px);
+  --cf-card-radius: clamp(14px, 1.15vw, 18px);
+
   /* Brand palette — refined navy / slate / blue */
   --brand-ink: #0b1220;
   --brand-navy: #0f1e3d;
@@ -54,6 +61,21 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  min-width: 320px;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 body {
@@ -357,19 +379,22 @@ select {
 }
 
 .cf-workspace-shell {
-  width: 100%;
-  max-width: 1760px;
+  width: min(
+    calc(100% - var(--cf-page-gutter) - var(--cf-page-gutter)),
+    var(--cf-page-max)
+  );
+  max-width: none;
   margin: 0 auto;
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: var(--cf-section-gap);
+  padding-block: var(--cf-page-gutter);
 }
 
 .cf-workspace-sidebar {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 22px;
+  border-radius: var(--cf-card-radius);
   background:
     radial-gradient(80% 54% at 100% 0%, rgba(47, 91, 234, 0.26), transparent 70%),
     linear-gradient(180deg, #0b1731 0%, #08122a 100%);
@@ -549,6 +574,14 @@ select {
 
 .cf-workspace-main {
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.cf-workspace-content,
+.cf-workspace-content > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cf-workspace-topbar {
@@ -559,7 +592,7 @@ select {
   flex-direction: column;
   gap: 1rem;
   border: 1px solid var(--cf-warm-border);
-  border-radius: 16px;
+  border-radius: var(--cf-card-radius);
   background: rgba(251, 248, 243, 0.90);
   padding: 1rem 1.15rem;
   box-shadow:
@@ -583,7 +616,7 @@ select {
 
 .cf-workspace .premium-card {
   border-color: var(--cf-warm-border);
-  border-radius: 16px;
+  border-radius: var(--cf-card-radius);
   background: rgba(255, 253, 250, 0.93);
   box-shadow:
     0 1px 2px rgba(8, 18, 42, 0.025),
@@ -730,23 +763,21 @@ select {
 
 @media (min-width: 1100px) {
   .cf-workspace-shell {
-    grid-template-columns: 252px minmax(0, 1fr);
-    gap: 1.15rem;
-    padding: 1.15rem;
+    grid-template-columns: var(--cf-sidebar-width) minmax(0, 1fr);
   }
 
   .cf-workspace-sidebar {
     position: sticky;
-    top: 1.15rem;
-    height: calc(100vh - 2.3rem);
+    top: var(--cf-page-gutter);
+    height: calc(100dvh - var(--cf-page-gutter) - var(--cf-page-gutter));
   }
 
   .cf-workspace-main {
-    padding-right: 0.15rem;
+    padding-right: 0;
   }
 
   .cf-workspace-content {
-    padding-top: 1.15rem;
+    padding-top: var(--cf-section-gap);
   }
 }
 
@@ -914,4 +945,123 @@ select {
 
 .cf-workspace .premium-card [class*="rounded-xl"] {
   border-radius: 11px;
+}
+
+
+/* ================================================================ */
+/* Universal viewport sizing                                        */
+/* ================================================================ */
+
+@media (min-width: 1100px) and (max-width: 1280px) {
+  :root {
+    --cf-page-gutter: 0.75rem;
+    --cf-section-gap: 0.75rem;
+    --cf-sidebar-width: 218px;
+  }
+
+  .cf-workspace-sidebar-inner {
+    padding: 0.9rem;
+  }
+
+  .cf-workspace-nav-item {
+    gap: 0.55rem;
+    padding-inline: 0.58rem;
+    font-size: 0.79rem;
+  }
+
+  .cf-workspace-topbar {
+    padding: 0.85rem 1rem;
+  }
+}
+
+@media (min-width: 1281px) and (max-width: 1599px) {
+  :root {
+    --cf-sidebar-width: clamp(228px, 15vw, 252px);
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --cf-page-gutter: clamp(1rem, 1.35vw, 1.75rem);
+    --cf-sidebar-width: clamp(252px, 14vw, 276px);
+  }
+
+  .cf-workspace-sidebar-inner {
+    padding: 1.2rem;
+  }
+
+  .cf-workspace-nav-item {
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --cf-page-max: 1760px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .cf-workspace-shell {
+    width: min(
+      calc(100% - var(--cf-page-gutter) - var(--cf-page-gutter)),
+      var(--cf-page-max)
+    );
+  }
+
+  .cf-workspace-sidebar {
+    width: 100%;
+  }
+
+  .cf-workspace-topbar {
+    top: 0.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --cf-page-gutter: 0.625rem;
+    --cf-section-gap: 0.625rem;
+  }
+
+  .cf-workspace-shell {
+    width: calc(100% - var(--cf-page-gutter) - var(--cf-page-gutter));
+  }
+
+  .premium-card,
+  .premium-dark {
+    padding: clamp(1rem, 4.5vw, 1.35rem);
+  }
+
+  .cf-dashboard-display {
+    font-size: clamp(2rem, 10vw, 2.75rem);
+  }
+
+  .cf-workspace-topbar {
+    padding: 0.8rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .cf-workspace-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-workspace-nav > .cf-workspace-nav-label,
+  .cf-workspace-nav > div > .cf-workspace-nav-label {
+    grid-column: 1;
+  }
+
+  .cf-workspace-topbar .btn {
+    min-height: 38px;
+    padding-inline: 0.8rem;
+  }
+}
+
+@supports not (height: 100dvh) {
+  @media (min-width: 1100px) {
+    .cf-workspace-sidebar {
+      height: calc(100vh - var(--cf-page-gutter) - var(--cf-page-gutter));
+    }
+  }
 }

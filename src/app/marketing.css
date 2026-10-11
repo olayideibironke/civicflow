@@ -12,26 +12,17 @@
 }
 
 .mk-container {
-  width: 100%;
-  max-width: 1240px;
+  width: min(
+    calc(100% - var(--cf-page-gutter) - var(--cf-page-gutter)),
+    var(--cf-page-max)
+  );
+  max-width: none;
   margin-inline: auto;
-  padding-inline: 1.25rem;
-}
-
-@media (min-width: 640px) {
-  .mk-container {
-    padding-inline: 2rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mk-container {
-    padding-inline: 2.5rem;
-  }
+  padding-inline: 0;
 }
 
 .mk-section {
-  padding-block: clamp(4.5rem, 9vw, 8rem);
+  padding-block: clamp(3.75rem, 7.5vw, 7rem);
 }
 
 .mk-display,
@@ -738,6 +729,7 @@ select.mk-field {
 
 .cf-auth-form-card {
   position: relative;
+  width: min(100%, clamp(430px, 34vw, 560px));
   border: 1px solid rgba(15, 30, 61, 0.085);
   border-radius: 20px;
   background: rgba(255, 253, 250, 0.90);
@@ -794,4 +786,43 @@ select.mk-field {
   .cf-auth-form-card {
     border-radius: 16px;
   }
+}
+
+
+/* Universal auth sizing */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .cf-auth {
+    grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) !important;
+  }
+
+  .cf-auth-brand > div {
+    padding-inline: clamp(2rem, 3vw, 3rem);
+  }
+
+  .cf-auth-form-card {
+    width: min(100%, 500px);
+  }
+}
+
+@media (min-width: 1600px) {
+  .cf-auth-form-card {
+    width: min(100%, 560px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .cf-auth-form-card {
+    width: min(100%, 560px);
+  }
+}
+
+/* Guard against fixed-width product mockups causing horizontal overflow */
+.mk,
+.mk section,
+.mk-container,
+.mk-frame,
+.mk-frame-float,
+.mk-panel {
+  min-width: 0;
+  max-width: 100%;
 }
