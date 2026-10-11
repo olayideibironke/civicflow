@@ -58,20 +58,22 @@ export default function AuthLayout({
   const copy = asideCopy[variant];
 
   return (
-    <main className="mk min-h-screen lg:grid lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+    <main className="mk cf-auth min-h-screen lg:grid lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
       {/* Brand panel */}
-      <aside className="mk-dark relative hidden overflow-hidden lg:flex lg:flex-col">
+      <aside className="cf-auth-brand relative hidden overflow-hidden lg:flex lg:flex-col">
         <div className="mk-dark-grid mk-fade-mask pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="cf-auth-brand-orb cf-auth-brand-orb-one" aria-hidden="true" />
+        <div className="cf-auth-brand-orb cf-auth-brand-orb-two" aria-hidden="true" />
         <div className="relative flex flex-1 flex-col px-12 py-10 xl:px-16">
           <Link href="/" className="mk-focus w-fit rounded-lg" aria-label="CivicFlow home">
             <CivicFlowLogo size="sm" inverted />
           </Link>
-          <div className="mt-auto max-w-md pt-16">
+          <div className="mt-auto max-w-[480px] pt-16">
             <p className="mk-eyebrow !text-blue-200">{copy.eyebrow}</p>
-            <p className="mk-display mt-5 text-[2.35rem] leading-[1.1] text-white">{copy.title}</p>
+            <p className="mk-display mt-5 text-[2.65rem] leading-[1.05] tracking-[-0.03em] text-white">{copy.title}</p>
             <p className="mt-5 text-[0.98rem] leading-7 text-slate-300">{copy.text}</p>
           </div>
-          <div className="relative mt-12 max-w-[440px]">
+          <div className="cf-auth-preview relative mt-12 max-w-[460px]">
             {variant === "client" ? (
               <FloatCard label="Client portal preview" className="mk-frame-on-dark @container overflow-hidden">
                 <ClientPortalScreen />
@@ -94,7 +96,7 @@ export default function AuthLayout({
       </aside>
 
       {/* Form column */}
-      <section className="flex min-h-screen flex-col">
+      <section className="cf-auth-form-column flex min-h-screen flex-col">
         <div className="mk-container flex h-[72px] items-center justify-between !max-w-none lg:!px-12">
           <Link href="/" className="mk-focus rounded-lg lg:invisible" aria-label="CivicFlow home">
             <CivicFlowLogo size="sm" />
@@ -105,8 +107,10 @@ export default function AuthLayout({
             </Link>
           ) : null}
         </div>
-        <div className="flex flex-1 items-center justify-center px-5 pb-16 pt-6 sm:px-8">
-          <div className="w-full max-w-[460px]">{children}</div>
+        <div className="flex flex-1 items-center justify-center px-5 pb-16 pt-6 sm:px-8 lg:px-12">
+          <div className="cf-auth-form-card w-full max-w-[500px]">
+            {children}
+          </div>
         </div>
         <div className="mk-container flex flex-wrap items-center justify-between gap-3 border-t border-line py-5 text-[0.8rem] text-slate-500 !max-w-none lg:!px-12">
           <p>© {new Date().getFullYear()} Westforge</p>

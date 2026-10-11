@@ -836,3 +836,71 @@ select {
     font-size: 1.85rem;
   }
 }
+
+
+/* Premium data surfaces inside authenticated CivicFlow */
+.cf-workspace .premium-card table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.cf-workspace .premium-card thead th {
+  color: #718096;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cf-workspace .premium-card tbody tr {
+  transition: background-color 150ms ease;
+}
+
+.cf-workspace .premium-card tbody tr:hover {
+  background: rgba(47, 91, 234, 0.025);
+}
+
+.cf-workspace .premium-card [class*="border-dashed"] {
+  border-color: rgba(15, 30, 61, 0.14);
+  background:
+    linear-gradient(180deg, rgba(248, 249, 252, 0.76), rgba(255, 255, 255, 0.9));
+}
+
+.cf-workspace .premium-card > div[class*="border-b"] {
+  border-color: rgba(15, 30, 61, 0.08);
+}
+
+.cf-workspace .chip {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  padding: 0.3rem 0.64rem;
+}
+
+.cf-workspace .soft-panel {
+  border-color: rgba(15, 30, 61, 0.085);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.82), rgba(255,255,255,0.92));
+}
+
+.cf-workspace .premium-card form h2,
+.cf-workspace form.premium-card h2 {
+  font-family: var(--font-display), "Iowan Old Style", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.cf-workspace .premium-card p.text-slate-600,
+.cf-workspace .premium-card p.text-slate-500 {
+  color: #667085;
+}
+
+.cf-workspace .premium-card [class*="bg-slate-950"] {
+  background: var(--color-midnight);
+}
+
+.cf-workspace .premium-card [class*="rounded-2xl"] {
+  border-radius: 14px;
+}
+
+.cf-workspace .premium-card [class*="rounded-xl"] {
+  border-radius: 11px;
+}
