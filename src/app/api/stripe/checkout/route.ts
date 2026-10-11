@@ -125,7 +125,18 @@ async function callSupabaseRpc<T>(
     };
   }
 
-  return { data: (await result.json()) as T, error: "" };
+  // Supabase RPCs that perform writes may return 204 No Content.
+  // Do not parse an empty successful response as JSON.
+  const raw = await result.text();
+  if (!raw.trim()) {
+    return { data: null, error: "" };
+  }
+
+  try {
+    return { data: JSON.parse(raw) as T, error: "" };
+  } catch {
+    return { data: null, error: "CivicFlow received an invalid invoice service response." };
+  }
 }
 
 async function expireStripeSession(
