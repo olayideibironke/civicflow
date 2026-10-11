@@ -91,8 +91,26 @@ function shortDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function formatCurrencyInput(value: string) {
+  const sanitized = value.replace(/[^\d.]/g, "");
+  if (!sanitized) return "";
+
+  const firstDot = sanitized.indexOf(".");
+  const hasDecimal = firstDot >= 0;
+  const wholeRaw = hasDecimal ? sanitized.slice(0, firstDot) : sanitized;
+  const decimalRaw = hasDecimal
+    ? sanitized.slice(firstDot + 1).replace(/\./g, "").slice(0, 2)
+    : "";
+
+  const normalizedWhole = wholeRaw.replace(/^0+(?=\d)/, "") || "0";
+  const groupedWhole = normalizedWhole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return "$" + groupedWhole + (hasDecimal ? "." + decimalRaw : "");
+}
+
 function dollarsToCents(value: string) {
-  const amount = Number(value);
+  const normalized = value.replace(/[$,\s]/g, "");
+  const amount = Number(normalized);
   if (!Number.isFinite(amount)) return 0;
   return Math.round(amount * 100);
 }
@@ -433,7 +451,7 @@ export default function BillingPage() {
                   <label className="input-label">Quantity<input className="input-field" type="number" min="0.01" step="0.01" value={invoiceQuantity} onChange={(e) => setInvoiceQuantity(e.target.value)} required /></label>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="input-label">Rate / amount<input className="input-field" type="number" min="0.01" step="0.01" placeholder="750.00" value={invoiceRate} onChange={(e) => setInvoiceRate(e.target.value)} required /></label>
+                  <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={invoiceRate} onChange={(e) => setInvoiceRate(formatCurrencyInput(e.target.value))} required /></label>
                   <label className="input-label">Due date<input className="input-field" type="date" value={invoiceDueDate} onChange={(e) => setInvoiceDueDate(e.target.value)} /></label>
                 </div>
                 <label className="input-label">Secure payment page<input className="input-field" type="url" placeholder="https://..." value={invoicePaymentUrl} onChange={(e) => setInvoicePaymentUrl(e.target.value)} /><span className="mt-1 text-xs font-normal text-slate-400">Optional. Use the firm&apos;s own hosted LawPay, Stripe, or other HTTPS payment page.</span></label>
@@ -461,14 +479,14 @@ export default function BillingPage() {
                 <div><p className="eyebrow">Draft invoice</p><h2 className="mt-3 text-xl font-bold text-slate-950">Add another line item</h2></div>
                 <label className="input-label">Invoice<select className="input-field" value={itemInvoiceId} onChange={(e) => setItemInvoiceId(e.target.value)}><option value="">Select draft invoice</option>{draftInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · {matterById.get(invoice.case_id)?.case_number}</option>)}</select></label>
                 <div className="grid gap-4 sm:grid-cols-3"><label className="input-label sm:col-span-2">Description<input className="input-field" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></label><label className="input-label">Qty<input className="input-field" type="number" min="0.01" step="0.01" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} /></label></div>
-                <label className="input-label">Rate / amount<input className="input-field" type="number" min="0.01" step="0.01" value={itemRate} onChange={(e) => setItemRate(e.target.value)} /></label>
+                <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={itemRate} onChange={(e) => setItemRate(formatCurrencyInput(e.target.value))} /></label>
                 <button disabled={busy || !itemInvoiceId} className="btn btn-secondary" type="submit">Add line item</button>
               </form>
 
               <form onSubmit={recordPayment} className="premium-card space-y-4">
                 <div><p className="eyebrow">Payment record</p><h2 className="mt-3 text-xl font-bold text-slate-950">Record funds received</h2></div>
                 <label className="input-label">Invoice<select className="input-field" value={paymentInvoiceId} onChange={(e) => setPaymentInvoiceId(e.target.value)}><option value="">Select outstanding invoice</option>{payableInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · balance {money(invoice.balance_cents)}</option>)}</select></label>
-                <div className="grid gap-4 sm:grid-cols-3"><label className="input-label">Amount<input className="input-field" type="number" min="0.01" step="0.01" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} /></label><label className="input-label">Method<select className="input-field" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}><option value="manual">Manual</option><option value="card">Card</option><option value="ach">ACH</option><option value="check">Check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label className="input-label">Destination<select className="input-field" value={paymentDestination} onChange={(e) => setPaymentDestination(e.target.value)}><option value="operating">Operating</option><option value="trust">Trust / IOLTA record</option></select></label></div>
+                <div className="grid gap-4 sm:grid-cols-3"><label className="input-label">Amount<input className="input-field" type="text" inputMode="decimal" placeholder="$0.00" value={paymentAmount} onChange={(e) => setPaymentAmount(formatCurrencyInput(e.target.value))} /></label><label className="input-label">Method<select className="input-field" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}><option value="manual">Manual</option><option value="card">Card</option><option value="ach">ACH</option><option value="check">Check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label className="input-label">Destination<select className="input-field" value={paymentDestination} onChange={(e) => setPaymentDestination(e.target.value)}><option value="operating">Operating</option><option value="trust">Trust / IOLTA record</option></select></label></div>
                 <label className="input-label">Memo<input className="input-field" value={paymentMemo} onChange={(e) => setPaymentMemo(e.target.value)} /></label>
                 <p className="text-xs leading-5 text-amber-700">Selecting Trust / IOLTA records where funds went. CivicFlow does not initiate or certify a trust-account transfer.</p>
                 <button disabled={busy || !paymentInvoiceId} className="btn btn-secondary" type="submit">Record payment</button>
