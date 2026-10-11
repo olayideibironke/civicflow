@@ -418,8 +418,10 @@ select {
   position: relative;
   z-index: 1;
   display: flex;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
   padding: 1.15rem;
 }
 
@@ -465,7 +467,16 @@ select {
 }
 
 .cf-workspace-nav {
-  margin-top: 1.35rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 1.2rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.cf-workspace-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .cf-workspace-nav-label {
@@ -527,9 +538,10 @@ select {
 }
 
 .cf-workspace-profile {
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0.8rem;
   border-top: 1px solid rgba(255, 255, 255, 0.09);
-  padding-top: 1rem;
+  padding-top: 0.85rem;
 }
 
 .cf-workspace-avatar {
@@ -987,11 +999,11 @@ select {
   }
 
   .cf-workspace-sidebar-inner {
-    padding: 1.2rem;
+    padding: 1.15rem;
   }
 
   .cf-workspace-nav-item {
-    min-height: 44px;
+    min-height: 42px;
   }
 }
 
@@ -1063,5 +1075,36 @@ select {
     .cf-workspace-sidebar {
       height: calc(100vh - var(--cf-page-gutter) - var(--cf-page-gutter));
     }
+  }
+}
+
+
+/* Sidebar height safety */
+@media (min-width: 1100px) and (max-height: 820px) {
+  .cf-workspace-brand {
+    padding-bottom: 0.55rem;
+  }
+
+  .cf-workspace-firm-card {
+    margin-top: 0.4rem;
+    padding: 0.82rem;
+  }
+
+  .cf-workspace-nav {
+    margin-top: 0.85rem;
+  }
+
+  .cf-workspace-nav-label {
+    margin-bottom: 0.3rem;
+  }
+
+  .cf-workspace-nav-item {
+    min-height: 38px;
+    padding-block: 0.5rem;
+  }
+
+  .cf-workspace-profile {
+    margin-top: 0.55rem;
+    padding-top: 0.7rem;
   }
 }
