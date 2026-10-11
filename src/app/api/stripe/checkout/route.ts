@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 const STRIPE_API_BASE = "https://api.stripe.com/v1";
 const STRIPE_CONNECTOR = "stripe/civicflow-stripe-sandbox";
+const CIVICFLOW_STRIPE_SANDBOX_ACCOUNT_ID = "acct_1UPEdsFUVijXk0Be";
 
 type CheckoutContext = {
   invoice_id: string;
@@ -44,36 +45,53 @@ async function getStripeCredential(request: Request) {
     };
   }
 
-  const response = await fetch(
-    `https://api.vercel.com/v1/connect/token/${encodeURIComponent(STRIPE_CONNECTOR)}`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${oidc}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subject: { type: "app" },
-        scopes: ["*"],
-      }),
-      cache: "no-store",
+  try {
+    const response = await fetch(
+      `https://api.vercel.com/v1/connect/token/${encodeURIComponent(STRIPE_CONNECTOR)}`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${oidc}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject: { type: "app" },
+          scopes: ["*"],
+        }),
+        cache: "no-store",
+      }
+    );
+
+    const raw = await response.text();
+    let result: ConnectTokenResponse | null = null;
+    try {
+      result = raw ? (JSON.parse(raw) as ConnectTokenResponse) : null;
+    } catch {
+      return {
+        token: "",
+        error: `Vercel Connect returned an unreadable response (HTTP ${response.status}).`,
+      };
     }
-  );
 
-  const result = (await response.json().catch(() => null)) as ConnectTokenResponse | null;
-  const token = result?.token ?? "";
+    const token = result?.token ?? "";
 
-  if (!response.ok || !token) {
+    if (!response.ok || !token) {
+      return {
+        token: "",
+        error:
+          result?.error?.message ??
+          `Vercel Connect could not issue the CivicFlow Stripe sandbox credential (HTTP ${response.status}).`,
+      };
+    }
+
+    return { token, error: "" };
+  } catch {
     return {
       token: "",
-      error:
-        result?.error?.message ??
-        "Vercel Connect could not issue the CivicFlow Stripe sandbox credential.",
+      error: "CivicFlow could not obtain the Stripe sandbox credential from Vercel Connect.",
     };
   }
-
-  return { token, error: "" };
 }
 
 async function callSupabaseRpc<T>(
@@ -112,7 +130,6 @@ async function callSupabaseRpc<T>(
 
 async function expireStripeSession(
   token: string,
-  connectedAccountId: string,
   sessionId: string
 ) {
   try {
@@ -122,7 +139,6 @@ async function expireStripeSession(
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Stripe-Account": connectedAccountId,
         },
         cache: "no-store",
       }
@@ -166,6 +182,13 @@ export async function POST(request: Request) {
 
   if (context.balance_cents <= 0) {
     return responseError("This invoice has no remaining balance.", 409);
+  }
+
+  if (context.connected_account_id !== CIVICFLOW_STRIPE_SANDBOX_ACCOUNT_ID) {
+    return responseError(
+      "CivicFlow Stripe sandbox account configuration does not match the authorized sandbox merchant account.",
+      503
+    );
   }
 
   const credential = await getStripeCredential(request);
@@ -223,22 +246,38 @@ export async function POST(request: Request) {
     stripeBody.set(`payment_intent_data[metadata][${key}]`, value);
   }
 
-  const stripeResponse = await fetch(`${STRIPE_API_BASE}/checkout/sessions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${credential.token}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Stripe-Account": context.connected_account_id,
-    },
-    body: stripeBody.toString(),
-    cache: "no-store",
-  });
+  let stripeResponse: Response;
+  try {
+    stripeResponse = await fetch(`${STRIPE_API_BASE}/checkout/sessions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${credential.token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: stripeBody.toString(),
+      cache: "no-store",
+    });
+  } catch {
+    return responseError("CivicFlow could not reach Stripe Checkout.", 502);
+  }
 
-  const stripeSession = (await stripeResponse.json()) as StripeCheckoutSession;
-
-  if (!stripeResponse.ok || !stripeSession.id || !stripeSession.url) {
+  const stripeRaw = await stripeResponse.text();
+  let stripeSession: StripeCheckoutSession | null = null;
+  try {
+    stripeSession = stripeRaw
+      ? (JSON.parse(stripeRaw) as StripeCheckoutSession)
+      : null;
+  } catch {
     return responseError(
-      stripeSession.error?.message || "Stripe Checkout could not be started.",
+      `Stripe Checkout returned an unreadable response (HTTP ${stripeResponse.status}).`,
+      502
+    );
+  }
+
+  if (!stripeResponse.ok || !stripeSession?.id || !stripeSession.url) {
+    return responseError(
+      stripeSession?.error?.message ||
+        `Stripe Checkout could not be started (HTTP ${stripeResponse.status}).`,
       502
     );
   }
@@ -258,7 +297,6 @@ export async function POST(request: Request) {
   if (registerResult.error) {
     await expireStripeSession(
       credential.token,
-      context.connected_account_id,
       stripeSession.id
     );
     return responseError(
