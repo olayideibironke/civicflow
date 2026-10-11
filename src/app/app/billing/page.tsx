@@ -143,6 +143,7 @@ export default function BillingPage() {
   const [invoiceNotes, setInvoiceNotes] = useState("");
   const [invoicePaymentUrl, setInvoicePaymentUrl] = useState("");
   const [invoicePaymentInstructions, setInvoicePaymentInstructions] = useState("");
+  const [editingInvoiceDraft, setEditingInvoiceDraft] = useState(false);
 
   const [itemInvoiceId, setItemInvoiceId] = useState("");
   const [itemDescription, setItemDescription] = useState("");
@@ -233,6 +234,46 @@ export default function BillingPage() {
   const collected = invoices.reduce((sum, invoice) => sum + invoice.amount_paid_cents, 0);
   const overdueInvoices = payableInvoices.filter((invoice) => invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10));
   const awaitingSignature = retainers.filter((retainer) => retainer.status === "sent").length;
+  const draftInvoiceForSelectedMatter = useMemo(
+    () =>
+      invoices.find(
+        (invoice) => invoice.case_id === invoiceCaseId && invoice.status === "draft"
+      ) ?? null,
+    [invoices, invoiceCaseId]
+  );
+  const primaryDraftItem = draftInvoiceForSelectedMatter
+    ? (itemsByInvoice.get(draftInvoiceForSelectedMatter.id) ?? [])[0] ?? null
+    : null;
+
+  const invoiceFieldsLocked = Boolean(draftInvoiceForSelectedMatter) && !editingInvoiceDraft;
+  const invoiceFormDescription =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? primaryDraftItem?.description ?? "Legal services"
+      : invoiceDescription;
+  const invoiceFormQuantity =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? String(primaryDraftItem?.quantity ?? 1)
+      : invoiceQuantity;
+  const invoiceFormRate =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? formatCurrencyInput(String((primaryDraftItem?.unit_amount_cents ?? 0) / 100))
+      : invoiceRate;
+  const invoiceFormDueDate =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? draftInvoiceForSelectedMatter.due_date ?? ""
+      : invoiceDueDate;
+  const invoiceFormPaymentUrl =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? draftInvoiceForSelectedMatter.external_payment_url ?? ""
+      : invoicePaymentUrl;
+  const invoiceFormPaymentInstructions =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? draftInvoiceForSelectedMatter.payment_instructions ?? ""
+      : invoicePaymentInstructions;
+  const invoiceFormNotes =
+    draftInvoiceForSelectedMatter && !editingInvoiceDraft
+      ? draftInvoiceForSelectedMatter.notes ?? ""
+      : invoiceNotes;
   const activeRetainerForSelectedMatter = useMemo(
     () =>
       retainers.find(
@@ -281,6 +322,9 @@ export default function BillingPage() {
   async function createInvoice(event: FormEvent) {
     event.preventDefault();
     if (!invoiceCaseId) return setMessage("Choose a matter first.");
+    if (draftInvoiceForSelectedMatter) {
+      return setMessage("This matter already has a draft invoice. Edit or send the existing draft instead of creating a duplicate.");
+    }
     const unitAmount = dollarsToCents(invoiceRate);
     if (unitAmount <= 0) return setMessage("Enter a valid invoice rate.");
     if (invoicePaymentUrl && !invoicePaymentUrl.startsWith("https://")) return setMessage("Payment links must begin with https://");
@@ -300,16 +344,85 @@ export default function BillingPage() {
     setBusy(false);
     if (error) return setMessage(error.message);
 
-    setInvoiceRate("");
-    setInvoiceNotes("");
-    setInvoicePaymentUrl("");
-    setInvoicePaymentInstructions("");
-    setMessage("Draft invoice created.");
+    setMessage("Draft invoice created. The completed draft is now locked below.");
+    await loadData();
+  }
+
+  function beginInvoiceDraftEdit() {
+    if (!draftInvoiceForSelectedMatter) return;
+    const firstItem = (itemsByInvoice.get(draftInvoiceForSelectedMatter.id) ?? [])[0];
+
+    setInvoiceDescription(firstItem?.description ?? "Legal services");
+    setInvoiceQuantity(String(firstItem?.quantity ?? 1));
+    setInvoiceRate(formatCurrencyInput(String((firstItem?.unit_amount_cents ?? 0) / 100)));
+    setInvoiceDueDate(draftInvoiceForSelectedMatter.due_date ?? "");
+    setInvoiceNotes(draftInvoiceForSelectedMatter.notes ?? "");
+    setInvoicePaymentUrl(draftInvoiceForSelectedMatter.external_payment_url ?? "");
+    setInvoicePaymentInstructions(draftInvoiceForSelectedMatter.payment_instructions ?? "");
+    setItemInvoiceId(draftInvoiceForSelectedMatter.id);
+    setEditingInvoiceDraft(true);
+    setMessage("");
+  }
+
+  async function updateInvoiceDraft(event: FormEvent) {
+    event.preventDefault();
+    const invoice = draftInvoiceForSelectedMatter;
+    if (!invoice) return;
+
+    const firstItem = (itemsByInvoice.get(invoice.id) ?? [])[0];
+    const unitAmount = dollarsToCents(invoiceRate);
+    if (unitAmount <= 0) return setMessage("Enter a valid invoice rate.");
+    if (invoicePaymentUrl && !invoicePaymentUrl.startsWith("https://")) {
+      return setMessage("Payment links must begin with https://");
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    const invoiceResult = await supabase
+      .from("billing_invoices")
+      .update({
+        due_date: invoiceDueDate || null,
+        notes: invoiceNotes,
+        external_payment_url: invoicePaymentUrl || null,
+        payment_instructions: invoicePaymentInstructions,
+      })
+      .eq("id", invoice.id)
+      .eq("status", "draft");
+
+    if (invoiceResult.error) {
+      setBusy(false);
+      return setMessage(invoiceResult.error.message);
+    }
+
+    if (firstItem) {
+      const itemResult = await supabase
+        .from("billing_invoice_items")
+        .update({
+          description: invoiceDescription.trim() || "Legal services",
+          quantity: Number(invoiceQuantity),
+          unit_amount_cents: unitAmount,
+        })
+        .eq("id", firstItem.id)
+        .eq("invoice_id", invoice.id);
+
+      if (itemResult.error) {
+        setBusy(false);
+        return setMessage(itemResult.error.message);
+      }
+    }
+
+    setBusy(false);
+    setEditingInvoiceDraft(false);
+    setMessage("Draft invoice updated.");
     await loadData();
   }
 
   async function addLineItem(event: FormEvent) {
     event.preventDefault();
+    if (!editingInvoiceDraft || !draftInvoiceForSelectedMatter) {
+      return setMessage("Choose Edit draft before adding another line item.");
+    }
     const invoice = invoices.find((row) => row.id === itemInvoiceId);
     if (!invoice) return setMessage("Choose a draft invoice.");
     const unitAmount = dollarsToCents(itemRate);
@@ -337,6 +450,7 @@ export default function BillingPage() {
     const { error } = await supabase.from("billing_invoices").update({ status }).eq("id", invoiceId);
     setBusy(false);
     if (error) return setMessage(error.message);
+    setEditingInvoiceDraft(false);
     setMessage(status === "sent" ? "Invoice sent to the client portal." : "Invoice voided.");
     await loadData();
   }
@@ -530,21 +644,61 @@ export default function BillingPage() {
         {!loading && matters.length > 0 ? (
           <>
             <section className="grid gap-6 2xl:grid-cols-2">
-              <form id="new-invoice" onSubmit={createInvoice} className="premium-card scroll-mt-8 space-y-5">
+              <form
+                id="new-invoice"
+                onSubmit={editingInvoiceDraft ? updateInvoiceDraft : createInvoice}
+                className="premium-card scroll-mt-8 space-y-5"
+              >
                 <div><p className="eyebrow">New Invoice</p><h2 className="mt-3 text-xl font-bold text-slate-950">Create a matter-linked invoice</h2></div>
-                <label className="input-label">Matter<select className="input-field" value={invoiceCaseId} onChange={(e) => setInvoiceCaseId(e.target.value)}>{matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}</select></label>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <label className="input-label sm:col-span-2">Line item<input className="input-field" value={invoiceDescription} onChange={(e) => setInvoiceDescription(e.target.value)} required /></label>
-                  <label className="input-label">Quantity<input className="input-field" type="number" min="0.01" step="0.01" value={invoiceQuantity} onChange={(e) => setInvoiceQuantity(e.target.value)} required /></label>
+                <label className="input-label">
+                  Matter
+                  <select
+                    className="input-field"
+                    value={invoiceCaseId}
+                    onChange={(e) => {
+                      setInvoiceCaseId(e.target.value);
+                      setEditingInvoiceDraft(false);
+                    }}
+                  >
+                    {matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}
+                  </select>
+                </label>
+
+                <div className={draftInvoiceForSelectedMatter ? "workflow-locked rounded-2xl border p-4 space-y-5" : "space-y-5"}>
+                  {draftInvoiceForSelectedMatter ? (
+                    <div className="flex flex-col gap-3 border-b border-slate-300/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">
+                          {draftInvoiceForSelectedMatter.invoice_number} is already saved as a draft.
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          The saved values stay visible and locked. Edit the draft intentionally or send it from the billing ledger below.
+                        </p>
+                      </div>
+                      <a href="#invoice-ledger" className="btn btn-secondary">View draft invoice</a>
+                    </div>
+                  ) : null}
+
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <label className="input-label sm:col-span-2">Line item<input className="input-field" value={invoiceFormDescription} onChange={(e) => setInvoiceDescription(e.target.value)} disabled={busy || invoiceFieldsLocked} required /></label>
+                    <label className="input-label">Quantity<input className="input-field" type="number" min="0.01" step="0.01" value={invoiceFormQuantity} onChange={(e) => setInvoiceQuantity(e.target.value)} disabled={busy || invoiceFieldsLocked} required /></label>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={invoiceFormRate} onChange={(e) => setInvoiceRate(formatCurrencyInput(e.target.value))} disabled={busy || invoiceFieldsLocked} required /></label>
+                    <label className="input-label">Due date<input className="input-field" type="date" value={invoiceFormDueDate} onChange={(e) => setInvoiceDueDate(e.target.value)} disabled={busy || invoiceFieldsLocked} /></label>
+                  </div>
+                  <label className="input-label">Secure payment page<input className="input-field" type="url" placeholder="https://..." value={invoiceFormPaymentUrl} onChange={(e) => setInvoicePaymentUrl(e.target.value)} disabled={busy || invoiceFieldsLocked} /><span className="mt-1 text-xs font-normal text-slate-400">Optional. Use the firm&apos;s own hosted LawPay, Stripe, or other HTTPS payment page.</span></label>
+                  <label className="input-label">Payment instructions<textarea className="input-field min-h-24" value={invoiceFormPaymentInstructions} onChange={(e) => setInvoicePaymentInstructions(e.target.value)} placeholder="Optional instructions visible to the client." disabled={busy || invoiceFieldsLocked} /></label>
+                  <label className="input-label">Invoice note<textarea className="input-field min-h-24" value={invoiceFormNotes} onChange={(e) => setInvoiceNotes(e.target.value)} disabled={busy || invoiceFieldsLocked} /></label>
+
+                  {!draftInvoiceForSelectedMatter ? (
+                    <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Working..." : "Create draft invoice"}</button>
+                  ) : editingInvoiceDraft ? (
+                    <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Saving..." : "Save draft changes"}</button>
+                  ) : (
+                    <button type="button" className="btn btn-secondary" onClick={beginInvoiceDraftEdit}>Edit draft</button>
+                  )}
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={invoiceRate} onChange={(e) => setInvoiceRate(formatCurrencyInput(e.target.value))} required /></label>
-                  <label className="input-label">Due date<input className="input-field" type="date" value={invoiceDueDate} onChange={(e) => setInvoiceDueDate(e.target.value)} /></label>
-                </div>
-                <label className="input-label">Secure payment page<input className="input-field" type="url" placeholder="https://..." value={invoicePaymentUrl} onChange={(e) => setInvoicePaymentUrl(e.target.value)} /><span className="mt-1 text-xs font-normal text-slate-400">Optional. Use the firm&apos;s own hosted LawPay, Stripe, or other HTTPS payment page.</span></label>
-                <label className="input-label">Payment instructions<textarea className="input-field min-h-24" value={invoicePaymentInstructions} onChange={(e) => setInvoicePaymentInstructions(e.target.value)} placeholder="Optional instructions visible to the client." /></label>
-                <label className="input-label">Invoice note<textarea className="input-field min-h-24" value={invoiceNotes} onChange={(e) => setInvoiceNotes(e.target.value)} /></label>
-                <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Working..." : "Create draft invoice"}</button>
               </form>
 
               <form
@@ -595,12 +749,12 @@ export default function BillingPage() {
             </section>
 
             <section className="grid gap-6 2xl:grid-cols-2">
-              <form onSubmit={addLineItem} className="premium-card space-y-4">
+              <form onSubmit={addLineItem} className={`premium-card space-y-4 ${draftInvoiceForSelectedMatter && !editingInvoiceDraft ? "workflow-locked" : ""}`}>
                 <div><p className="eyebrow">Draft invoice</p><h2 className="mt-3 text-xl font-bold text-slate-950">Add another line item</h2></div>
-                <label className="input-label">Invoice<select className="input-field" value={itemInvoiceId} onChange={(e) => setItemInvoiceId(e.target.value)}><option value="">Select draft invoice</option>{draftInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · {matterById.get(invoice.case_id)?.case_number}</option>)}</select></label>
-                <div className="grid gap-4 sm:grid-cols-3"><label className="input-label sm:col-span-2">Description<input className="input-field" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} /></label><label className="input-label">Qty<input className="input-field" type="number" min="0.01" step="0.01" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} /></label></div>
-                <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={itemRate} onChange={(e) => setItemRate(formatCurrencyInput(e.target.value))} /></label>
-                <button disabled={busy || !itemInvoiceId} className="btn btn-secondary" type="submit">Add line item</button>
+                <label className="input-label">Invoice<select className="input-field" value={itemInvoiceId} onChange={(e) => setItemInvoiceId(e.target.value)} disabled={!editingInvoiceDraft}><option value="">Select draft invoice</option>{draftInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · {matterById.get(invoice.case_id)?.case_number}</option>)}</select></label>
+                <div className="grid gap-4 sm:grid-cols-3"><label className="input-label sm:col-span-2">Description<input className="input-field" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} disabled={!editingInvoiceDraft} /></label><label className="input-label">Qty<input className="input-field" type="number" min="0.01" step="0.01" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} disabled={!editingInvoiceDraft} /></label></div>
+                <label className="input-label">Rate / amount<input className="input-field" type="text" inputMode="decimal" placeholder="$750.00" value={itemRate} onChange={(e) => setItemRate(formatCurrencyInput(e.target.value))} disabled={!editingInvoiceDraft} /></label>
+                <button disabled={busy || !itemInvoiceId || !editingInvoiceDraft} className="btn btn-secondary" type="submit">{editingInvoiceDraft ? "Add line item" : "Edit draft to add line items"}</button>
               </form>
 
               <form onSubmit={recordPayment} className="premium-card space-y-4">
@@ -613,7 +767,7 @@ export default function BillingPage() {
               </form>
             </section>
 
-            <section className="premium-card">
+            <section id="invoice-ledger" className="premium-card scroll-mt-8">
               <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow">Invoices</p><h2 className="mt-3 text-xl font-bold text-slate-950">Firm billing ledger</h2></div><p className="text-sm text-slate-500">{invoices.length} invoice{invoices.length === 1 ? "" : "s"}</p></div>
               <div className="mt-6 space-y-4">
                 {invoices.length === 0 ? <p className="text-sm text-slate-500">No invoices yet.</p> : invoices.map((invoice) => {
