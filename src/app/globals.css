@@ -2,8 +2,16 @@
 @import "./marketing.css";
 
 :root {
-  --background: #f4f7fb;
+  --background: #f8f4ee;
   --foreground: #0b1220;
+
+  /* Project-wide premium canvas */
+  --cf-canvas: #f8f4ee;
+  --cf-canvas-soft: #fbf8f3;
+  --cf-canvas-deep: #f2ebe2;
+  --cf-canvas-glow: rgba(143, 109, 75, 0.085);
+  --cf-canvas-glow-soft: rgba(181, 151, 118, 0.055);
+  --cf-warm-border: rgba(92, 70, 47, 0.10);
 
   /* Brand palette — refined navy / slate / blue */
   --brand-ink: #0b1220;
@@ -31,10 +39,10 @@
   --color-navy-800: #15284f;
   --color-cobalt: #2f5bea;
   --color-cobalt-soft: #e8eefd;
-  --color-porcelain: #f6f5f1;
-  --color-ivory: #fbfaf7;
-  --color-line: #e3e1da;
-  --color-line-strong: #d3d0c7;
+  --color-porcelain: #f4efe8;
+  --color-ivory: #f8f4ee;
+  --color-line: #e2dbd1;
+  --color-line-strong: #d2c8bc;
   --color-ink: #0b1220;
   --color-muted: #5b6474;
 }
@@ -51,8 +59,10 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 600px at 100% -10%, rgba(37, 99, 235, 0.06), transparent 60%),
-    var(--background);
+    radial-gradient(1100px 520px at 100% -8%, var(--cf-canvas-glow), transparent 62%),
+    radial-gradient(900px 420px at 0% 100%, var(--cf-canvas-glow-soft), transparent 68%),
+    linear-gradient(180deg, var(--cf-canvas-soft) 0%, var(--cf-canvas) 48%, var(--cf-canvas-deep) 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
@@ -340,8 +350,9 @@ select {
 .cf-workspace {
   min-height: 100vh;
   background:
-    radial-gradient(900px 440px at 96% -4%, rgba(47, 91, 234, 0.075), transparent 62%),
-    linear-gradient(180deg, #fbfaf7 0%, #f6f5f1 100%);
+    radial-gradient(980px 460px at 96% -4%, var(--cf-canvas-glow), transparent 64%),
+    radial-gradient(760px 360px at 2% 100%, var(--cf-canvas-glow-soft), transparent 70%),
+    linear-gradient(180deg, var(--cf-canvas-soft) 0%, var(--cf-canvas) 52%, var(--cf-canvas-deep) 100%);
   color: var(--color-ink);
 }
 
@@ -547,9 +558,9 @@ select {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border: 1px solid rgba(15, 30, 61, 0.09);
+  border: 1px solid var(--cf-warm-border);
   border-radius: 16px;
-  background: rgba(251, 250, 247, 0.9);
+  background: rgba(251, 248, 243, 0.90);
   padding: 1rem 1.15rem;
   box-shadow:
     0 1px 2px rgba(8, 18, 42, 0.03),
@@ -571,9 +582,9 @@ select {
 }
 
 .cf-workspace .premium-card {
-  border-color: rgba(15, 30, 61, 0.09);
+  border-color: var(--cf-warm-border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.93);
+  background: rgba(255, 253, 250, 0.93);
   box-shadow:
     0 1px 2px rgba(8, 18, 42, 0.025),
     0 18px 42px -34px rgba(8, 18, 42, 0.34);
@@ -619,7 +630,7 @@ select {
 
 .cf-workspace .btn-secondary {
   border-color: rgba(15, 30, 61, 0.13);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 253, 250, 0.90);
   color: #26324a;
 }
 
@@ -641,8 +652,8 @@ select {
   border: 1px solid rgba(15, 30, 61, 0.08);
   border-radius: 18px;
   background:
-    radial-gradient(55% 140% at 96% 0%, rgba(47, 91, 234, 0.14), transparent 62%),
-    linear-gradient(120deg, #ffffff 0%, #fbfaf7 72%);
+    radial-gradient(55% 140% at 96% 0%, rgba(143, 109, 75, 0.10), transparent 62%),
+    linear-gradient(120deg, #fffdf9 0%, var(--cf-canvas-soft) 72%);
   padding: clamp(1.5rem, 2.6vw, 2.35rem);
   box-shadow: 0 24px 54px -42px rgba(8, 18, 42, 0.45);
 }
@@ -677,7 +688,7 @@ select {
   min-width: min(100%, 340px);
   border: 1px solid rgba(15, 30, 61, 0.09);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 253, 250, 0.84);
   padding: 0.85rem;
   box-shadow: 0 16px 36px -30px rgba(8, 18, 42, 0.45);
   backdrop-filter: blur(12px);
@@ -784,8 +795,8 @@ select {
 .cf-workspace-content > .space-y-6 > section.premium-card:first-child {
   overflow: hidden;
   background:
-    radial-gradient(60% 130% at 98% 0%, rgba(47, 91, 234, 0.095), transparent 65%),
-    rgba(255, 255, 255, 0.93);
+    radial-gradient(60% 130% at 98% 0%, rgba(143, 109, 75, 0.075), transparent 65%),
+    rgba(255, 253, 250, 0.94);
   padding: clamp(1.45rem, 2.4vw, 2.15rem);
 }
 
@@ -863,7 +874,7 @@ select {
 .cf-workspace .premium-card [class*="border-dashed"] {
   border-color: rgba(15, 30, 61, 0.14);
   background:
-    linear-gradient(180deg, rgba(248, 249, 252, 0.76), rgba(255, 255, 255, 0.9));
+    linear-gradient(180deg, rgba(248, 244, 238, 0.82), rgba(255, 253, 250, 0.92));
 }
 
 .cf-workspace .premium-card > div[class*="border-b"] {
@@ -878,7 +889,7 @@ select {
 
 .cf-workspace .soft-panel {
   border-color: rgba(15, 30, 61, 0.085);
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.82), rgba(255,255,255,0.92));
+  background: linear-gradient(180deg, rgba(248, 244, 238, 0.84), rgba(255,253,250,0.93));
 }
 
 .cf-workspace .premium-card form h2,
