@@ -12,7 +12,17 @@ type Payment = { id: string; invoice_id: string; amount_cents: number; status: s
 type Retainer = { id: string; case_id: string; title: string; agreement_text: string; agreement_sha256: string; status: string; client_email: string | null; sent_at: string | null; expires_at: string | null; signer_name: string | null; signed_at: string | null; consent_text: string | null; signed_pdf_path: string | null; signed_pdf_created_at: string | null; };
 
 function money(cents: number) { return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents || 0) / 100); }
-function date(value: string | null) { if (!value) return "Not set"; return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value)); }
+function date(value: string | null) {
+  if (!value) return "Not set";
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const parsed = dateOnly
+    ? (() => {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      })()
+    : new Date(value);
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(parsed);
+}
 function badge(status: string) { if (status === "paid" || status === "signed") return "border-emerald-200 bg-emerald-50 text-emerald-700"; if (status === "partially_paid" || status === "sent") return "border-blue-200 bg-blue-50 text-blue-700"; return "border-slate-200 bg-slate-50 text-slate-600"; }
 function isOverdue(invoice: Invoice) { return Boolean(invoice.balance_cents > 0 && invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10)); }
 

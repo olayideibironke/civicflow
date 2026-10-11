@@ -84,11 +84,20 @@ function money(cents: number) {
 
 function shortDate(value: string | null) {
   if (!value) return "Not set";
+
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const parsed = dateOnly
+    ? (() => {
+        const [year, month, day] = value.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      })()
+    : new Date(value);
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(parsed);
 }
 
 function formatCurrencyInput(value: string) {
