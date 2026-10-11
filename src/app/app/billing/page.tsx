@@ -160,6 +160,7 @@ export default function BillingPage() {
   const [invoicePaymentUrl, setInvoicePaymentUrl] = useState("");
   const [invoicePaymentInstructions, setInvoicePaymentInstructions] = useState("");
   const [editingInvoiceDraft, setEditingInvoiceDraft] = useState(false);
+  const [startingNewInvoice, setStartingNewInvoice] = useState(false);
 
   const [itemInvoiceId, setItemInvoiceId] = useState("");
   const [itemDescription, setItemDescription] = useState("");
@@ -270,13 +271,29 @@ export default function BillingPage() {
   const paymentDisplayMemo = paymentWorkflowComplete
     ? latestCompletedPayment.memo
     : paymentMemo;
-  const invoiceWorkflowForSelectedMatter = useMemo(
+  const latestInvoiceForSelectedMatter = useMemo(
     () =>
       invoices.find(
         (invoice) => invoice.case_id === invoiceCaseId && invoice.status !== "void"
       ) ?? null,
     [invoices, invoiceCaseId]
   );
+  const activeInvoiceForSelectedMatter = useMemo(
+    () =>
+      invoices.find(
+        (invoice) =>
+          invoice.case_id === invoiceCaseId &&
+          ["draft", "sent", "partially_paid"].includes(invoice.status)
+      ) ?? null,
+    [invoices, invoiceCaseId]
+  );
+  const invoiceWorkflowForSelectedMatter = startingNewInvoice
+    ? null
+    : activeInvoiceForSelectedMatter ?? latestInvoiceForSelectedMatter;
+  const canStartNewInvoice =
+    !startingNewInvoice &&
+    !activeInvoiceForSelectedMatter &&
+    latestInvoiceForSelectedMatter?.status === "paid";
   const draftInvoiceForSelectedMatter =
     invoiceWorkflowForSelectedMatter?.status === "draft"
       ? invoiceWorkflowForSelectedMatter
@@ -417,8 +434,25 @@ export default function BillingPage() {
     }
 
     setBusy(false);
+    setStartingNewInvoice(false);
     setMessage("Draft invoice created. The completed draft is now locked below.");
     await loadData();
+  }
+
+  function beginNewInvoiceForMatter() {
+    if (!canStartNewInvoice) return;
+
+    setStartingNewInvoice(true);
+    setEditingInvoiceDraft(false);
+    setInvoiceDescription("Legal services");
+    setInvoiceQuantity("1");
+    setInvoiceRate("");
+    setInvoiceDueDate("");
+    setInvoiceNotes("");
+    setInvoicePaymentUrl("");
+    setInvoicePaymentInstructions("");
+    setItemInvoiceId("");
+    setMessage("");
   }
 
   function beginInvoiceDraftEdit() {
@@ -731,6 +765,7 @@ export default function BillingPage() {
                     onChange={(e) => {
                       setInvoiceCaseId(e.target.value);
                       setEditingInvoiceDraft(false);
+                      setStartingNewInvoice(false);
                     }}
                   >
                     {matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}
@@ -771,7 +806,14 @@ export default function BillingPage() {
                   ) : invoiceWorkflowForSelectedMatter.status === "draft" ? (
                     <button type="button" className="btn btn-secondary" onClick={beginInvoiceDraftEdit}>Edit draft</button>
                   ) : (
-                    <button type="button" disabled className="btn btn-primary">{invoiceWorkflowLabel}</button>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled className="btn btn-primary">{invoiceWorkflowLabel}</button>
+                      {canStartNewInvoice ? (
+                        <button type="button" className="btn btn-secondary" onClick={beginNewInvoiceForMatter}>
+                          New invoice for this matter
+                        </button>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               </form>
