@@ -248,8 +248,28 @@ export default function BillingPage() {
   const payableInvoices = invoices.filter((invoice) => invoice.status === "sent" || invoice.status === "partially_paid");
   const outstanding = payableInvoices.reduce((sum, invoice) => sum + invoice.balance_cents, 0);
   const collected = invoices.reduce((sum, invoice) => sum + invoice.amount_paid_cents, 0);
-  const overdueInvoices = payableInvoices.filter((invoice) => invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10));
+  const overdueInvoices = payableInvoices.filter((invoice) => invoice.due_date && invoice.due_date < localDateKey());
   const awaitingSignature = retainers.filter((retainer) => retainer.status === "sent").length;
+  const latestCompletedPayment = payments[0] ?? null;
+  const latestCompletedPaymentInvoice = latestCompletedPayment
+    ? invoices.find((invoice) => invoice.id === latestCompletedPayment.invoice_id) ?? null
+    : null;
+  const paymentWorkflowComplete =
+    payableInvoices.length === 0 &&
+    latestCompletedPayment !== null &&
+    latestCompletedPaymentInvoice?.status === "paid";
+  const paymentDisplayAmount = paymentWorkflowComplete
+    ? formatCurrencyInput(String(latestCompletedPayment.amount_cents / 100))
+    : paymentAmount;
+  const paymentDisplayMethod = paymentWorkflowComplete
+    ? latestCompletedPayment.payment_method
+    : paymentMethod;
+  const paymentDisplayDestination = paymentWorkflowComplete
+    ? latestCompletedPayment.funds_destination
+    : paymentDestination;
+  const paymentDisplayMemo = paymentWorkflowComplete
+    ? latestCompletedPayment.memo
+    : paymentMemo;
   const invoiceWorkflowForSelectedMatter = useMemo(
     () =>
       invoices.find(
@@ -812,13 +832,70 @@ export default function BillingPage() {
                 <button disabled={busy || !itemInvoiceId || !editingInvoiceDraft} className="btn btn-secondary" type="submit">{editingInvoiceDraft ? "Add line item" : "Edit draft to add line items"}</button>
               </form>
 
-              <form onSubmit={recordPayment} className="premium-card space-y-4">
-                <div><p className="eyebrow">Payment record</p><h2 className="mt-3 text-xl font-bold text-slate-950">Record funds received</h2></div>
-                <label className="input-label">Invoice<select className="input-field" value={paymentInvoiceId} onChange={(e) => setPaymentInvoiceId(e.target.value)}><option value="">Select outstanding invoice</option>{payableInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · balance {money(invoice.balance_cents)}</option>)}</select></label>
-                <div className="grid gap-4 sm:grid-cols-3"><label className="input-label">Amount<input className="input-field" type="text" inputMode="decimal" placeholder="$0.00" value={paymentAmount} onChange={(e) => setPaymentAmount(formatCurrencyInput(e.target.value))} /></label><label className="input-label">Method<select className="input-field" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}><option value="manual">Manual</option><option value="card">Card</option><option value="ach">ACH</option><option value="check">Check</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label className="input-label">Destination<select className="input-field" value={paymentDestination} onChange={(e) => setPaymentDestination(e.target.value)}><option value="operating">Operating</option><option value="trust">Trust / IOLTA record</option></select></label></div>
-                <label className="input-label">Memo<input className="input-field" value={paymentMemo} onChange={(e) => setPaymentMemo(e.target.value)} /></label>
+              <form onSubmit={recordPayment} className={`premium-card space-y-4 ${paymentWorkflowComplete ? "workflow-locked" : ""}`}>
+                <div>
+                  <p className="eyebrow">Payment record</p>
+                  <h2 className="mt-3 text-xl font-bold text-slate-950">{paymentWorkflowComplete ? "Funds received" : "Record funds received"}</h2>
+                </div>
+
+                {paymentWorkflowComplete && latestCompletedPayment && latestCompletedPaymentInvoice ? (
+                  <div className="rounded-xl border border-slate-300/60 bg-slate-100/70 px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-800">Payment workflow completed.</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {latestCompletedPaymentInvoice.invoice_number} was paid in full on {shortDate(latestCompletedPayment.received_at)}. The payment record is locked for accounting history.
+                    </p>
+                  </div>
+                ) : null}
+
+                <label className="input-label">
+                  Invoice
+                  <select
+                    className="input-field"
+                    value={paymentWorkflowComplete ? latestCompletedPaymentInvoice?.id ?? "" : paymentInvoiceId}
+                    onChange={(e) => setPaymentInvoiceId(e.target.value)}
+                    disabled={paymentWorkflowComplete}
+                  >
+                    {paymentWorkflowComplete && latestCompletedPaymentInvoice ? (
+                      <option value={latestCompletedPaymentInvoice.id}>
+                        {latestCompletedPaymentInvoice.invoice_number} · paid in full
+                      </option>
+                    ) : (
+                      <>
+                        <option value="">Select outstanding invoice</option>
+                        {payableInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · balance {money(invoice.balance_cents)}</option>)}
+                      </>
+                    )}
+                  </select>
+                </label>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <label className="input-label">
+                    Amount
+                    <input className="input-field" type="text" inputMode="decimal" placeholder="$0.00" value={paymentDisplayAmount} onChange={(e) => setPaymentAmount(formatCurrencyInput(e.target.value))} disabled={paymentWorkflowComplete} />
+                  </label>
+                  <label className="input-label">
+                    Method
+                    <select className="input-field" value={paymentDisplayMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={paymentWorkflowComplete}>
+                      <option value="manual">Manual</option><option value="card">Card</option><option value="ach">ACH</option><option value="check">Check</option><option value="cash">Cash</option><option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label className="input-label">
+                    Destination
+                    <select className="input-field" value={paymentDisplayDestination} onChange={(e) => setPaymentDestination(e.target.value)} disabled={paymentWorkflowComplete}>
+                      <option value="operating">Operating</option><option value="trust">Trust / IOLTA record</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="input-label">
+                  Memo
+                  <input className="input-field" value={paymentDisplayMemo} onChange={(e) => setPaymentMemo(e.target.value)} disabled={paymentWorkflowComplete} />
+                </label>
+
                 <p className="text-xs leading-5 text-amber-700">Selecting Trust / IOLTA records where funds went. CivicFlow does not initiate or certify a trust-account transfer.</p>
-                <button disabled={busy || !paymentInvoiceId} className="btn btn-secondary" type="submit">Record payment</button>
+                <button disabled={busy || !paymentInvoiceId || paymentWorkflowComplete} className="btn btn-secondary" type="submit">
+                  {paymentWorkflowComplete ? "Payment recorded" : "Record payment"}
+                </button>
               </form>
             </section>
 
