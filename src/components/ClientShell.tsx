@@ -136,63 +136,85 @@ export default function ClientShell({ children }: ClientShellProps) {
   }
 
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto grid max-w-[1500px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:py-8">
-        <aside className="self-start rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-[var(--shadow-md)] backdrop-blur lg:sticky lg:top-8">
-          <Link href="/" className="flex items-center rounded-xl px-2 py-1.5 transition hover:opacity-90" aria-label="CivicFlow home">
-            <CivicFlowLogo size="md" />
-          </Link>
+    <main className="cf-workspace cf-client-workspace min-h-screen">
+      <div className="cf-workspace-shell">
+        <aside className="cf-workspace-sidebar">
+          <div className="cf-workspace-sidebar-inner">
+            <Link href="/" className="cf-workspace-brand" aria-label="CivicFlow home">
+              <CivicFlowLogo size="md" inverted />
+            </Link>
 
-          <div className="premium-dark mt-4 !rounded-xl !p-4">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-blue-200/80">Client Portal</p>
-            <p className="mt-2.5 text-lg font-bold leading-tight text-white">{displayName}</p>
-            <p className="mt-2 text-xs leading-5 text-slate-300">
-              {workspace.caseCount} matter{workspace.caseCount === 1 ? "" : "s"} connected to this account
-            </p>
-          </div>
+            <div className="cf-workspace-firm-card">
+              <p className="cf-workspace-kicker text-blue-200/70">Secure client portal</p>
+              <p className="mt-2 text-base font-semibold text-white">{displayName}</p>
+              <p className="mt-3 text-xs leading-5 text-slate-300">
+                {workspace.caseCount} matter{workspace.caseCount === 1 ? "" : "s"} shared with this account.
+              </p>
+            </div>
 
-          <nav className="mt-5 grid gap-1">
-            {navigationItems.map((item) => {
-              const active = item.href === "/client" ? pathname === "/client" || pathname.startsWith("/client/cases/") : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
-                >
-                  {active ? <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-blue-400" /> : null}
-                  <span className={active ? "text-blue-300" : "text-slate-400"}>{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+            <nav className="cf-workspace-nav" aria-label="Client portal">
+              <p className="cf-workspace-nav-label">Your workspace</p>
+              {navigationItems.map((item) => {
+                const active =
+                  item.href === "/client"
+                    ? pathname === "/client" || pathname.startsWith("/client/cases/")
+                    : pathname.startsWith(item.href);
 
-          <div className="mt-5 border-t border-slate-200/80 pt-5">
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
+                return (
+                  <div key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`cf-workspace-nav-item ${active ? "is-active" : ""}`}
+                    >
+                      <span className="cf-workspace-nav-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                      {active ? <span className="cf-workspace-nav-active" aria-hidden="true" /> : null}
+                    </Link>
+                  </div>
+                );
+              })}
+            </nav>
+
+            <div className="cf-workspace-profile">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-sm font-semibold text-white">{initials}</div>
+                <div className="cf-workspace-avatar">{initials}</div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">{workspace.email}</p>
+                  <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-400">{workspace.email}</p>
                 </div>
               </div>
-              <button type="button" onClick={handleSignOut} disabled={signingOut} className="btn btn-secondary mt-3.5 w-full">
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="cf-workspace-profile-action mt-4 w-full"
+              >
                 {signingOut ? "Signing out..." : "Sign out"}
               </button>
             </div>
           </div>
         </aside>
 
-        <section className="min-w-0 space-y-6">
-          <header className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-[var(--shadow-sm)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-400">Secure Client Portal</p>
-              <p className="mt-1 text-sm font-semibold text-slate-700">Only information your legal team shares with you appears here.</p>
+        <section className="cf-workspace-main">
+          <header className="cf-workspace-topbar">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                CivicFlow client portal
+              </p>
+              <h1 className="cf-workspace-page-title mt-2">
+                Your legal matters
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Only information your legal team has chosen to share with you appears here.
+              </p>
             </div>
-            <Link href="/client/account" className="btn btn-secondary">Account settings</Link>
+            <div className="flex items-center gap-2">
+              <Link href="/client/account" className="btn btn-secondary">Account</Link>
+              <div className="cf-workspace-avatar cf-workspace-avatar-light">{initials}</div>
+            </div>
           </header>
-          <div className="animate-fade-up">{children}</div>
+
+          <div className="cf-workspace-content animate-fade-up">{children}</div>
         </section>
       </div>
     </main>

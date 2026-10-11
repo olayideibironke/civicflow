@@ -778,3 +778,61 @@ select {
     padding-top: 0.7rem;
   }
 }
+
+
+/* Editorial page headers inside the authenticated product */
+.cf-workspace-content > .space-y-6 > section.premium-card:first-child {
+  overflow: hidden;
+  background:
+    radial-gradient(60% 130% at 98% 0%, rgba(47, 91, 234, 0.095), transparent 65%),
+    rgba(255, 255, 255, 0.93);
+  padding: clamp(1.45rem, 2.4vw, 2.15rem);
+}
+
+.cf-workspace-content > .space-y-6 > section.premium-card:first-child::after {
+  content: "";
+  position: absolute;
+  right: -54px;
+  bottom: -88px;
+  height: 190px;
+  width: 190px;
+  border: 1px solid rgba(47, 91, 234, 0.08);
+  border-radius: 999px;
+  box-shadow: 0 0 0 34px rgba(47, 91, 234, 0.018);
+  pointer-events: none;
+}
+
+.cf-workspace-content > .space-y-6 > section.premium-card:first-child > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cf-workspace-content > .space-y-6 > section.premium-card:first-child h1 {
+  max-width: 860px;
+  font-family: var(--font-display), "Iowan Old Style", Georgia, serif;
+  font-size: clamp(1.85rem, 3vw, 3rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: -0.032em;
+  color: var(--color-midnight);
+}
+
+.cf-workspace-content > .space-y-6 > section.premium-card:first-child p:not(.eyebrow) {
+  max-width: 780px;
+}
+
+.cf-client-workspace .cf-workspace-sidebar {
+  background:
+    radial-gradient(82% 55% at 100% 0%, rgba(47, 91, 234, 0.22), transparent 70%),
+    linear-gradient(180deg, #102348 0%, #0a1730 100%);
+}
+
+.cf-client-workspace .cf-workspace-firm-card {
+  background: rgba(255, 255, 255, 0.065);
+}
+
+@media (max-width: 639px) {
+  .cf-workspace-content > .space-y-6 > section.premium-card:first-child h1 {
+    font-size: 1.85rem;
+  }
+}
