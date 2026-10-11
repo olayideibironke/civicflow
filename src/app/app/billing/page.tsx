@@ -250,46 +250,63 @@ export default function BillingPage() {
   const collected = invoices.reduce((sum, invoice) => sum + invoice.amount_paid_cents, 0);
   const overdueInvoices = payableInvoices.filter((invoice) => invoice.due_date && invoice.due_date < new Date().toISOString().slice(0, 10));
   const awaitingSignature = retainers.filter((retainer) => retainer.status === "sent").length;
-  const draftInvoiceForSelectedMatter = useMemo(
+  const invoiceWorkflowForSelectedMatter = useMemo(
     () =>
       invoices.find(
-        (invoice) => invoice.case_id === invoiceCaseId && invoice.status === "draft"
+        (invoice) => invoice.case_id === invoiceCaseId && invoice.status !== "void"
       ) ?? null,
     [invoices, invoiceCaseId]
   );
-  const primaryDraftItem = draftInvoiceForSelectedMatter
-    ? (itemsByInvoice.get(draftInvoiceForSelectedMatter.id) ?? [])[0] ?? null
+  const draftInvoiceForSelectedMatter =
+    invoiceWorkflowForSelectedMatter?.status === "draft"
+      ? invoiceWorkflowForSelectedMatter
+      : null;
+  const primaryInvoiceItem = invoiceWorkflowForSelectedMatter
+    ? (itemsByInvoice.get(invoiceWorkflowForSelectedMatter.id) ?? [])[0] ?? null
     : null;
 
-  const invoiceFieldsLocked = Boolean(draftInvoiceForSelectedMatter) && !editingInvoiceDraft;
+  const invoiceFieldsLocked =
+    Boolean(invoiceWorkflowForSelectedMatter) &&
+    !(invoiceWorkflowForSelectedMatter?.status === "draft" && editingInvoiceDraft);
   const invoiceFormDescription =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? primaryDraftItem?.description ?? "Legal services"
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? primaryInvoiceItem?.description ?? "Legal services"
       : invoiceDescription;
   const invoiceFormQuantity =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? String(primaryDraftItem?.quantity ?? 1)
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? String(primaryInvoiceItem?.quantity ?? 1)
       : invoiceQuantity;
   const invoiceFormRate =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? formatCurrencyInput(String((primaryDraftItem?.unit_amount_cents ?? 0) / 100))
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? formatCurrencyInput(String((primaryInvoiceItem?.unit_amount_cents ?? 0) / 100))
       : invoiceRate;
   const invoiceFormDueDate =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? draftInvoiceForSelectedMatter.due_date ?? ""
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? invoiceWorkflowForSelectedMatter.due_date ?? ""
       : invoiceDueDate;
   const invoiceFormPaymentUrl =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? draftInvoiceForSelectedMatter.external_payment_url ?? ""
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? invoiceWorkflowForSelectedMatter.external_payment_url ?? ""
       : invoicePaymentUrl;
   const invoiceFormPaymentInstructions =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? draftInvoiceForSelectedMatter.payment_instructions ?? ""
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? invoiceWorkflowForSelectedMatter.payment_instructions ?? ""
       : invoicePaymentInstructions;
   const invoiceFormNotes =
-    draftInvoiceForSelectedMatter && !editingInvoiceDraft
-      ? draftInvoiceForSelectedMatter.notes ?? ""
+    invoiceWorkflowForSelectedMatter && !editingInvoiceDraft
+      ? invoiceWorkflowForSelectedMatter.notes ?? ""
       : invoiceNotes;
+
+  const invoiceWorkflowLabel =
+    invoiceWorkflowForSelectedMatter?.status === "draft"
+      ? "Draft saved"
+      : invoiceWorkflowForSelectedMatter?.status === "sent"
+        ? "Invoice sent"
+        : invoiceWorkflowForSelectedMatter?.status === "partially_paid"
+          ? "Partially paid"
+          : invoiceWorkflowForSelectedMatter?.status === "paid"
+            ? "Invoice paid"
+            : "Invoice on record";
   const activeRetainerForSelectedMatter = useMemo(
     () =>
       retainers.find(
@@ -338,8 +355,8 @@ export default function BillingPage() {
   async function createInvoice(event: FormEvent) {
     event.preventDefault();
     if (!invoiceCaseId) return setMessage("Choose a matter first.");
-    if (draftInvoiceForSelectedMatter) {
-      return setMessage("This matter already has a draft invoice. Edit or send the existing draft instead of creating a duplicate.");
+    if (invoiceWorkflowForSelectedMatter) {
+      return setMessage("This matter already has an invoice workflow on record. Use the existing invoice instead of creating a duplicate.");
     }
     const unitAmount = dollarsToCents(invoiceRate);
     if (unitAmount <= 0) return setMessage("Enter a valid invoice rate.");
@@ -700,18 +717,18 @@ export default function BillingPage() {
                   </select>
                 </label>
 
-                <div className={draftInvoiceForSelectedMatter ? "workflow-locked rounded-2xl border p-4 space-y-5" : "space-y-5"}>
-                  {draftInvoiceForSelectedMatter ? (
+                <div className={invoiceWorkflowForSelectedMatter ? "workflow-locked rounded-2xl border p-4 space-y-5" : "space-y-5"}>
+                  {invoiceWorkflowForSelectedMatter ? (
                     <div className="flex flex-col gap-3 border-b border-slate-300/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-sm font-semibold text-slate-800">
-                          {draftInvoiceForSelectedMatter.invoice_number} is already saved as a draft.
+                          {invoiceWorkflowForSelectedMatter.invoice_number} is already on record.
                         </p>
                         <p className="mt-1 text-xs leading-5 text-slate-500">
-                          The saved values stay visible and locked. Edit the draft intentionally or send it from the billing ledger below.
+                          Status: {invoiceWorkflowForSelectedMatter.status.replaceAll("_", " ")}. Saved values stay visible and locked as this invoice moves through its lifecycle.
                         </p>
                       </div>
-                      <a href="#invoice-ledger" className="btn btn-secondary">View draft invoice</a>
+                      <a href="#invoice-ledger" className="btn btn-secondary">View invoice</a>
                     </div>
                   ) : null}
 
@@ -727,12 +744,14 @@ export default function BillingPage() {
                   <label className="input-label">Payment instructions<textarea className="input-field min-h-24" value={invoiceFormPaymentInstructions} onChange={(e) => setInvoicePaymentInstructions(e.target.value)} placeholder="Optional instructions visible to the client." disabled={busy || invoiceFieldsLocked} /></label>
                   <label className="input-label">Invoice note<textarea className="input-field min-h-24" value={invoiceFormNotes} onChange={(e) => setInvoiceNotes(e.target.value)} disabled={busy || invoiceFieldsLocked} /></label>
 
-                  {!draftInvoiceForSelectedMatter ? (
+                  {!invoiceWorkflowForSelectedMatter ? (
                     <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Working..." : "Create draft invoice"}</button>
-                  ) : editingInvoiceDraft ? (
+                  ) : invoiceWorkflowForSelectedMatter.status === "draft" && editingInvoiceDraft ? (
                     <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Saving..." : "Save draft changes"}</button>
-                  ) : (
+                  ) : invoiceWorkflowForSelectedMatter.status === "draft" ? (
                     <button type="button" className="btn btn-secondary" onClick={beginInvoiceDraftEdit}>Edit draft</button>
+                  ) : (
+                    <button type="button" disabled className="btn btn-primary">{invoiceWorkflowLabel}</button>
                   )}
                 </div>
               </form>
@@ -785,7 +804,7 @@ export default function BillingPage() {
             </section>
 
             <section className="grid gap-6 2xl:grid-cols-2">
-              <form onSubmit={addLineItem} className={`premium-card space-y-4 ${draftInvoiceForSelectedMatter && !editingInvoiceDraft ? "workflow-locked" : ""}`}>
+              <form onSubmit={addLineItem} className={`premium-card space-y-4 ${invoiceWorkflowForSelectedMatter && !editingInvoiceDraft ? "workflow-locked" : ""}`}>
                 <div><p className="eyebrow">Draft invoice</p><h2 className="mt-3 text-xl font-bold text-slate-950">Add another line item</h2></div>
                 <label className="input-label">Invoice<select className="input-field" value={itemInvoiceId} onChange={(e) => setItemInvoiceId(e.target.value)} disabled={!editingInvoiceDraft}><option value="">Select draft invoice</option>{draftInvoices.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.invoice_number} · {matterById.get(invoice.case_id)?.case_number}</option>)}</select></label>
                 <div className="grid gap-4 sm:grid-cols-3"><label className="input-label sm:col-span-2">Description<input className="input-field" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} disabled={!editingInvoiceDraft} /></label><label className="input-label">Qty<input className="input-field" type="number" min="0.01" step="0.01" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} disabled={!editingInvoiceDraft} /></label></div>
