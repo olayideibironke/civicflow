@@ -179,12 +179,12 @@ function MetricCard({
           : "text-slate-900";
 
   return (
-    <div className="premium-card">
-      <p className="eyebrow">{label}</p>
-      <p className={`mt-3 text-3xl font-bold tracking-tight ${valueClass}`}>
+    <div className="cf-metric-card">
+      <p className="text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className={`cf-metric-value mt-4 ${valueClass}`}>
         {value}
       </p>
-      <p className="mt-3 text-sm font-medium leading-6 text-slate-500">
+      <p className="mt-3 text-sm leading-6 text-slate-500">
         {detail}
       </p>
     </div>
@@ -431,25 +431,33 @@ export default function DashboardPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <section className="premium-card">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <section className="cf-dashboard-hero">
+          <div className="relative z-10 flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <p className="eyebrow">Operations Dashboard</p>
-              <h1 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                Staff command center
+              <p className="mk-eyebrow">Today in CivicFlow</p>
+              <h1 className="cf-dashboard-display mt-5">
+                Your practice, clearly in view.
               </h1>
-              <p className="mt-3 max-w-4xl text-base leading-7 text-slate-600">
-                Track open cases, overdue follow-ups, document blockers, assignment gaps, and recent client intake activity from one workspace.
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+                Matters, follow-ups, documents, client activity, billing, and intake stay connected in one focused legal workspace.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/app/cases/new" className="btn btn-primary">
-                Create case
-              </Link>
-              <Link href="/intake" className="btn btn-secondary">
-                Client intake
-              </Link>
+            <div className="cf-dashboard-action-rail">
+              <p className="px-1 pb-3 text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Start work
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+                <Link href="/app/cases/new" className="btn btn-primary">
+                  New matter
+                </Link>
+                <Link href="/app/conflicts" className="btn btn-secondary">
+                  Run conflict check
+                </Link>
+                <Link href="/app/billing" className="btn btn-secondary">
+                  Billing & retainers
+                </Link>
+              </div>
             </div>
           </div>
         </section>

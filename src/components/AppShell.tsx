@@ -195,6 +195,14 @@ export default function AppShell({ children }: AppShellProps) {
     [workspace?.isPlatformAdmin]
   );
 
+  const activeNavigationItem = useMemo(
+    () =>
+      visibleNavigation.find((item) =>
+        item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href)
+      ),
+    [pathname, visibleNavigation]
+  );
+
   async function handleSignOut() {
     setSigningOut(true);
     await supabase.auth.signOut();
@@ -237,68 +245,110 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <main className="min-h-screen">
-      <div className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:py-8">
-        <aside className="self-start rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-[var(--shadow-md)] backdrop-blur lg:sticky lg:top-8">
-          <Link href="/" className="flex items-center rounded-xl px-2 py-1.5 transition hover:opacity-90" aria-label="CivicFlow home">
-            <CivicFlowLogo size="md" />
-          </Link>
+    <main className="cf-workspace min-h-screen">
+      <div className="cf-workspace-shell">
+        <aside className="cf-workspace-sidebar">
+          <div className="cf-workspace-sidebar-inner">
+            <Link
+              href="/"
+              className="cf-workspace-brand"
+              aria-label="CivicFlow home"
+            >
+              <CivicFlowLogo size="md" inverted />
+            </Link>
 
-          <div className="premium-dark mt-4 !rounded-xl !p-4">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-blue-200/80">Active Workspace</p>
-            <p className="mt-2.5 text-lg font-bold leading-tight text-white">{workspaceName}</p>
-            <div className="mt-3.5 flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              <p className="text-xs font-medium text-slate-300">Firm access verified</p>
-            </div>
-          </div>
-
-          <nav className="mt-5 grid gap-1">
-            <p className="px-3 pb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
-            {visibleNavigation.map((item) => {
-              const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
-              return (
-                <Link key={item.href} href={item.href} className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${active ? "bg-slate-900 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}>
-                  {active ? <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-blue-400" /> : null}
-                  <span className={`flex shrink-0 items-center justify-center ${active ? "text-blue-300" : "text-slate-400 group-hover:text-slate-600"}`}>{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="mt-5 border-t border-slate-200/80 pt-5">
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">{initials}</div>
+            <div className="cf-workspace-firm-card">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">{displayName}</p>
-                  <p className="mt-0.5 truncate text-xs font-medium text-slate-500">{staffRole}</p>
+                  <p className="cf-workspace-kicker text-blue-200/70">Firm workspace</p>
+                  <p className="mt-2 truncate text-base font-semibold text-white">{workspaceName}</p>
+                </div>
+                <span className="cf-workspace-live-dot" aria-hidden="true" />
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate-300">
+                Secure matter management for your legal team.
+              </p>
+            </div>
+
+            <nav className="cf-workspace-nav" aria-label="Firm workspace">
+              <p className="cf-workspace-nav-label">Practice</p>
+              {visibleNavigation.map((item) => {
+                const active = item.href === "/app" ? pathname === "/app" : pathname.startsWith(item.href);
+                const showControls = item.href === "/app/settings";
+                const showPlatform = item.href === "/app/firm-inquiries";
+
+                return (
+                  <div key={item.href}>
+                    {showControls ? <p className="cf-workspace-nav-label mt-5">Firm controls</p> : null}
+                    {showPlatform ? <p className="cf-workspace-nav-label mt-5">Westforge admin</p> : null}
+                    <Link
+                      href={item.href}
+                      className={`cf-workspace-nav-item ${active ? "is-active" : ""}`}
+                    >
+                      <span className="cf-workspace-nav-icon">{item.icon}</span>
+                      <span>{item.label}</span>
+                      {active ? <span className="cf-workspace-nav-active" aria-hidden="true" /> : null}
+                    </Link>
+                  </div>
+                );
+              })}
+            </nav>
+
+            <div className="cf-workspace-profile">
+              <div className="flex items-center gap-3">
+                <div className="cf-workspace-avatar">{initials}</div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-400">{staffRole}</p>
                 </div>
               </div>
-              <Link href="/app/account" className="btn btn-secondary mt-3.5 w-full">Account settings</Link>
-              <button type="button" onClick={handleSignOut} disabled={signingOut} className="btn btn-secondary mt-2 w-full">{signingOut ? "Signing out..." : "Sign out"}</button>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Link href="/app/account" className="cf-workspace-profile-action">
+                  Account
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="cf-workspace-profile-action"
+                >
+                  {signingOut ? "Signing out" : "Sign out"}
+                </button>
+              </div>
             </div>
           </div>
         </aside>
 
-        <section className="min-w-0 space-y-6">
-          <header className="flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white/80 px-5 py-4 shadow-[var(--shadow-sm)] backdrop-blur md:flex-row md:items-center md:justify-between">
+        <section className="cf-workspace-main">
+          <header className="cf-workspace-topbar">
             <div className="min-w-0">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-slate-400">CivicFlow Legal Workspace</p>
-              <p className="mt-1 truncate text-sm font-semibold text-slate-700">{workspaceName} · {staffRole}</p>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
+                <span>{workspaceName}</span>
+                <span aria-hidden="true">/</span>
+                <span className="text-cobalt">{activeNavigationItem?.label ?? "Workspace"}</span>
+              </div>
+              <div className="mt-2 flex items-end gap-3">
+                <h1 className="cf-workspace-page-title">
+                  {activeNavigationItem?.label ?? "Legal workspace"}
+                </h1>
+                <span className="mb-1 hidden rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.67rem] font-semibold text-emerald-700 sm:inline-flex">
+                  Firm access verified
+                </span>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              {workspace?.isPlatformAdmin ? <Link href="/get-started" className="btn btn-secondary hidden sm:inline-flex">Firm inquiry form</Link> : null}
-              <Link href="/intake" className="btn btn-secondary">Client intake</Link>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 text-sm font-semibold text-white ring-1 ring-white/10">{initials}</div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/app/conflicts" className="btn btn-secondary hidden md:inline-flex">
+                Conflict check
+              </Link>
+              <Link href="/app/cases/new" className="btn btn-primary">
+                New matter
+              </Link>
+              <div className="cf-workspace-avatar cf-workspace-avatar-light">{initials}</div>
             </div>
           </header>
 
-          <div className="animate-fade-up">{children}</div>
+          <div className="cf-workspace-content animate-fade-up">{children}</div>
         </section>
       </div>
     </main>
