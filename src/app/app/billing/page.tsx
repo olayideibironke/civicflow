@@ -160,6 +160,7 @@ export default function BillingPage() {
   const [retainerEmail, setRetainerEmail] = useState("");
   const [retainerExpires, setRetainerExpires] = useState("");
   const [retainerText, setRetainerText] = useState("");
+  const [editingRetainerDraft, setEditingRetainerDraft] = useState(false);
 
   async function loadData(preferredMatterId = requestedMatterId) {
     setLoading(true);
@@ -243,7 +244,9 @@ export default function BillingPage() {
 
   const retainerCreateLabel = activeRetainerForSelectedMatter
     ? activeRetainerForSelectedMatter.status === "draft"
-      ? "Draft already created"
+      ? editingRetainerDraft
+        ? "Save draft changes"
+        : "Edit draft"
       : activeRetainerForSelectedMatter.status === "sent"
         ? "Sent for signature"
         : activeRetainerForSelectedMatter.status === "signed"
@@ -252,6 +255,27 @@ export default function BillingPage() {
     : busy
       ? "Working..."
       : "Create retainer draft";
+
+  const retainerFieldsLocked =
+    Boolean(activeRetainerForSelectedMatter) &&
+    !(activeRetainerForSelectedMatter?.status === "draft" && editingRetainerDraft);
+
+  const retainerFormTitle =
+    activeRetainerForSelectedMatter && !editingRetainerDraft
+      ? activeRetainerForSelectedMatter.title
+      : retainerTitle;
+  const retainerFormEmail =
+    activeRetainerForSelectedMatter && !editingRetainerDraft
+      ? activeRetainerForSelectedMatter.client_email ?? ""
+      : retainerEmail;
+  const retainerFormExpires =
+    activeRetainerForSelectedMatter && !editingRetainerDraft
+      ? activeRetainerForSelectedMatter.expires_at?.slice(0, 10) ?? ""
+      : retainerExpires;
+  const retainerFormText =
+    activeRetainerForSelectedMatter && !editingRetainerDraft
+      ? activeRetainerForSelectedMatter.agreement_text
+      : retainerText;
 
 
   async function createInvoice(event: FormEvent) {
@@ -374,6 +398,43 @@ export default function BillingPage() {
     await loadData();
   }
 
+  function beginRetainerDraftEdit() {
+    if (!activeRetainerForSelectedMatter || activeRetainerForSelectedMatter.status !== "draft") return;
+    setRetainerTitle(activeRetainerForSelectedMatter.title);
+    setRetainerEmail(activeRetainerForSelectedMatter.client_email ?? "");
+    setRetainerExpires(activeRetainerForSelectedMatter.expires_at?.slice(0, 10) ?? "");
+    setRetainerText(activeRetainerForSelectedMatter.agreement_text);
+    setEditingRetainerDraft(true);
+    setMessage("");
+  }
+
+  async function updateRetainerDraft(event: FormEvent) {
+    event.preventDefault();
+    const retainer = activeRetainerForSelectedMatter;
+    if (!retainer || retainer.status !== "draft") return;
+    if (!retainerText.trim()) return setMessage("Agreement text is required.");
+
+    setBusy(true);
+    setMessage("");
+    const { error } = await supabase
+      .from("retainer_signature_requests")
+      .update({
+        title: retainerTitle.trim() || "Retainer Agreement",
+        client_email: retainerEmail.trim() || null,
+        expires_at: retainerExpires ? new Date(`${retainerExpires}T23:59:59`).toISOString() : null,
+        agreement_text: retainerText.trim(),
+      })
+      .eq("id", retainer.id)
+      .eq("status", "draft");
+
+    setBusy(false);
+    if (error) return setMessage(error.message);
+
+    setEditingRetainerDraft(false);
+    setMessage("Retainer draft updated. The agreement fingerprint was recalculated.");
+    await loadData();
+  }
+
   async function openSignedRetainerPdf(retainer: Retainer) {
     setArchiveBusyId(retainer.id);
     setMessage("");
@@ -486,30 +547,50 @@ export default function BillingPage() {
                 <button disabled={busy} className="btn btn-primary" type="submit">{busy ? "Working..." : "Create draft invoice"}</button>
               </form>
 
-              <form id="new-retainer" onSubmit={createRetainer} className="premium-card scroll-mt-8 space-y-5">
+              <form
+                id="new-retainer"
+                onSubmit={activeRetainerForSelectedMatter?.status === "draft" ? updateRetainerDraft : createRetainer}
+                className="premium-card scroll-mt-8 space-y-5"
+              >
                 <div><p className="eyebrow">Retainer eSignature</p><h2 className="mt-3 text-xl font-bold text-slate-950">Prepare an agreement for secure client signing</h2></div>
-                <label className="input-label">Matter<select className="input-field" value={retainerCaseId} onChange={(e) => { const id=e.target.value; setRetainerCaseId(id); setRetainerEmail(matterById.get(id)?.client_email ?? ""); }}>{matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}</select></label>
-                {activeRetainerForSelectedMatter ? (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="input-label">Matter<select className="input-field" value={retainerCaseId} onChange={(e) => { const id=e.target.value; setRetainerCaseId(id); setRetainerEmail(matterById.get(id)?.client_email ?? ""); setEditingRetainerDraft(false); }}>{matters.map((matter) => <option key={matter.id} value={matter.id}>{matter.case_number} · {matter.client_first_name} {matter.client_last_name}</option>)}</select></label>
+
+                <div className={activeRetainerForSelectedMatter ? "workflow-locked rounded-2xl border p-4 space-y-5" : "space-y-5"}>
+                  {activeRetainerForSelectedMatter ? (
+                    <div className="flex flex-col gap-3 border-b border-slate-300/60 pb-4 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-blue-950">A retainer already exists for this matter.</p>
-                        <p className="mt-1 text-xs leading-5 text-blue-800">
-                          Status: {activeRetainerForSelectedMatter.status.replaceAll("_", " ")}. Continue with the existing agreement instead of creating a duplicate.
+                        <p className="text-sm font-semibold text-slate-800">This retainer workflow is already on record.</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Status: {activeRetainerForSelectedMatter.status.replaceAll("_", " ")}. Completed values stay visible and locked instead of returning to an empty form.
                         </p>
                       </div>
                       <a href="#retainer-queue" className="btn btn-secondary">View existing retainer</a>
                     </div>
+                  ) : null}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="input-label">Agreement title<input className="input-field" value={retainerFormTitle} onChange={(e) => setRetainerTitle(e.target.value)} disabled={busy || retainerFieldsLocked} required /></label>
+                    <label className="input-label">Client email<input className="input-field" type="email" value={retainerFormEmail} onChange={(e) => setRetainerEmail(e.target.value)} disabled={busy || retainerFieldsLocked} /></label>
                   </div>
-                ) : null}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="input-label">Agreement title<input className="input-field" value={retainerTitle} onChange={(e) => setRetainerTitle(e.target.value)} disabled={busy || Boolean(activeRetainerForSelectedMatter)} required /></label>
-                  <label className="input-label">Client email<input className="input-field" type="email" value={retainerEmail} onChange={(e) => setRetainerEmail(e.target.value)} disabled={busy || Boolean(activeRetainerForSelectedMatter)} /></label>
+                  <label className="input-label">Signature deadline<input className="input-field" type="date" value={retainerFormExpires} onChange={(e) => setRetainerExpires(e.target.value)} disabled={busy || retainerFieldsLocked} /></label>
+                  <label className="input-label">Agreement text<textarea className="input-field min-h-64 font-mono text-xs leading-6" value={retainerFormText} onChange={(e) => setRetainerText(e.target.value)} placeholder="Paste or draft the retainer agreement here..." disabled={busy || retainerFieldsLocked} required /></label>
+                  <p className="workflow-lock-note text-xs leading-5 text-slate-500">Once sent, the agreement text is locked. CivicFlow fingerprints the exact text with SHA-256 and records the signing event, signer, consent, and timestamp.</p>
+
+                  {!activeRetainerForSelectedMatter ? (
+                    <button disabled={busy} className="btn btn-primary" type="submit">{retainerCreateLabel}</button>
+                  ) : activeRetainerForSelectedMatter.status === "draft" ? (
+                    <button
+                      disabled={busy}
+                      className="btn btn-primary"
+                      type={editingRetainerDraft ? "submit" : "button"}
+                      onClick={editingRetainerDraft ? undefined : beginRetainerDraftEdit}
+                    >
+                      {busy ? "Working..." : retainerCreateLabel}
+                    </button>
+                  ) : (
+                    <button disabled className="btn btn-primary" type="button">{retainerCreateLabel}</button>
+                  )}
                 </div>
-                <label className="input-label">Signature deadline<input className="input-field" type="date" value={retainerExpires} onChange={(e) => setRetainerExpires(e.target.value)} disabled={busy || Boolean(activeRetainerForSelectedMatter)} /></label>
-                <label className="input-label">Agreement text<textarea className="input-field min-h-64 font-mono text-xs leading-6" value={retainerText} onChange={(e) => setRetainerText(e.target.value)} placeholder="Paste or draft the retainer agreement here..." disabled={busy || Boolean(activeRetainerForSelectedMatter)} required /></label>
-                <p className="text-xs leading-5 text-slate-500">Once sent, the agreement text is locked. CivicFlow fingerprints the exact text with SHA-256 and records the signing event, signer, consent, and timestamp.</p>
-                <button disabled={busy || Boolean(activeRetainerForSelectedMatter)} className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-45" type="submit">{retainerCreateLabel}</button>
               </form>
             </section>
 
@@ -537,7 +618,7 @@ export default function BillingPage() {
               <div className="mt-6 space-y-4">
                 {invoices.length === 0 ? <p className="text-sm text-slate-500">No invoices yet.</p> : invoices.map((invoice) => {
                   const matter = matterById.get(invoice.case_id);
-                  return <div key={invoice.id} className="rounded-2xl border border-slate-200 p-5">
+                  return <div key={invoice.id} className={`rounded-2xl border border-slate-200 p-5 ${invoice.status === "draft" ? "" : "workflow-complete-record"}`}>
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{invoice.invoice_number}</span><span className={`chip border ${badge(invoice.status)}`}>{invoice.status.replaceAll("_", " ")}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">Issued {shortDate(invoice.issue_date)} · Due {shortDate(invoice.due_date)}</p></div><div className="grid grid-cols-3 gap-4 text-right"><div><p className="text-xs text-slate-400">Total</p><p className="mt-1 font-bold text-slate-950">{money(invoice.subtotal_cents)}</p></div><div><p className="text-xs text-slate-400">Paid</p><p className="mt-1 font-bold text-emerald-700">{money(invoice.amount_paid_cents)}</p></div><div><p className="text-xs text-slate-400">Balance</p><p className="mt-1 font-bold text-slate-950">{money(invoice.balance_cents)}</p></div></div></div>
                     <div className="mt-4 space-y-2">{(itemsByInvoice.get(invoice.id) ?? []).map((item) => <div key={item.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"><span>{item.description} · {Number(item.quantity)} × {money(item.unit_amount_cents)}</span><strong>{money(item.amount_cents)}</strong></div>)}</div>
                     {(paymentsByInvoice.get(invoice.id) ?? []).length > 0 ? <div className="mt-4 border-t border-slate-100 pt-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Payment history</p>{(paymentsByInvoice.get(invoice.id) ?? []).map((payment) => <p key={payment.id} className="mt-2 text-sm text-slate-600">{shortDate(payment.received_at)} · {money(payment.amount_cents)} · {payment.payment_method} · {payment.funds_destination} · {payment.status}</p>)}</div> : null}
@@ -549,7 +630,7 @@ export default function BillingPage() {
 
             <section id="retainer-queue" className="premium-card scroll-mt-8">
               <div className="border-b border-slate-100 pb-5"><p className="eyebrow">Retainers</p><h2 className="mt-3 text-xl font-bold text-slate-950">Signature queue</h2></div>
-              <div className="mt-6 space-y-4">{retainers.length === 0 ? <p className="text-sm text-slate-500">No retainers yet.</p> : retainers.map((retainer) => { const matter=matterById.get(retainer.case_id); return <div key={retainer.id} className="rounded-2xl border border-slate-200 p-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{retainer.title}</span><span className={`chip border ${badge(retainer.status)}`}>{retainer.status}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">SHA-256 {retainer.agreement_sha256.slice(0, 18)}...</p></div><div className="text-sm text-slate-500">{retainer.signed_at ? <>Signed {shortDate(retainer.signed_at)} by <strong className="text-slate-800">{retainer.signer_name}</strong></> : retainer.sent_at ? <>Sent {shortDate(retainer.sent_at)}</> : <>Draft created {shortDate(retainer.created_at)}</>}</div></div><details className="mt-4 rounded-xl bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">View agreement text</summary><pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-7 text-slate-600">{retainer.agreement_text}</pre></details><div className="mt-5 flex flex-wrap gap-2">{retainer.status === "draft" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "sent")} className="btn btn-primary" type="button">Send for signature</button> : null}{retainer.status === "draft" || retainer.status === "sent" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "voided")} className="btn btn-secondary" type="button">Void</button> : null}{retainer.status === "signed" ? <button disabled={archiveBusyId === retainer.id} onClick={() => openSignedRetainerPdf(retainer)} className="btn btn-primary" type="button">{archiveBusyId === retainer.id ? "Preparing PDF..." : retainer.signed_pdf_path ? "Download signed PDF" : "Archive signed PDF"}</button> : null}<Link href={`/app/cases/${encodeURIComponent(matter?.case_number ?? "")}`} className="btn btn-secondary">Open matter</Link></div>{retainer.signed_pdf_created_at ? <p className="mt-3 text-xs text-slate-400">Signed PDF archived {shortDate(retainer.signed_pdf_created_at)} in private case documents.</p> : null}</div>; })}</div>
+              <div className="mt-6 space-y-4">{retainers.length === 0 ? <p className="text-sm text-slate-500">No retainers yet.</p> : retainers.map((retainer) => { const matter=matterById.get(retainer.case_id); return <div key={retainer.id} className={`rounded-2xl border border-slate-200 p-5 ${retainer.status === "draft" ? "" : "workflow-complete-record"}`}><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{retainer.title}</span><span className={`chip border ${badge(retainer.status)}`}>{retainer.status}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">SHA-256 {retainer.agreement_sha256.slice(0, 18)}...</p></div><div className="text-sm text-slate-500">{retainer.signed_at ? <>Signed {shortDate(retainer.signed_at)} by <strong className="text-slate-800">{retainer.signer_name}</strong></> : retainer.sent_at ? <>Sent {shortDate(retainer.sent_at)}</> : <>Draft created {shortDate(retainer.created_at)}</>}</div></div><details className="mt-4 rounded-xl bg-slate-50 p-4"><summary className="cursor-pointer text-sm font-semibold text-slate-700">View agreement text</summary><pre className="mt-4 whitespace-pre-wrap font-sans text-sm leading-7 text-slate-600">{retainer.agreement_text}</pre></details><div className="mt-5 flex flex-wrap gap-2">{retainer.status === "draft" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "sent")} className="btn btn-primary" type="button">Send for signature</button> : null}{retainer.status === "draft" || retainer.status === "sent" ? <button disabled={busy} onClick={() => updateRetainerStatus(retainer.id, "voided")} className="btn btn-secondary" type="button">Void</button> : null}{retainer.status === "signed" ? <button disabled={archiveBusyId === retainer.id} onClick={() => openSignedRetainerPdf(retainer)} className="btn btn-primary" type="button">{archiveBusyId === retainer.id ? "Preparing PDF..." : retainer.signed_pdf_path ? "Download signed PDF" : "Archive signed PDF"}</button> : null}<Link href={`/app/cases/${encodeURIComponent(matter?.case_number ?? "")}`} className="btn btn-secondary">Open matter</Link></div>{retainer.signed_pdf_created_at ? <p className="mt-3 text-xs text-slate-400">Signed PDF archived {shortDate(retainer.signed_pdf_created_at)} in private case documents.</p> : null}</div>; })}</div>
             </section>
           </>
         ) : null}

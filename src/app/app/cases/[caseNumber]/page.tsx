@@ -467,6 +467,8 @@ export default function DynamicCaseDetailPage() {
   }
 
   function openUploadModal() {
+    if (caseCompleted) return;
+
     const firstIncompleteDocument =
       documents.find((document) => document.status !== "Received") ??
       documents[0];
@@ -643,6 +645,7 @@ export default function DynamicCaseDetailPage() {
     document: CaseDocument,
     nextStatus: DocumentStatus
   ) {
+    if (caseCompleted) return;
     const { data, error } = await supabase
       .from("case_documents")
       .update({
@@ -675,6 +678,8 @@ export default function DynamicCaseDetailPage() {
   }
 
   async function handleWorkflowSave() {
+    if (caseCompleted) return;
+
     if (!caseRecord) {
       return;
     }
@@ -707,6 +712,8 @@ export default function DynamicCaseDetailPage() {
 
   async function handleAddNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (caseCompleted) return;
 
     if (!caseRecord) {
       setNoteMessageTone("error");
@@ -773,6 +780,8 @@ export default function DynamicCaseDetailPage() {
   }
 
   async function handleToggleFollowUp(note: CaseNote) {
+    if (caseCompleted) return;
+
     const nextCompleted = !note.follow_up_completed;
 
     const { data, error } = await supabase
@@ -808,6 +817,38 @@ export default function DynamicCaseDetailPage() {
       nextCompleted
         ? `${staffDisplayName} completed a case follow-up.`
         : `${staffDisplayName} reopened a case follow-up.`
+    );
+  }
+
+  async function handleReopenCaseForEdit() {
+    if (!caseRecord || !caseCompleted) return;
+
+    setDecisionMessage("");
+    const { data, error } = await supabase
+      .from("cases")
+      .update({
+        status: "In Review",
+        completed_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", caseRecord.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      setDecisionMessage(error.message);
+      return;
+    }
+
+    setCaseRecord(data as CivicCase);
+    setStatus("In Review");
+    setCaseCompleted(false);
+    setWorkflowSaved(true);
+    setWorkflowMessage("Case reopened for editing.");
+
+    await addActivity(
+      "Case reopened for editing",
+      staffDisplayName + " reopened the completed case to make controlled updates."
     );
   }
 
@@ -917,18 +958,25 @@ export default function DynamicCaseDetailPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row xl:justify-end">
-              <button
-                type="button"
-                onClick={openUploadModal}
-                className="btn btn-secondary"
-              >
-                Upload document
-              </button>
+              {caseCompleted ? (
+                <button
+                  type="button"
+                  onClick={handleReopenCaseForEdit}
+                  className="btn btn-secondary"
+                >
+                  Edit / reopen case
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openUploadModal}
+                  className="btn btn-secondary"
+                >
+                  Upload document
+                </button>
+              )}
 
-              <Link
-                href="/app/reports"
-                className="btn btn-primary"
-              >
+              <Link href="/app/reports" className="btn btn-primary">
                 View reports
               </Link>
             </div>
@@ -993,7 +1041,7 @@ export default function DynamicCaseDetailPage() {
 
         <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
           <div className="space-y-6">
-            <div className="premium-card">
+            <div className={caseCompleted ? "premium-card workflow-locked" : "premium-card"}>
               <p className="eyebrow">
                 Workflow Control
               </p>
@@ -1012,6 +1060,7 @@ export default function DynamicCaseDetailPage() {
                       setWorkflowSaved(false);
                     }}
                     className="input-field"
+                    disabled={caseCompleted}
                   >
                     {statusOptions.map((option) => (
                       <option key={option}>{option}</option>
@@ -1028,6 +1077,7 @@ export default function DynamicCaseDetailPage() {
                       setWorkflowSaved(false);
                     }}
                     className="input-field"
+                    disabled={caseCompleted}
                   >
                     <option>Unassigned</option>
                     <option>{staffDisplayName}</option>
@@ -1049,15 +1099,15 @@ export default function DynamicCaseDetailPage() {
                 <button
                   type="button"
                   onClick={handleWorkflowSave}
-                  disabled={workflowSaved}
-                  className={savedButtonClass(workflowSaved)}
+                  disabled={workflowSaved || caseCompleted}
+                  className={savedButtonClass(workflowSaved || caseCompleted)}
                 >
                   {workflowSaved ? "Workflow saved" : "Save workflow"}
                 </button>
               </div>
             </div>
 
-            <div className="premium-card">
+            <div className={caseCompleted ? "premium-card workflow-locked" : "premium-card"}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="eyebrow">
@@ -1097,6 +1147,7 @@ export default function DynamicCaseDetailPage() {
                     Note type *
                     <select
                       required
+                      disabled={caseCompleted}
                       value={noteType}
                       onChange={(event) =>
                         setNoteType(event.target.value as NoteType)
@@ -1114,7 +1165,7 @@ export default function DynamicCaseDetailPage() {
                     <input
                       type="date"
                       value={followUpDate}
-                      disabled={!followUpRequired}
+                      disabled={caseCompleted || !followUpRequired}
                       onChange={(event) => setFollowUpDate(event.target.value)}
                       className="input-field disabled:bg-slate-100 disabled:text-slate-400"
                     />
@@ -1125,6 +1176,7 @@ export default function DynamicCaseDetailPage() {
                   <input
                     type="checkbox"
                     checked={followUpRequired}
+                    disabled={caseCompleted}
                     onChange={(event) => {
                       setFollowUpRequired(event.target.checked);
                       if (!event.target.checked) {
@@ -1150,6 +1202,7 @@ export default function DynamicCaseDetailPage() {
                   New internal note *
                   <textarea
                     required
+                    disabled={caseCompleted}
                     value={newNote}
                     onChange={(event) => {
                       setNewNote(event.target.value);
@@ -1176,8 +1229,8 @@ export default function DynamicCaseDetailPage() {
                 <div className="mt-4 flex justify-end">
                   <button
                     type="submit"
-                    disabled={savingNote}
-                    className={savedButtonClass(savingNote)}
+                    disabled={savingNote || caseCompleted}
+                    className={savedButtonClass(savingNote || caseCompleted)}
                   >
                     {savingNote ? "Saving note..." : "Save note"}
                   </button>
@@ -1263,6 +1316,7 @@ export default function DynamicCaseDetailPage() {
                             <button
                               type="button"
                               onClick={() => handleToggleFollowUp(note)}
+                              disabled={caseCompleted}
                               className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
                                 note.follow_up_completed
                                   ? "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
@@ -1282,7 +1336,7 @@ export default function DynamicCaseDetailPage() {
               </div>
             </div>
 
-            <div className="premium-card">
+            <div className={caseCompleted ? "premium-card workflow-locked" : "premium-card"}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="eyebrow">
@@ -1360,6 +1414,7 @@ export default function DynamicCaseDetailPage() {
                       <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           type="button"
+                          disabled={caseCompleted}
                           onClick={() =>
                             updateDocumentStatus(document, "Received")
                           }
@@ -1370,6 +1425,7 @@ export default function DynamicCaseDetailPage() {
 
                         <button
                           type="button"
+                          disabled={caseCompleted}
                           onClick={() =>
                             updateDocumentStatus(document, "Needs Review")
                           }
@@ -1380,6 +1436,7 @@ export default function DynamicCaseDetailPage() {
 
                         <button
                           type="button"
+                          disabled={caseCompleted}
                           onClick={() =>
                             updateDocumentStatus(document, "Missing")
                           }
@@ -1394,7 +1451,7 @@ export default function DynamicCaseDetailPage() {
               </div>
             </div>
 
-            <div className="premium-card">
+            <div className={caseCompleted ? "premium-card workflow-locked" : "premium-card"}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="eyebrow">
@@ -1426,6 +1483,7 @@ export default function DynamicCaseDetailPage() {
                   Decision outcome
                   <select
                     value={decisionOutcome}
+                    disabled={caseCompleted}
                     onChange={(event) => {
                       setDecisionOutcome(event.target.value);
                       setCaseCompleted(false);
@@ -1457,6 +1515,7 @@ export default function DynamicCaseDetailPage() {
                 Decision note
                 <textarea
                   value={decisionNote}
+                  disabled={caseCompleted}
                   onChange={(event) => {
                     setDecisionNote(event.target.value);
                     setCaseCompleted(false);

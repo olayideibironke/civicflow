@@ -232,6 +232,37 @@ select {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
 }
 
+/* Workflow completion states */
+.workflow-locked {
+  border-color: rgba(148, 163, 184, 0.32) !important;
+  background: rgba(241, 245, 249, 0.78) !important;
+  box-shadow: none !important;
+}
+
+.workflow-locked .input-field,
+.input-field:disabled,
+.input-field[readonly] {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  background: rgba(226, 232, 240, 0.72) !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.workflow-locked textarea.input-field {
+  resize: none;
+}
+
+.workflow-locked .workflow-lock-note {
+  color: #64748b;
+}
+
+.workflow-complete-record {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  background: rgba(248, 250, 252, 0.9) !important;
+}
+
 /* ---------------------------------------------------------------- */
 /* Buttons — clear hierarchy                                        */
 /* ---------------------------------------------------------------- */

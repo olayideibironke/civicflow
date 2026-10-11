@@ -568,7 +568,7 @@ export default function CasesPage() {
                 <Link
                   key={caseItem.id}
                   href={getCaseHref(caseItem.case_number)}
-                  className="block rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm card-interactive"
+                  className={`block rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm card-interactive ${isCompletedCase(caseItem) ? "workflow-complete-record" : ""}`}
                 >
                   <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_420px] 2xl:items-start">
                     <div className="min-w-0">

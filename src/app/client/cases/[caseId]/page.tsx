@@ -133,7 +133,7 @@ export default function ClientCasePage() {
         </section>
       ) : (
         <div className="space-y-6">
-          <section className="premium-card">
+          <section className={caseRecord.status === "Completed" ? "premium-card workflow-complete-record" : "premium-card"}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <Link href="/client" className="text-sm font-semibold text-slate-500 hover:text-slate-950">← Back to my matters</Link>
@@ -175,7 +175,7 @@ export default function ClientCasePage() {
           ) : null}
 
           <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-            <div className="premium-card">
+            <div className={caseRecord.status === "Completed" ? "premium-card workflow-complete-record" : "premium-card"}>
               <p className="eyebrow">Shared Documents</p>
               <h2 className="mt-3 text-xl font-bold text-slate-950">Documents your legal team shared</h2>
 
@@ -199,7 +199,7 @@ export default function ClientCasePage() {
               </div>
             </div>
 
-            <div className="premium-card">
+            <div className={caseRecord.status === "Completed" ? "premium-card workflow-complete-record" : "premium-card"}>
               <p className="eyebrow">Updates</p>
               <h2 className="mt-3 text-xl font-bold text-slate-950">Shared activity</h2>
               <div className="mt-6 space-y-4">

@@ -78,7 +78,7 @@ export default function ClientPortalPage() {
               <Link
                 key={item.case_id}
                 href={`/client/cases/${encodeURIComponent(item.case_id)}`}
-                className="premium-card block transition hover:-translate-y-0.5 hover:border-slate-300"
+                className={`premium-card block transition hover:-translate-y-0.5 hover:border-slate-300 ${item.status === "Completed" ? "workflow-complete-record" : ""}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>

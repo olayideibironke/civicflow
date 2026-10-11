@@ -14,6 +14,7 @@ export default function ClientAccountPage() {
   const [lastName, setLastName] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -70,6 +71,7 @@ export default function ClientAccountPage() {
     }
 
     setProfileMessage("Profile saved.");
+    setEditingProfile(false);
   }
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
@@ -190,19 +192,21 @@ export default function ClientAccountPage() {
         </section>
 
         <section className="grid items-start gap-6 xl:grid-cols-2">
-          <form onSubmit={saveProfile} noValidate className="premium-card">
+          <form onSubmit={saveProfile} noValidate className={`premium-card ${editingProfile ? "" : "workflow-locked"}`}>
             <p className="eyebrow">Profile</p>
             <h2 className="mt-3 text-xl font-bold text-slate-950">Personal information</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">Your login email is managed through CivicFlow authentication.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Name corrections update your client portal profile only. They do not rewrite signed agreements, invoices, matter history, or prior audit records.
+            </p>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <label className="input-label">
                 First name *
-                <input value={firstName} onChange={(event) => { setFirstName(event.target.value); setProfileMessage(""); }} className="input-field" required />
+                <input value={firstName} onChange={(event) => { setFirstName(event.target.value); setProfileMessage(""); }} className="input-field" disabled={!editingProfile || savingProfile} required />
               </label>
               <label className="input-label">
                 Last name *
-                <input value={lastName} onChange={(event) => { setLastName(event.target.value); setProfileMessage(""); }} className="input-field" required />
+                <input value={lastName} onChange={(event) => { setLastName(event.target.value); setProfileMessage(""); }} className="input-field" disabled={!editingProfile || savingProfile} required />
               </label>
             </div>
 
@@ -212,7 +216,11 @@ export default function ClientAccountPage() {
             </div>
 
             {profileMessage ? <p className="mt-4 text-sm font-medium text-slate-600">{profileMessage}</p> : null}
-            <button type="submit" disabled={savingProfile} className="btn btn-primary mt-6">{savingProfile ? "Saving..." : "Save profile"}</button>
+            {editingProfile ? (
+              <button type="submit" disabled={savingProfile} className="btn btn-primary mt-6">{savingProfile ? "Saving..." : "Save profile changes"}</button>
+            ) : (
+              <button type="button" className="btn btn-secondary mt-6" onClick={() => { setEditingProfile(true); setProfileMessage(""); }}>Edit profile</button>
+            )}
           </form>
 
           <form onSubmit={changePassword} noValidate className="premium-card">

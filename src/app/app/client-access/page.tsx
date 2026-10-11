@@ -74,11 +74,19 @@ export default function ClientAccessPage() {
   const [inviteMessage, setInviteMessage] = useState("");
   const [activationUrl, setActivationUrl] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
+  const [editingSharing, setEditingSharing] = useState(false);
 
   const selectedCase = useMemo(
     () => cases.find((item) => item.id === selectedCaseId) ?? null,
     [cases, selectedCaseId]
   );
+
+  const acceptedInvite = useMemo(
+    () => invites.find((invite) => Boolean(invite.accepted_at)) ?? null,
+    [invites]
+  );
+
+  const sharingLocked = Boolean(acceptedInvite) && !editingSharing;
 
   const filteredCases = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -141,6 +149,7 @@ export default function ClientAccessPage() {
     setActivationUrl("");
     setInviteMessage("");
     setCopyMessage("");
+    setEditingSharing(false);
 
     const [documentsResult, activityResult, invitesResult] = await Promise.all([
       supabase
@@ -377,13 +386,17 @@ export default function ClientAccessPage() {
                     </span>
                   </div>
 
-                  <form onSubmit={createInvite} noValidate className="mt-6 border-t border-slate-100 pt-6">
+                  <form
+                    onSubmit={createInvite}
+                    noValidate
+                    className={`mt-6 border-t border-slate-100 pt-6 ${acceptedInvite ? "workflow-locked rounded-xl border p-4" : ""}`}
+                  >
                     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
                       <label className="input-label">
                         Client email *
                         <input
                           type="email"
-                          value={inviteEmail}
+                          value={acceptedInvite?.email ?? inviteEmail}
                           onChange={(event) => {
                             setInviteEmail(event.target.value);
                             setInviteMessage("");
@@ -391,13 +404,23 @@ export default function ClientAccessPage() {
                           }}
                           placeholder="client@example.com"
                           className="input-field"
+                          disabled={Boolean(acceptedInvite)}
                           required
                         />
                       </label>
-                      <button type="submit" disabled={creatingInvite} className="btn btn-primary px-6 py-3">
-                        {creatingInvite ? "Creating..." : "Create secure invitation"}
+                      <button
+                        type="submit"
+                        disabled={creatingInvite || Boolean(acceptedInvite)}
+                        className="btn btn-primary px-6 py-3"
+                      >
+                        {acceptedInvite ? "Client access activated" : creatingInvite ? "Creating..." : "Create secure invitation"}
                       </button>
                     </div>
+                    {acceptedInvite ? (
+                      <p className="workflow-lock-note mt-3 text-xs leading-5">
+                        Activation is complete. The accepted identity stays locked; use sharing permissions below to control what this client can see.
+                      </p>
+                    ) : null}
                   </form>
 
                   {inviteMessage ? (
@@ -439,8 +462,26 @@ export default function ClientAccessPage() {
                   </div>
                 </section>
 
+                {acceptedInvite ? (
+                  <section className="premium-card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="eyebrow">Sharing permissions</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        Client access is active. Shared documents and updates stay locked until an attorney intentionally edits visibility.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setEditingSharing((current) => !current)}
+                    >
+                      {editingSharing ? "Done editing" : "Edit sharing"}
+                    </button>
+                  </section>
+                ) : null}
+
                 <section className="grid gap-6 lg:grid-cols-2">
-                  <div className="premium-card">
+                  <div className={`premium-card ${sharingLocked ? "workflow-locked" : ""}`}>
                     <p className="eyebrow">Shared Documents</p>
                     <h3 className="mt-3 text-lg font-bold text-slate-950">Choose client-visible documents</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">A document stays private until you explicitly share it.</p>
@@ -456,6 +497,7 @@ export default function ClientAccessPage() {
                             <input
                               type="checkbox"
                               checked={document.client_visible}
+                              disabled={sharingLocked}
                               onChange={() => toggleDocumentVisibility(document)}
                               className="mt-1 h-4 w-4"
                             />
@@ -471,7 +513,7 @@ export default function ClientAccessPage() {
                     </div>
                   </div>
 
-                  <div className="premium-card">
+                  <div className={`premium-card ${sharingLocked ? "workflow-locked" : ""}`}>
                     <p className="eyebrow">Shared Updates</p>
                     <h3 className="mt-3 text-lg font-bold text-slate-950">Choose client-visible activity</h3>
                     <p className="mt-2 text-sm leading-6 text-slate-600">Internal notes are never exposed here. Only selected activity updates can appear in the client portal.</p>
@@ -487,6 +529,7 @@ export default function ClientAccessPage() {
                             <input
                               type="checkbox"
                               checked={item.client_visible}
+                              disabled={sharingLocked}
                               onChange={() => toggleActivityVisibility(item)}
                               className="mt-1 h-4 w-4"
                             />
