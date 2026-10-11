@@ -100,6 +100,13 @@ function shortDate(value: string | null) {
   }).format(parsed);
 }
 
+function localDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
 function formatCurrencyInput(value: string) {
   const sanitized = value.replace(/[^\d.]/g, "");
   if (!sanitized) return "";
@@ -340,7 +347,7 @@ export default function BillingPage() {
 
     setBusy(true);
     setMessage("");
-    const { error } = await supabase.rpc("create_billing_invoice", {
+    const { data, error } = await supabase.rpc("create_billing_invoice", {
       p_case_id: invoiceCaseId,
       p_due_date: invoiceDueDate || null,
       p_notes: invoiceNotes,
@@ -350,9 +357,29 @@ export default function BillingPage() {
       p_external_payment_url: invoicePaymentUrl || null,
       p_payment_instructions: invoicePaymentInstructions,
     });
-    setBusy(false);
-    if (error) return setMessage(error.message);
 
+    if (error) {
+      setBusy(false);
+      return setMessage(error.message);
+    }
+
+    const createdInvoiceId = Array.isArray(data) ? data[0]?.invoice_id : null;
+    if (createdInvoiceId) {
+      const { error: issueDateError } = await supabase
+        .from("billing_invoices")
+        .update({ issue_date: localDateKey() })
+        .eq("id", createdInvoiceId)
+        .eq("status", "draft");
+
+      if (issueDateError) {
+        setBusy(false);
+        setMessage("Draft invoice created, but its local issue date could not be finalized. Refresh before sending.");
+        await loadData();
+        return;
+      }
+    }
+
+    setBusy(false);
     setMessage("Draft invoice created. The completed draft is now locked below.");
     await loadData();
   }
@@ -782,7 +809,7 @@ export default function BillingPage() {
                 {invoices.length === 0 ? <p className="text-sm text-slate-500">No invoices yet.</p> : invoices.map((invoice) => {
                   const matter = matterById.get(invoice.case_id);
                   return <div key={invoice.id} className={`rounded-2xl border border-slate-200 p-5 ${invoice.status === "draft" ? "" : "workflow-complete-record"}`}>
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{invoice.invoice_number}</span><span className={`chip border ${badge(invoice.status)}`}>{invoice.status.replaceAll("_", " ")}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">Issued {shortDate(invoice.issue_date)} · Due {shortDate(invoice.due_date)}</p></div><div className="grid grid-cols-3 gap-4 text-right"><div><p className="text-xs text-slate-400">Total</p><p className="mt-1 font-bold text-slate-950">{money(invoice.subtotal_cents)}</p></div><div><p className="text-xs text-slate-400">Paid</p><p className="mt-1 font-bold text-emerald-700">{money(invoice.amount_paid_cents)}</p></div><div><p className="text-xs text-slate-400">Balance</p><p className="mt-1 font-bold text-slate-950">{money(invoice.balance_cents)}</p></div></div></div>
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="font-bold text-slate-950">{invoice.invoice_number}</span><span className={`chip border ${badge(invoice.status)}`}>{invoice.status.replaceAll("_", " ")}</span></div><p className="mt-2 text-sm text-slate-600">{matter?.case_number} · {matter?.client_first_name} {matter?.client_last_name}</p><p className="mt-1 text-xs text-slate-400">Issued {shortDate(invoice.issue_date)} · Due {shortDate(invoice.due_date)}</p></div><div className="grid grid-cols-3 gap-4 text-right"><div><p className="text-xs text-slate-400">Total</p><p className="mt-1 font-bold text-slate-950">{money(invoice.subtotal_cents)}</p></div><div><p className="text-xs text-slate-400">Paid</p><p className="mt-1 font-bold text-emerald-700">{money(invoice.amount_paid_cents)}</p></div><div><p className="text-xs text-slate-400">Balance</p><p className="mt-1 font-bold text-slate-950">{invoice.status === "void" ? money(0) : money(invoice.balance_cents)}</p></div></div></div>
                     <div className="mt-4 space-y-2">{(itemsByInvoice.get(invoice.id) ?? []).map((item) => <div key={item.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"><span>{item.description} · {Number(item.quantity)} × {money(item.unit_amount_cents)}</span><strong>{money(item.amount_cents)}</strong></div>)}</div>
                     {(paymentsByInvoice.get(invoice.id) ?? []).length > 0 ? <div className="mt-4 border-t border-slate-100 pt-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Payment history</p>{(paymentsByInvoice.get(invoice.id) ?? []).map((payment) => <p key={payment.id} className="mt-2 text-sm text-slate-600">{shortDate(payment.received_at)} · {money(payment.amount_cents)} · {payment.payment_method} · {payment.funds_destination} · {payment.status}</p>)}</div> : null}
                     <div className="mt-5 flex flex-wrap gap-2">{invoice.status === "draft" ? <button disabled={busy} onClick={() => updateInvoiceStatus(invoice.id, "sent")} className="btn btn-primary" type="button">Send to client</button> : null}{invoice.status !== "paid" && invoice.status !== "void" ? <button disabled={busy} onClick={() => updateInvoiceStatus(invoice.id, "void")} className="btn btn-secondary" type="button">Void invoice</button> : null}<Link href={`/app/cases/${encodeURIComponent(matter?.case_number ?? "")}`} className="btn btn-secondary">Open matter</Link>{invoice.external_payment_url ? <a href={invoice.external_payment_url} target="_blank" rel="noreferrer" className="btn btn-secondary">Open payment page</a> : null}</div>
