@@ -135,9 +135,9 @@ export default function ClientCasePage() {
         <div className="space-y-6">
           <section className={caseRecord.status === "Completed" ? "premium-card workflow-complete-record" : "premium-card"}>
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <Link href="/client" className="text-sm font-semibold text-slate-500 hover:text-slate-950">← Back to my matters</Link>
-                <p className="eyebrow mt-5">{caseRecord.organization_name}</p>
+              <div className="min-w-0">
+                <Link href="/client" className="inline-flex max-w-full items-center text-sm font-semibold text-slate-500 hover:text-slate-950">← Back to my matters</Link>
+                <p className="eyebrow mt-5 break-words">{caseRecord.organization_name}</p>
                 <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Matter {caseRecord.case_number}</h1>
                 <p className="mt-3 text-sm leading-7 text-slate-600">{caseRecord.service_category}</p>
               </div>
@@ -174,7 +174,7 @@ export default function ClientCasePage() {
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">{downloadMessage}</div>
           ) : null}
 
-          <section className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <section className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,390px)]">
             <div className={caseRecord.status === "Completed" ? "premium-card workflow-complete-record" : "premium-card"}>
               <p className="eyebrow">Shared Documents</p>
               <h2 className="mt-3 text-xl font-bold text-slate-950">Documents your legal team shared</h2>
@@ -183,11 +183,11 @@ export default function ClientCasePage() {
                 {documents.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 p-6 text-sm leading-6 text-slate-500">No documents have been shared with you yet.</div>
                 ) : documents.map((document) => (
-                  <div key={document.document_id} className="rounded-xl border border-slate-200 p-4">
+                  <div key={document.document_id} className="min-w-0 rounded-xl border border-slate-200 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-950">{document.name}</p>
-                        {document.description ? <p className="mt-1.5 text-sm leading-6 text-slate-600">{document.description}</p> : null}
+                        {document.description ? <p className="mt-1.5 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{document.description}</p> : null}
                         <p className="mt-2 text-xs font-medium text-slate-400">Status: {document.status}</p>
                       </div>
                       {document.file_path ? (
@@ -206,10 +206,10 @@ export default function ClientCasePage() {
                 {activity.length === 0 ? (
                   <p className="text-sm leading-6 text-slate-500">No client-visible updates have been posted yet.</p>
                 ) : activity.map((item) => (
-                  <div key={item.activity_id} className="border-l-2 border-slate-200 pl-4">
+                  <div key={item.activity_id} className="min-w-0 border-l-2 border-slate-200 pl-4">
                     <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                    <p className="mt-1.5 text-sm leading-6 text-slate-600">{item.detail}</p>
-                    <p className="mt-2 text-xs font-medium text-slate-400">{formatDate(item.created_at)}</p>
+                    <p className="mt-1.5 break-words text-sm leading-6 text-slate-600 [overflow-wrap:anywhere]">{item.detail}</p>
+                    <p className="mt-2 break-words text-xs font-medium text-slate-400">{formatDate(item.created_at)}</p>
                   </div>
                 ))}
               </div>
