@@ -8,9 +8,10 @@ create table if not exists private.civicflow_subscriptions (
   firm_name text,
   plan text not null check (plan in ('basic','pro','advanced')),
   seats integer not null check (seats between 1 and 250),
-  stripe_price_id text not null,
+  stripe_price_id text,
   status text not null,
   organization_id uuid unique references public.organizations(id) on delete set null,
+  livemode boolean not null default false,
   last_event_created bigint not null default 0,
   updated_at timestamptz not null default now()
 );
@@ -71,11 +72,11 @@ begin
     end if;
     insert into private.civicflow_subscriptions(
       stripe_subscription_id,stripe_customer_id,checkout_session_id,customer_email,
-      firm_name,plan,seats,stripe_price_id,status,last_event_created
+      firm_name,plan,seats,stripe_price_id,status,last_event_created,livemode
     ) values (
       sid,o->>'customer',o->>'id',o #>> '{customer_details,email}',
-      o #>> '{metadata,firm_name}',plan,seats,'pending_verification','pending_verification',
-      event_created
+      o #>> '{metadata,firm_name}',plan,seats,null,'pending_verification',
+      event_created,coalesce((e->>'livemode')::boolean,false)
     ) on conflict (stripe_subscription_id) do update
       set checkout_session_id=excluded.checkout_session_id,
           updated_at=now();
@@ -90,7 +91,8 @@ begin
       last_event_created=coalesce((e->>'created')::bigint,0),
       updated_at=now()
   where s.stripe_subscription_id=sid
-    and coalesce((e->>'created')::bigint,0)>=s.last_event_created;
+    and s.livemode=coalesce((e->>'livemode')::boolean,false)
+    and event_created>=s.last_event_created;
   return jsonb_build_object('processed',true,'status','recorded');
 end;
 $$;
