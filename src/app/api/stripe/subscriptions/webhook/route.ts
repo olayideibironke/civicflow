@@ -6,6 +6,9 @@ export async function POST(request: Request) {
   if (!url || !key) {
     return NextResponse.json({ error: "Subscription webhook is not configured." }, { status: 503 });
   }
+  if (process.env.CIVICFLOW_SUBSCRIPTION_WEBHOOK_ENABLED !== "true") {
+    return NextResponse.json({ error: "Subscription webhook is disabled." }, { status: 503 });
+  }
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
     return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
@@ -18,6 +21,7 @@ export async function POST(request: Request) {
   if (payload.length > 1024 * 1024) {
     return NextResponse.json({ error: "Event too large." }, { status: 413 });
   }
+  // Supabase verifies the original raw Stripe payload against the dedicated Vault secret.
   const response = await fetch(`${url}/rest/v1/rpc/process_civicflow_subscription_webhook`, {
     method: "POST",
     headers: {
