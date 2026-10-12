@@ -136,8 +136,10 @@ begin
   sid := o->>'id';
   if sid is null then raise exception 'Missing subscription id.'; end if;
   -- Stripe does not guarantee checkout.session.completed arrives before subscription.created.
-  -- Record an unlinked subscription as pending; only trusted reconciliation can verify it.
-  if typ='customer.subscription.created' and o->>'customer' is not null then
+  -- Record unlinked subscription events as pending, including update/delete events
+  -- that arrive before checkout or created. Only reconciliation can verify them.
+  if typ in ('customer.subscription.created','customer.subscription.updated','customer.subscription.deleted')
+     and o->>'customer' is not null then
     plan := o #>> '{metadata,plan}';
     seats := nullif(o #>> '{metadata,seats}','')::integer;
     if plan in ('basic','pro','advanced') and seats between 1 and 250 then
