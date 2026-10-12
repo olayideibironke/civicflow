@@ -3,6 +3,7 @@
 create table if not exists private.civicflow_subscriptions (
   stripe_subscription_id text primary key,
   stripe_customer_id text not null,
+  checkout_reference text unique,
   checkout_session_id text unique,
   customer_email text,
   firm_name text,
@@ -13,6 +14,7 @@ create table if not exists private.civicflow_subscriptions (
   organization_id uuid unique references public.organizations(id) on delete set null,
   livemode boolean not null default false,
   last_event_created bigint not null default 0,
+  verified_at timestamptz,
   updated_at timestamptz not null default now()
 );
 revoke all on private.civicflow_subscriptions from public, anon, authenticated;
@@ -98,3 +100,33 @@ end;
 $$;
 revoke all on function public.process_civicflow_subscription_webhook(text,text) from public,anon,authenticated;
 grant execute on function public.process_civicflow_subscription_webhook(text,text) to service_role;
+
+-- Entitlements are explicitly provisioned by trusted service-role operations only.
+-- No customer metadata, email match or client-side callback can grant access.
+create or replace function public.get_civicflow_subscription_entitlement(p_organization_id uuid)
+returns jsonb
+language plpgsql security definer
+set search_path = pg_catalog, public, private
+as $$
+declare
+  v private.civicflow_subscriptions%rowtype;
+begin
+  if auth.uid() is null or not public.is_staff_for_org(p_organization_id) then
+    raise exception 'Not authorized for this organization.';
+  end if;
+  select * into v from private.civicflow_subscriptions
+  where organization_id=p_organization_id
+  limit 1;
+  if v.stripe_subscription_id is null then
+    return jsonb_build_object('active',false,'seats',0);
+  end if;
+  return jsonb_build_object(
+    'active',v.status in ('active','trialing') and v.verified_at is not null,
+    'plan',v.plan,
+    'seats',case when v.status in ('active','trialing') and v.verified_at is not null then v.seats else 0 end,
+    'status',v.status
+  );
+end;
+$$;
+revoke all on function public.get_civicflow_subscription_entitlement(uuid) from public,anon;
+grant execute on function public.get_civicflow_subscription_entitlement(uuid) to authenticated;
