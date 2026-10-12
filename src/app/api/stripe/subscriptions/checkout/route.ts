@@ -17,6 +17,14 @@ export async function POST(request: Request) {
   if (process.env.CIVICFLOW_SUBSCRIPTIONS_ENABLED !== "true") {
     return error("Subscription checkout is not yet available.", 503);
   }
+  const configuredOrigin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
+  if (!configuredOrigin || !configuredOrigin.startsWith("https://")) {
+    return error("Public origin is not configured.", 503);
+  }
+  const originHeader = request.headers.get("origin");
+  if (!originHeader || originHeader !== new URL(configuredOrigin).origin) {
+    return error("Cross-origin subscription checkout is not allowed.", 403);
+  }
   const body = await request.json().catch(() => null) as {
     plan?: unknown; seats?: unknown; email?: unknown; firmName?: unknown
   } | null;
@@ -44,8 +52,7 @@ export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production" && !secret.startsWith("sk_live_")) {
     return error("Production subscriptions require a live Stripe credential.", 503);
   }
-  const origin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
-  if (!origin || !/^https:\/\//.test(origin)) return error("Public origin is not configured.", 503);
+  const origin = configuredOrigin;
   const params = new URLSearchParams();
   params.set("mode", "subscription");
   params.set("line_items[0][price]", price);
