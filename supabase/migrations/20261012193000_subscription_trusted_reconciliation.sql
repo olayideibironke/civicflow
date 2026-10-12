@@ -35,8 +35,11 @@ begin
   if v.stripe_subscription_id is null or v.checkout_session_id is null then
     raise exception 'Verified Stripe checkout must be registered before reconciliation.';
   end if;
-  if v.plan <> p_plan then
-    raise exception 'Verified plan does not match original checkout.';
+  if v.plan <> p_plan or v.seats <> p_seats then
+    raise exception 'Verified plan or seat count does not match original checkout.';
+  end if;
+  if v.stripe_price_id is not null and v.stripe_price_id <> p_price_id then
+    raise exception 'Subscription price changed; explicit plan change flow required.';
   end if;
   if v.stripe_customer_id <> p_customer_id or v.livemode <> p_livemode then
     raise exception 'Stripe subscription identity mismatch.';
