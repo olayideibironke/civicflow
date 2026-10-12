@@ -50,6 +50,7 @@ export async function reconcileVerifiedFirmSubscription(input: {
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       p_subscription_id: verified.subscriptionId,
+      p_checkout_session_id: checkoutSessionId,
       p_customer_id: verified.customerId,
       p_organization_id: organizationId,
       p_plan: verified.plan,
