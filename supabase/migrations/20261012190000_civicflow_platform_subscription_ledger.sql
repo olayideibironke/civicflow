@@ -153,6 +153,17 @@ begin
   update private.civicflow_subscriptions s
   set status=case when typ='customer.subscription.deleted' then 'canceled'
       else coalesce(o->>'status',s.status) end,
+      -- A verified subscription must be rechecked against Stripe after any plan,
+      -- price or seat change. Until then, entitlement lookup fails closed.
+      verified_at=case
+        when typ='customer.subscription.deleted' then null
+        when s.verified_at is not null and (
+          jsonb_array_length(coalesce(o #> '{items,data}','[]'::jsonb)) <> 1
+          or (o #>> '{items,data,0,price,id}') is distinct from s.stripe_price_id
+          or (o #>> '{items,data,0,quantity}') is distinct from s.seats::text
+          or (o #>> '{metadata,plan}') is distinct from s.plan
+        ) then null
+        else s.verified_at end,
       last_event_created=coalesce((e->>'created')::bigint,0),
       updated_at=now()
   where s.stripe_subscription_id=sid
