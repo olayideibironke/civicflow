@@ -35,21 +35,18 @@ declare
   sid text;
   plan text;
   seats integer;
-  price text;
   event_created bigint;
   inserted integer;
-  expected_price text;
 begin
   e := p_payload::jsonb;
-  if coalesce((e->>'livemode')::boolean,false) is distinct from true then
-    raise exception 'Live subscription event expected.';
-  end if;
-  if not private.verify_stripe_signature(p_payload,p_signature,'live') then
+  if not private.verify_stripe_signature(p_payload,p_signature,
+      case when coalesce((e->>'livemode')::boolean,false) then 'live' else 'sandbox' end) then
     raise exception 'Invalid subscription webhook signature.';
   end if;
   if e->>'account' is not null then
     raise exception 'Connected account events are not platform subscriptions.';
   end if;
+  event_created := coalesce((e->>'created')::bigint,0);
   typ := e->>'type';
   o := e #> '{data,object}';
   if e->>'id' is null or o is null then raise exception 'Invalid event.'; end if;
@@ -78,7 +75,7 @@ begin
     ) values (
       sid,o->>'customer',o->>'id',o #>> '{customer_details,email}',
       o #>> '{metadata,firm_name}',plan,seats,'pending_verification','pending_verification',
-      coalesce((e->>'created')::bigint,0)
+      event_created
     ) on conflict (stripe_subscription_id) do update
       set checkout_session_id=excluded.checkout_session_id,
           updated_at=now();
