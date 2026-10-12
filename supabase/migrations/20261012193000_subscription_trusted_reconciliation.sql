@@ -32,8 +32,11 @@ begin
   end if;
   select * into v from private.civicflow_subscriptions
     where stripe_subscription_id=p_subscription_id for update;
-  if v.stripe_subscription_id is null then
-    raise exception 'Subscription checkout must be registered before reconciliation.';
+  if v.stripe_subscription_id is null or v.checkout_session_id is null then
+    raise exception 'Verified Stripe checkout must be registered before reconciliation.';
+  end if;
+  if v.plan <> p_plan then
+    raise exception 'Verified plan does not match original checkout.';
   end if;
   if v.stripe_customer_id <> p_customer_id or v.livemode <> p_livemode then
     raise exception 'Stripe subscription identity mismatch.';
