@@ -1,0 +1,76 @@
+import { NextResponse } from "next/server";
+
+const PRICES = {
+  basic: process.env.CIVICFLOW_STRIPE_PRICE_BASIC,
+  pro: process.env.CIVICFLOW_STRIPE_PRICE_PRO,
+  advanced: process.env.CIVICFLOW_STRIPE_PRICE_ADVANCED,
+} as const;
+const STRIPE_URL = "https://api.stripe.com/v1/checkout/sessions";
+type Plan = keyof typeof PRICES;
+
+function error(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status });
+}
+
+export async function POST(request: Request) {
+  // Disabled until the platform subscription webhook and entitlement ledger are deployed.
+  if (process.env.CIVICFLOW_SUBSCRIPTIONS_ENABLED !== "true") {
+    return error("Subscription checkout is not yet available.", 503);
+  }
+  const body = await request.json().catch(() => null) as {
+    plan?: unknown; seats?: unknown; email?: unknown; firmName?: unknown
+  } | null;
+  const plan = typeof body?.plan === "string" ? body.plan.toLowerCase() : "";
+  if (!(plan in PRICES)) return error("Select a valid plan.", 400);
+  const seats = body?.seats;
+  if (!Number.isSafeInteger(seats) || (seats as number) < 1 || (seats as number) > 250) {
+    return error("Seats must be a whole number between 1 and 250.", 400);
+  }
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const firmName = typeof body?.firmName === "string" ? body.firmName.trim() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    return error("A valid work email is required.", 400);
+  }
+  if (!firmName || firmName.length > 160) return error("A valid firm name is required.", 400);
+  const price = PRICES[plan as Plan];
+  if (!price || !/^price_[a-zA-Z0-9]+$/.test(price)) {
+    return error("Subscription pricing is not configured.", 503);
+  }
+  // Subscription charges always use the CivicFlow platform account, never a firm's Connect account.
+  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
+  if (!secret || !/^sk_(test|live)_/.test(secret)) {
+    return error("Subscription payments are not configured.", 503);
+  }
+  if (process.env.NODE_ENV === "production" && !secret.startsWith("sk_live_")) {
+    return error("Production subscriptions require a live Stripe credential.", 503);
+  }
+  const origin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
+  if (!origin || !/^https:\/\//.test(origin)) return error("Public origin is not configured.", 503);
+  const params = new URLSearchParams();
+  params.set("mode", "subscription");
+  params.set("line_items[0][price]", price);
+  params.set("line_items[0][quantity]", String(seats));
+  params.set("customer_email", email);
+  params.set("success_url", `${origin}/get-started?subscription=processing&session_id={CHECKOUT_SESSION_ID}`);
+  params.set("cancel_url", `${origin}/get-started?subscription=cancelled`);
+  params.set("subscription_data[metadata][plan]", plan);
+  params.set("subscription_data[metadata][firm_name]", firmName);
+  params.set("metadata[plan]", plan);
+  params.set("metadata[firm_name]", firmName);
+  params.set("metadata[seats]", String(seats));
+  const stripe = await fetch(STRIPE_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secret}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+    cache: "no-store",
+  }).catch(() => null);
+  if (!stripe) return error("Stripe is temporarily unavailable.", 502);
+  const session = await stripe.json().catch(() => null) as { id?: string; url?: string } | null;
+  if (!stripe.ok || !session?.id || !session.url || !session.url.startsWith("https://checkout.stripe.com/")) {
+    return error("Could not create a subscription checkout.", 502);
+  }
+  return NextResponse.json({ url: session.url, sessionId: session.id });
+}
