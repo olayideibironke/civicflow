@@ -126,11 +126,29 @@ begin
       event_created,coalesce((e->>'livemode')::boolean,false)
     ) on conflict (stripe_subscription_id) do update
       set checkout_session_id=excluded.checkout_session_id,
-          updated_at=now();
+          customer_email=coalesce(excluded.customer_email,private.civicflow_subscriptions.customer_email),
+          firm_name=coalesce(excluded.firm_name,private.civicflow_subscriptions.firm_name),
+          updated_at=now()
+      where private.civicflow_subscriptions.stripe_customer_id=excluded.stripe_customer_id
+        and private.civicflow_subscriptions.livemode=excluded.livemode;
     return jsonb_build_object('processed',true,'status','pending_verification');
   end if;
   sid := o->>'id';
   if sid is null then raise exception 'Missing subscription id.'; end if;
+  -- Stripe does not guarantee checkout.session.completed arrives before subscription.created.
+  -- Record an unlinked subscription as pending; only trusted reconciliation can verify it.
+  if typ='customer.subscription.created' and o->>'customer' is not null then
+    plan := o #>> '{metadata,plan}';
+    seats := nullif(o #>> '{metadata,seats}','')::integer;
+    if plan in ('basic','pro','advanced') and seats between 1 and 250 then
+      insert into private.civicflow_subscriptions (
+        stripe_subscription_id,stripe_customer_id,plan,seats,status,livemode,last_event_created
+      ) values (
+        sid,o->>'customer',plan,seats,'pending_verification',
+        coalesce((e->>'livemode')::boolean,false),event_created
+      ) on conflict (stripe_subscription_id) do nothing;
+    end if;
+  end if;
   -- Never create entitlements from unlinked or unverified Stripe subscription data.
   update private.civicflow_subscriptions s
   set status=case when typ='customer.subscription.deleted' then 'canceled'
