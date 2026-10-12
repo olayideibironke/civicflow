@@ -49,12 +49,21 @@ export async function POST(request: Request) {
   if (!secret || !/^sk_(test|live)_/.test(secret)) {
     return error("Subscription payments are not configured.", 503);
   }
-  if (process.env.NODE_ENV === "production" && !secret.startsWith("sk_live_")) {
-    return error("Production subscriptions require a live Stripe credential.", 503);
+  // Explicit mode prevents accidental live billing in a preview or sandbox rollout.
+  const mode = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE;
+  if (mode !== "test" && mode !== "live") {
+    return error("Subscription payment mode is not configured.", 503);
+  }
+  if (!secret.startsWith(mode === "live" ? "sk_live_" : "sk_test_")) {
+    return error("Stripe credential does not match the configured payment mode.", 503);
+  }
+  if (mode === "live" && process.env.NODE_ENV !== "production") {
+    return error("Live subscription checkout is restricted to production.", 503);
   }
   const origin = configuredOrigin;
   const params = new URLSearchParams();
   params.set("mode", "subscription");
+  params.set("client_reference_id", crypto.randomUUID());
   params.set("line_items[0][price]", price);
   params.set("line_items[0][quantity]", String(seats));
   params.set("customer_email", email);
@@ -62,6 +71,7 @@ export async function POST(request: Request) {
   params.set("cancel_url", `${origin}/get-started?subscription=cancelled`);
   params.set("subscription_data[metadata][plan]", plan);
   params.set("subscription_data[metadata][firm_name]", firmName);
+  params.set("subscription_data[metadata][seats]", String(seats));
   params.set("metadata[plan]", plan);
   params.set("metadata[firm_name]", firmName);
   params.set("metadata[seats]", String(seats));
