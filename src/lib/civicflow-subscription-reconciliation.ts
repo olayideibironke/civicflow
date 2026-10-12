@@ -36,13 +36,15 @@ export async function reconcileVerifiedFirmSubscription(input: {
   if (checkout.id !== checkoutSessionId || checkout.mode !== "subscription" ||
       checkout.status !== "complete" || checkout.subscription !== verified.subscriptionId ||
       checkout.customer !== verified.customerId || checkout.livemode !== verified.livemode ||
-      !checkout.client_reference_id) {
+      !checkout.client_reference_id ||
+      (verified.livemode && !checkoutSessionId.startsWith("cs_live_")) ||
+      (!verified.livemode && !checkoutSessionId.startsWith("cs_test_"))) {
     throw new Error("Stripe checkout does not match the verified subscription");
   }
   if (verified.status !== "active" && verified.status !== "trialing") {
     throw new Error("Subscription is not active");
   }
-  if (verified.status === "active" && checkout.payment_status !== "paid") {
+  if (checkout.payment_status !== "paid" && checkout.payment_status !== "no_payment_required") {
     throw new Error("Checkout payment is not confirmed");
   }
   const result = await fetch(`${supabaseUrl}/rest/v1/rpc/reconcile_civicflow_subscription`, {
