@@ -1,3 +1,48 @@
+-- Platform webhook signing secrets must not be shared with law-firm invoice Connect webhooks.
+-- Provision Vault names civicflow_subscription_webhook_live and
+-- civicflow_subscription_webhook_sandbox separately before enabling checkout.
+create or replace function private.verify_civicflow_subscription_signature(
+  p_payload text, p_signature text, p_mode text
+) returns boolean
+language plpgsql security definer
+set search_path = pg_catalog, extensions, vault
+as $$
+declare
+  v_secret text;
+  v_timestamp_text text;
+  v_timestamp bigint;
+  v_expected text;
+  v_part text;
+begin
+  if p_mode not in ('live','sandbox') then return false; end if;
+  select decrypted_secret into v_secret from vault.decrypted_secrets
+  where name = case when p_mode='live' then 'civicflow_subscription_webhook_live'
+                    else 'civicflow_subscription_webhook_sandbox' end
+  order by updated_at desc limit 1;
+  if coalesce(length(v_secret),0)=0 then return false; end if;
+  foreach v_part in array string_to_array(coalesce(p_signature,''),',') loop
+    if split_part(trim(v_part),'=',1)='t' then
+      v_timestamp_text := split_part(trim(v_part),'=',2);
+      exit;
+    end if;
+  end loop;
+  if coalesce(v_timestamp_text,'') !~ '^[0-9]{1,15}$' then return false; end if;
+  v_timestamp := v_timestamp_text::bigint;
+  if abs(floor(extract(epoch from now()))::bigint-v_timestamp)>300 then return false; end if;
+  v_expected := encode(extensions.hmac(
+    convert_to(v_timestamp_text||'.'||p_payload,'UTF8'),
+    convert_to(v_secret,'UTF8'),'sha256'),'hex');
+  foreach v_part in array string_to_array(coalesce(p_signature,''),',') loop
+    if split_part(trim(v_part),'=',1)='v1'
+       and lower(split_part(trim(v_part),'=',2))=v_expected then return true; end if;
+  end loop;
+  return false;
+exception when others then return false;
+end;
+$$;
+revoke all on function private.verify_civicflow_subscription_signature(text,text,text)
+from public,anon,authenticated;
+
 -- Platform subscriptions are separate from law-firm client invoice payments.
 -- Subscription checkout must remain disabled until this migration and its webhook are configured.
 create table if not exists private.civicflow_subscriptions (
@@ -42,7 +87,7 @@ declare
   inserted integer;
 begin
   e := p_payload::jsonb;
-  if not private.verify_stripe_signature(p_payload,p_signature,
+  if not private.verify_civicflow_subscription_signature(p_payload,p_signature,
       case when coalesce((e->>'livemode')::boolean,false) then 'live' else 'sandbox' end) then
     raise exception 'Invalid subscription webhook signature.';
   end if;
