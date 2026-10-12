@@ -10,6 +10,10 @@ export async function POST(request: Request) {
   if (!signature) {
     return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
   }
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && Number(contentLength) > 1024 * 1024) {
+    return NextResponse.json({ error: "Event too large." }, { status: 413 });
+  }
   const payload = await request.text();
   if (payload.length > 1024 * 1024) {
     return NextResponse.json({ error: "Event too large." }, { status: 413 });
