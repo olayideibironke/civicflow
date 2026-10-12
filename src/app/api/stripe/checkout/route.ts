@@ -184,6 +184,16 @@ export async function POST(request: Request) {
     return responseError("This invoice is not available for Stripe Checkout.", 403);
   }
 
+  // Production invoices must never be charged through the platform's Stripe account.
+  // Live firm-specific Stripe Connect checkout is not enabled until the firm's
+  // connected account is verified and the webhook supports Connect events.
+  if (context.connection_mode === "live") {
+    return responseError(
+      "Live invoice payments require the law firm's verified Stripe connection. No payment has been initiated.",
+      503
+    );
+  }
+
   if (context.connection_mode !== "sandbox") {
     return responseError(
       "This CivicFlow build is configured for sandbox payments only.",
