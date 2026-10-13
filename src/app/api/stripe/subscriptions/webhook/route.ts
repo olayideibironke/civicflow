@@ -18,7 +18,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Event too large." }, { status: 413 });
   }
   const payload = await request.text();
-  if (payload.length > 1024 * 1024) {
+  // Stripe signs raw UTF-8 bytes; JavaScript string length is not a byte limit.
+  if (new TextEncoder().encode(payload).byteLength > 1024 * 1024) {
     return NextResponse.json({ error: "Event too large." }, { status: 413 });
   }
   // Supabase verifies the original raw Stripe payload against the dedicated Vault secret.
