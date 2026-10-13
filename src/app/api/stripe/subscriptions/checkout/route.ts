@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const PRICES = {
   basic: process.env.CIVICFLOW_STRIPE_PRICE_BASIC,
