@@ -19,11 +19,19 @@ export async function POST(request: Request) {
     return error("Subscription checkout is not yet available.", 503);
   }
   const configuredOrigin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
-  if (!configuredOrigin || !configuredOrigin.startsWith("https://")) {
-    return error("Public origin is not configured.", 503);
+  let origin: string;
+  try {
+    const parsedOrigin = new URL(configuredOrigin ?? "");
+    if (parsedOrigin.protocol !== "https:" || parsedOrigin.username || parsedOrigin.password ||
+        parsedOrigin.pathname !== "/" || parsedOrigin.search || parsedOrigin.hash) {
+      return error("Public origin is not configured correctly.", 503);
+    }
+    origin = parsedOrigin.origin;
+  } catch {
+    return error("Public origin is not configured correctly.", 503);
   }
   const originHeader = request.headers.get("origin");
-  if (!originHeader || originHeader !== new URL(configuredOrigin).origin) {
+  if (!originHeader || originHeader !== origin) {
     return error("Cross-origin subscription checkout is not allowed.", 403);
   }
   const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
@@ -88,7 +96,6 @@ export async function POST(request: Request) {
   if (mode === "live" && process.env.NODE_ENV !== "production") {
     return error("Live subscription checkout is restricted to production.", 503);
   }
-  const origin = new URL(configuredOrigin).origin;
   const params = new URLSearchParams();
   params.set("mode", "subscription");
   // Organization identity is taken from the authenticated firm admin profile.
