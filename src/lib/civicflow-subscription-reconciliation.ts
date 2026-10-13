@@ -36,7 +36,7 @@ export async function reconcileVerifiedFirmSubscription(input: {
   if (checkout.id !== checkoutSessionId || checkout.mode !== "subscription" ||
       checkout.status !== "complete" || checkout.subscription !== verified.subscriptionId ||
       checkout.customer !== verified.customerId || checkout.livemode !== verified.livemode ||
-      !checkout.client_reference_id ||
+      checkout.client_reference_id !== organizationId ||
       (verified.livemode && !checkoutSessionId.startsWith("cs_live_")) ||
       (!verified.livemode && !checkoutSessionId.startsWith("cs_test_"))) {
     throw new Error("Stripe checkout does not match the verified subscription");
