@@ -2,6 +2,7 @@
 create or replace function public.reconcile_civicflow_subscription(
   p_subscription_id text,
   p_checkout_session_id text,
+  p_checkout_reference text,
   p_customer_id text,
   p_organization_id uuid,
   p_plan text,
@@ -35,6 +36,9 @@ begin
   if v.stripe_subscription_id is null or v.checkout_session_id is distinct from p_checkout_session_id then
     raise exception 'Verified Stripe checkout must be registered before reconciliation.';
   end if;
+  if v.checkout_reference is distinct from p_checkout_reference then
+    raise exception 'Checkout reference mismatch.';
+  end if;
   if v.plan <> p_plan or v.seats <> p_seats then
     raise exception 'Verified plan or seat count does not match original checkout.';
   end if;
@@ -59,7 +63,7 @@ begin
   return jsonb_build_object('verified',true,'organization_id',p_organization_id);
 end;
 $$;
-revoke all on function public.reconcile_civicflow_subscription(text,text,text,uuid,text,text,integer,text,boolean)
+revoke all on function public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)
 from public,anon,authenticated;
-grant execute on function public.reconcile_civicflow_subscription(text,text,text,uuid,text,text,integer,text,boolean)
+grant execute on function public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)
 to service_role;
