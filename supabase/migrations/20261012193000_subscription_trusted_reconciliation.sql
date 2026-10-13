@@ -22,8 +22,7 @@ begin
   end if;
   if p_subscription_id !~ '^sub_[A-Za-z0-9]+$'
      or p_checkout_session_id !~ '^cs_(test_|live_)[A-Za-z0-9]+$'
-     or coalesce(p_checkout_reference,'') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}
-     or p_customer_id !~ '^cus_[A-Za-z0-9]+$'
+     or coalesce(p_checkout_reference,'') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}     or p_customer_id !~ '^cus_[A-Za-z0-9]+$'
      or p_checkout_reference is distinct from p_organization_id::text
      or p_organization_id is null
      or coalesce(p_plan,'') not in ('basic','pro','advanced')
@@ -71,12 +70,12 @@ grant execute on function public.reconcile_civicflow_subscription(text,text,text
 to service_role;
 
      or p_customer_id !~ '^cus_[A-Za-z0-9]+$'
-     or p_checkout_reference::uuid is distinct from p_organization_id
+     or p_checkout_reference is distinct from p_organization_id::text
      or p_organization_id is null
-     or p_plan not in ('basic','pro','advanced')
+     or coalesce(p_plan,'') not in ('basic','pro','advanced')
      or p_price_id !~ '^price_[A-Za-z0-9]+$'
-     or p_seats not between 1 and 250
-     or p_status not in ('active','trialing','past_due','unpaid','canceled','incomplete','incomplete_expired','paused')
+     or p_seats is null or p_seats not between 1 and 250
+     or coalesce(p_status,'') not in ('active','trialing','past_due','unpaid','canceled','incomplete','incomplete_expired','paused')
      or p_livemode is null then
     raise exception 'Invalid reconciliation parameters.';
   end if;
