@@ -22,7 +22,8 @@ begin
   end if;
   if p_subscription_id !~ '^sub_[A-Za-z0-9]+$'
      or p_checkout_session_id !~ '^cs_(test_|live_)[A-Za-z0-9]+$'
-     or coalesce(p_checkout_reference,'') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}     or p_customer_id !~ '^cus_[A-Za-z0-9]+$'
+     or coalesce(p_checkout_reference,'') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+     or coalesce(p_customer_id,'') !~ '^cus_[A-Za-z0-9]+$'
      or p_checkout_reference is distinct from p_organization_id::text
      or p_organization_id is null
      or coalesce(p_plan,'') not in ('basic','pro','advanced')
