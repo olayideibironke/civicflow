@@ -97,7 +97,10 @@ begin
   event_created := coalesce((e->>'created')::bigint,0);
   typ := e->>'type';
   o := e #> '{data,object}';
-  if coalesce(e->>'id','') !~ '^evt_[A-Za-z0-9]+ ('checkout.session.completed','customer.subscription.created',
+  if coalesce(e->>'id','') !~ '^evt_[A-Za-z0-9]+$' or o is null then
+    raise exception 'Invalid event.';
+  end if;
+  if typ not in ('checkout.session.completed','customer.subscription.created',
     'customer.subscription.updated','customer.subscription.deleted') then
     return jsonb_build_object('processed',false,'reason','ignored');
   end if;
@@ -117,7 +120,10 @@ begin
        or (not coalesce((e->>'livemode')::boolean,false) and o->>'id' !~ '^cs_test_') then
       raise exception 'Invalid checkout identity or payment mode.';
     end if;
-    if coalesce(o->>'client_reference_id','') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12} 'Invalid checkout completion.';
+    if coalesce(o->>'client_reference_id','') !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+       or o->>'status' is distinct from 'complete'
+       or coalesce(o->>'payment_status','') not in ('paid','no_payment_required') then
+      raise exception 'Invalid checkout completion.';
     end if;
     plan := o #>> '{metadata,plan}';
     seats := nullif(o #>> '{metadata,seats}','')::integer;
