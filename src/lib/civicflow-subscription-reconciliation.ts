@@ -53,6 +53,7 @@ export async function reconcileVerifiedFirmSubscription(input: {
     body: JSON.stringify({
       p_subscription_id: verified.subscriptionId,
       p_checkout_session_id: checkoutSessionId,
+      p_checkout_reference: checkout.client_reference_id,
       p_customer_id: verified.customerId,
       p_organization_id: organizationId,
       p_plan: verified.plan,
