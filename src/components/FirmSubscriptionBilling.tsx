@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 const plans = [
@@ -14,6 +14,44 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
   const [seats, setSeats] = useState(1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!isAdmin) return;
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("subscription");
+    const sessionId = params.get("session_id");
+    if (state === "cancelled") {
+      setMessage("Checkout cancelled. Your subscription has not changed.");
+      return;
+    }
+    if (state !== "processing" || !sessionId || !/^cs_(test_|live_)[A-Za-z0-9]+$/.test(sessionId)) return;
+    let cancelled = false;
+    async function activate() {
+      setBusy(true);
+      setMessage("Verifying your Stripe payment and activating your subscription...");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("Please sign in to verify your payment.");
+        const response = await fetch("/api/stripe/subscriptions/activate", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId }),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.activated) throw new Error(result.error || "Activation pending.");
+        if (!cancelled) {
+          setMessage("Subscription verified and activated successfully.");
+          window.history.replaceState({}, "", "/app/settings");
+        }
+      } catch (error) {
+        if (!cancelled) setMessage(error instanceof Error ? error.message : "Activation pending. Reload to retry.");
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    }
+    void activate();
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
   const price = plans.find((item) => item.id === plan)?.price ?? 80;
 
   async function startCheckout() {
