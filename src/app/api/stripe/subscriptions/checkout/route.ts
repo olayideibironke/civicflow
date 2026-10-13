@@ -60,9 +60,11 @@ export async function POST(request: Request) {
   if (mode === "live" && process.env.NODE_ENV !== "production") {
     return error("Live subscription checkout is restricted to production.", 503);
   }
-  const origin = configuredOrigin;
+  const origin = new URL(configuredOrigin).origin;
   const params = new URLSearchParams();
   params.set("mode", "subscription");
+  // This is a correlation reference, not proof of organization ownership.
+  // Provisioning must separately verify an authenticated firm owner.
   params.set("client_reference_id", crypto.randomUUID());
   params.set("line_items[0][price]", price);
   params.set("line_items[0][quantity]", String(seats));
@@ -85,8 +87,11 @@ export async function POST(request: Request) {
     cache: "no-store",
   }).catch(() => null);
   if (!stripe) return error("Stripe is temporarily unavailable.", 502);
-  const session = await stripe.json().catch(() => null) as { id?: string; url?: string } | null;
-  if (!stripe.ok || !session?.id || !session.url || !session.url.startsWith("https://checkout.stripe.com/")) {
+  const session = await stripe.json().catch(() => null) as { id?: string; url?: string; livemode?: boolean } | null;
+  if (!stripe.ok || !session?.id || !session.url ||
+      session.livemode !== (mode === "live") ||
+      !session.id.startsWith(mode === "live" ? "cs_live_" : "cs_test_") ||
+      !session.url.startsWith("https://checkout.stripe.com/")) {
     return error("Could not create a subscription checkout.", 502);
   }
   return NextResponse.json({ url: session.url, sessionId: session.id });
