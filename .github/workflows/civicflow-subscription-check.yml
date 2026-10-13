@@ -20,3 +20,15 @@ jobs:
           NEXT_TELEMETRY_DISABLED: '1'
           NEXT_PUBLIC_SUPABASE_URL: 'https://rvnaixlydhpefptyqqgs.supabase.co'
           NEXT_PUBLIC_SUPABASE_ANON_KEY: 'ci-public-placeholder-key'
+      - name: Parse subscription SQL migrations
+        run: |
+          python -m pip install --disable-pip-version-check pglast==7.11
+          python - <<'PY'
+          from pathlib import Path
+          from pglast import parse_sql
+          files = sorted(Path("supabase/migrations").glob("*subscription*.sql"))
+          assert files, "No subscription SQL migrations found"
+          for path in files:
+              statements = parse_sql(path.read_text(encoding="utf-8"))
+              print(f"{path}: {len(statements)} PostgreSQL statements parsed")
+          PY
