@@ -156,7 +156,12 @@ begin
     return jsonb_build_object('processed',true,'status','pending_verification');
   end if;
   sid := o->>'id';
-  if coalesce(sid,'') !~ '^sub_[A-Za-z0-9]+
+  if coalesce(sid,'') !~ '^sub_[A-Za-z0-9]+$' then
+    raise exception 'Invalid subscription id.';
+  end if;
+  if coalesce(o->>'customer','') !~ '^cus_[A-Za-z0-9]+$' then
+    raise exception 'Invalid subscription customer.';
+  end if;
   -- Stripe does not guarantee checkout.session.completed arrives before subscription.created.
   -- Record unlinked subscription events as pending, including update/delete events
   -- that arrive before checkout or created. Only reconciliation can verify them.
