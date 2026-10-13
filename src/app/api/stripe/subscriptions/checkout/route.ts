@@ -118,7 +118,7 @@ export async function POST(request: Request) {
   if (!stripe.ok || !session?.id || !session.url ||
       session.livemode !== (mode === "live") ||
       !session.id.startsWith(mode === "live" ? "cs_live_" : "cs_test_") ||
-      !session.url.startsWith("https://checkout.stripe.com/")) {
+      (() => { try { const destination = new URL(session.url); return destination.protocol !== "https:" || destination.hostname !== "checkout.stripe.com"; } catch { return true; } })()) {
     return error("Could not create a subscription checkout.", 502);
   }
   return NextResponse.json({ url: session.url, sessionId: session.id });
