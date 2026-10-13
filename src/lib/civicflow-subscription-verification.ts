@@ -1,3 +1,5 @@
+import "server-only";
+
 // Server-only Stripe subscription verification. Never trust checkout metadata for entitlements.
 export type VerifiedSubscription = {
   subscriptionId: string;
