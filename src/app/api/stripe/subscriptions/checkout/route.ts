@@ -48,8 +48,10 @@ export async function POST(request: Request) {
     "get_civicflow_subscription_entitlement", { p_organization_id: firm.id },
   );
   if (entitlementError) return error("Subscription status could not be verified.", 503);
-  if (entitlement?.active === true) {
-    return error("This firm already has an active subscription. Contact support to change plans.", 409);
+  // Fail closed for any existing subscription record, including unpaid or
+  // unverified records. A new purchase requires an explicit recovery/change flow.
+  if (entitlement?.active === true || typeof entitlement?.status === "string") {
+    return error("This firm already has a subscription record. Contact support before purchasing again.", 409);
   }
   const body = await request.json().catch(() => null) as {
     plan?: unknown; seats?: unknown; email?: unknown; firmName?: unknown
