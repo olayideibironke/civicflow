@@ -52,8 +52,8 @@ export async function POST(request: Request) {
   if (!Number.isSafeInteger(seats) || (seats as number) < 1 || (seats as number) > 250) {
     return error("Seats must be a whole number between 1 and 250.", 400);
   }
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const firmName = typeof body?.firmName === "string" ? body.firmName.trim() : "";
+  const email = identity.user.email || "";
+  const firmName = firm.name;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     return error("A valid work email is required.", 400);
   }
@@ -81,9 +81,8 @@ export async function POST(request: Request) {
   const origin = new URL(configuredOrigin).origin;
   const params = new URLSearchParams();
   params.set("mode", "subscription");
-  // This is a correlation reference, not proof of organization ownership.
-  // Provisioning must separately verify an authenticated firm owner.
-  params.set("client_reference_id", crypto.randomUUID());
+  // Organization identity is taken from the authenticated firm admin profile.
+  params.set("client_reference_id", firm.id);
   params.set("line_items[0][price]", price);
   params.set("line_items[0][quantity]", String(seats));
   params.set("customer_email", email);
