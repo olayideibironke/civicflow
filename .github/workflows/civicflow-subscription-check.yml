@@ -26,8 +26,9 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           from pglast import parse_sql
-          files = sorted(Path("supabase/migrations").glob("*subscription*.sql"))
-          assert files, "No subscription SQL migrations found"
+          migration_dir = Path("supabase/migrations")
+          files = sorted(set(migration_dir.glob("*subscription*.sql")) | set(migration_dir.glob("*stripe_connect*.sql")))
+          assert len(files) >= 3, "Expected subscription ledger, reconciliation, and Connect routing migrations"
           for path in files:
               statements = parse_sql(path.read_text(encoding="utf-8"))
               print(f"{path}: {len(statements)} PostgreSQL statements parsed")
