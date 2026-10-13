@@ -45,10 +45,15 @@ export default function GetStartedPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState("");
+  const [subscriptionNotice, setSubscriptionNotice] = useState<"processing" | "cancelled" | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const plan = params.get("plan");
+    const subscription = params.get("subscription");
+    if (subscription === "processing" || subscription === "cancelled") {
+      setSubscriptionNotice(subscription);
+    }
 
     if (plan && ["basic", "pro", "advanced"].includes(plan.toLowerCase())) {
       const normalized = `${plan.charAt(0).toUpperCase()}${plan.slice(1).toLowerCase()}`;
@@ -131,6 +136,15 @@ export default function GetStartedPage() {
     <main className="mk min-h-screen">
       <MarketingHeader activePage="get-started" />
 
+      {subscriptionNotice && (
+        <div role="status" aria-live="polite" className="mk-container pt-6">
+          <div className="rounded-xl border border-line bg-white px-5 py-4 text-sm text-ink">
+            {subscriptionNotice === "processing"
+              ? "Stripe checkout has returned. Your subscription is being verified. Payment does not automatically activate a firm account. Our team will confirm your onboarding and access."
+              : "You left Stripe checkout without completing your subscription. No subscription has been activated. You can still submit your firm details below."}
+          </div>
+        </div>
+      )}
       <section className="relative overflow-hidden">
         <div className="mk-hairline-grid pointer-events-none absolute inset-x-0 top-0 h-[520px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true" />
         <div className="mk-container relative grid gap-12 py-14 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
