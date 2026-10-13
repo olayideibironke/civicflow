@@ -26,6 +26,23 @@ export async function POST(request: Request) {
   if (!originHeader || originHeader !== new URL(configuredOrigin).origin) {
     return error("Cross-origin subscription checkout is not allowed.", 403);
   }
+  const token = request.headers.get("authorization")?.match(/^Bearer (.+)$/i)?.[1];
+  const dbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const dbKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!token || !dbUrl || !dbKey) return error("Administrator sign-in required.", 401);
+  const db = createClient(dbUrl, dbKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data: identity, error: identityError } = await db.auth.getUser(token);
+  if (identityError || !identity.user) return error("Invalid session.", 401);
+  const { data: profile, error: profileError } = await db.from("profiles")
+    .select("organization_id,role").eq("id", identity.user.id).single();
+  if (profileError || profile?.role !== "admin" || !profile.organization_id)
+    return error("Firm administrator access required.", 403);
+  const { data: firm, error: firmError } = await db.from("organizations")
+    .select("id,name").eq("id", profile.organization_id).single();
+  if (firmError || !firm) return error("Firm not found.", 403);
   const body = await request.json().catch(() => null) as {
     plan?: unknown; seats?: unknown; email?: unknown; firmName?: unknown
   } | null;
