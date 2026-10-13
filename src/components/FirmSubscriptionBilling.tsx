@@ -14,6 +14,29 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
   const [seats, setSeats] = useState(1);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [existingSubscription, setExistingSubscription] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  useEffect(() => {
+    if (!isAdmin) { setCheckingSubscription(false); return; }
+    let cancelled = false;
+    async function checkSubscription() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase.from("profiles").select("organization_id").eq("id", user.id).single();
+        if (!profile?.organization_id) return;
+        const { data, error } = await supabase.rpc("get_civicflow_subscription_entitlement", {
+          p_organization_id: profile.organization_id,
+        });
+        if (!cancelled && !error) setExistingSubscription(data?.active === true || typeof data?.status === "string");
+      } finally {
+        if (!cancelled) setCheckingSubscription(false);
+      }
+    }
+    void checkSubscription().catch(() => { if (!cancelled) setCheckingSubscription(false); });
+    return () => { cancelled = true; };
+  }, [isAdmin]);
+
   useEffect(() => {
     if (!isAdmin) return;
     const params = new URLSearchParams(window.location.search);
@@ -39,6 +62,7 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
         const result = await response.json();
         if (!response.ok || !result.activated) throw new Error(result.error || "Activation pending.");
         if (!cancelled) {
+          setExistingSubscription(true);
           setMessage("Subscription verified and activated successfully.");
           window.history.replaceState({}, "", "/app/settings");
         }
@@ -55,7 +79,7 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
   const price = plans.find((item) => item.id === plan)?.price ?? 80;
 
   async function startCheckout() {
-    if (!isAdmin || busy) return;
+    if (!isAdmin || busy || checkingSubscription || existingSubscription) return;
     setBusy(true);
     setMessage("");
     try {
@@ -102,8 +126,9 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
       <p className="mt-4 text-sm font-semibold text-slate-800">
         Estimated monthly subscription: ${Number.isSafeInteger(seats) && seats >= 1 && seats <= 250 ? price * seats : "—"}
       </p>
-      <button type="button" className="btn btn-primary mt-5" disabled={!isAdmin || busy || !Number.isSafeInteger(seats) || seats < 1 || seats > 250}
-        onClick={startCheckout}>{busy ? "Opening secure checkout…" : "Continue to secure checkout"}</button>
+      <button type="button" className="btn btn-primary mt-5" disabled={!isAdmin || busy || checkingSubscription || existingSubscription || !Number.isSafeInteger(seats) || seats < 1 || seats > 250}
+        onClick={startCheckout}>{busy ? "Opening secure checkout…" : existingSubscription ? "Subscription already registered" : checkingSubscription ? "Checking subscription…" : "Continue to secure checkout"}</button>
+      {existingSubscription && <p className="mt-3 text-sm text-slate-600">This firm already has a subscription record. Contact support for plan changes or billing recovery.</p>}
       {!isAdmin && <p className="mt-3 text-sm text-slate-600">Only firm administrators can purchase seats.</p>}
       {message && <p role="alert" className="mt-3 text-sm text-rose-700">{message}</p>}
     </section>
