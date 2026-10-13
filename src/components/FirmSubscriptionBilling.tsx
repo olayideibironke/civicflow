@@ -16,24 +16,28 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
   const [message, setMessage] = useState("");
   const [existingSubscription, setExistingSubscription] = useState(false);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [subscriptionCheckFailed, setSubscriptionCheckFailed] = useState(false);
   useEffect(() => {
     if (!isAdmin) { setCheckingSubscription(false); return; }
     let cancelled = false;
     async function checkSubscription() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) { if (!cancelled) setSubscriptionCheckFailed(true); return; }
         const { data: profile } = await supabase.from("profiles").select("organization_id").eq("id", user.id).single();
-        if (!profile?.organization_id) return;
+        if (!profile?.organization_id) { if (!cancelled) setSubscriptionCheckFailed(true); return; }
         const { data, error } = await supabase.rpc("get_civicflow_subscription_entitlement", {
           p_organization_id: profile.organization_id,
         });
-        if (!cancelled && !error) setExistingSubscription(data?.active === true || typeof data?.status === "string");
+        if (!cancelled) {
+          if (error || !data) setSubscriptionCheckFailed(true);
+          else setExistingSubscription(data.active === true || typeof data.status === "string");
+        }
       } finally {
         if (!cancelled) setCheckingSubscription(false);
       }
     }
-    void checkSubscription().catch(() => { if (!cancelled) setCheckingSubscription(false); });
+    void checkSubscription().catch(() => { if (!cancelled) { setSubscriptionCheckFailed(true); setCheckingSubscription(false); } });
     return () => { cancelled = true; };
   }, [isAdmin]);
 
@@ -79,7 +83,7 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
   const price = plans.find((item) => item.id === plan)?.price ?? 80;
 
   async function startCheckout() {
-    if (!isAdmin || busy || checkingSubscription || existingSubscription) return;
+    if (!isAdmin || busy || checkingSubscription || subscriptionCheckFailed || existingSubscription) return;
     setBusy(true);
     setMessage("");
     try {
@@ -126,8 +130,9 @@ export default function FirmSubscriptionBilling({ isAdmin }: { isAdmin: boolean 
       <p className="mt-4 text-sm font-semibold text-slate-800">
         Estimated monthly subscription: ${Number.isSafeInteger(seats) && seats >= 1 && seats <= 250 ? price * seats : "—"}
       </p>
-      <button type="button" className="btn btn-primary mt-5" disabled={!isAdmin || busy || checkingSubscription || existingSubscription || !Number.isSafeInteger(seats) || seats < 1 || seats > 250}
-        onClick={startCheckout}>{busy ? "Opening secure checkout…" : existingSubscription ? "Subscription already registered" : checkingSubscription ? "Checking subscription…" : "Continue to secure checkout"}</button>
+      <button type="button" className="btn btn-primary mt-5" disabled={!isAdmin || busy || checkingSubscription || subscriptionCheckFailed || existingSubscription || !Number.isSafeInteger(seats) || seats < 1 || seats > 250}
+        onClick={startCheckout}>{busy ? "Opening secure checkout…" : existingSubscription ? "Subscription already registered" : subscriptionCheckFailed ? "Billing status unavailable" : checkingSubscription ? "Checking subscription…" : "Continue to secure checkout"}</button>
+      {subscriptionCheckFailed && <p role="alert" className="mt-3 text-sm text-rose-700">Unable to verify this firm’s subscription status. Please reload or contact support before purchasing.</p>}
       {existingSubscription && <p className="mt-3 text-sm text-slate-600">This firm already has a subscription record. Contact support for plan changes or billing recovery.</p>}
       {!isAdmin && <p className="mt-3 text-sm text-slate-600">Only firm administrators can purchase seats.</p>}
       {message && <p role="alert" className="mt-3 text-sm text-rose-700">{message}</p>}
