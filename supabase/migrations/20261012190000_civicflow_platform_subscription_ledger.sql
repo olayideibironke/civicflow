@@ -118,7 +118,14 @@ begin
        or (not coalesce((e->>'livemode')::boolean,false) and o->>'id' !~ '^cs_test_') then
       raise exception 'Invalid checkout identity or payment mode.';
     end if;
-    if coalesce(o->>'client_reference_id','') !~ '^[0-9a-f-]{36} or seats not between 1 and 250 then
+    if coalesce(o->>'client_reference_id','') !~ '^[0-9a-fA-F-]{36}$'
+       or o->>'status' is distinct from 'complete'
+       or o->>'payment_status' not in ('paid','no_payment_required') then
+      raise exception 'Invalid checkout completion.';
+    end if;
+    plan := o #>> '{metadata,plan}';
+    seats := nullif(o #>> '{metadata,seats}','')::integer;
+    if plan not in ('basic','pro','advanced') or seats not between 1 and 250 then
       raise exception 'Invalid subscription metadata.';
     end if;
     insert into private.civicflow_subscriptions(
