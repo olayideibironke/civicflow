@@ -43,6 +43,14 @@ export async function POST(request: Request) {
   const { data: firm, error: firmError } = await db.from("organizations")
     .select("id,name").eq("id", profile.organization_id).single();
   if (firmError || !firm) return error("Firm not found.", 403);
+  // Do not initiate a second paid subscription for an already active firm.
+  const { data: entitlement, error: entitlementError } = await db.rpc(
+    "get_civicflow_subscription_entitlement", { p_organization_id: firm.id },
+  );
+  if (entitlementError) return error("Subscription status could not be verified.", 503);
+  if (entitlement?.active === true) {
+    return error("This firm already has an active subscription. Contact support to change plans.", 409);
+  }
   const body = await request.json().catch(() => null) as {
     plan?: unknown; seats?: unknown; email?: unknown; firmName?: unknown
   } | null;
