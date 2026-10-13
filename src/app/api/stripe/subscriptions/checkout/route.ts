@@ -86,8 +86,8 @@ export async function POST(request: Request) {
   params.set("line_items[0][price]", price);
   params.set("line_items[0][quantity]", String(seats));
   params.set("customer_email", email);
-  params.set("success_url", `${origin}/get-started?subscription=processing&session_id={CHECKOUT_SESSION_ID}`);
-  params.set("cancel_url", `${origin}/get-started?subscription=cancelled`);
+  params.set("success_url", `${origin}/app/settings?subscription=processing&session_id={CHECKOUT_SESSION_ID}`);
+  params.set("cancel_url", `${origin}/app/settings?subscription=cancelled`);
   params.set("subscription_data[metadata][plan]", plan);
   params.set("subscription_data[metadata][firm_name]", firmName);
   params.set("subscription_data[metadata][seats]", String(seats));
