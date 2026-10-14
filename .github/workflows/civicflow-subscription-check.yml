@@ -66,7 +66,7 @@ jobs:
           CREATE FUNCTION public.is_staff_for_org(uuid) RETURNS boolean LANGUAGE sql AS 'SELECT false';
           CREATE FUNCTION extensions.hmac(bytea,bytea,text) RETURNS bytea LANGUAGE sql AS 'SELECT NULL::bytea';
           SQL
-          for file in supabase/migrations/*subscription*.sql supabase/migrations/*stripe_connect*.sql; do
+          for file in supabase/migrations/20261012190000_civicflow_platform_subscription_ledger.sql supabase/migrations/20261012191000_restrict_stripe_connect_routing_mutations.sql supabase/migrations/20261012193000_subscription_trusted_reconciliation.sql; do
             echo "Applying $file to isolated PostgreSQL"
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test -f "$file"
           done
