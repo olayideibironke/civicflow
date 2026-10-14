@@ -70,4 +70,32 @@ jobs:
             echo "Applying $file to isolated PostgreSQL"
             psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test -f "$file"
           done
-          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test -c "SELECT proname FROM pg_proc WHERE proname IN ('process_civicflow_subscription_webhook','get_civicflow_subscription_entitlement','reconcile_civicflow_subscription') ORDER BY proname"
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test <<'SQL'
+          DO $test$
+          BEGIN
+            IF (SELECT count(*) FROM pg_proc WHERE proname IN
+              ('process_civicflow_subscription_webhook','get_civicflow_subscription_entitlement','reconcile_civicflow_subscription')) <> 3 THEN
+              RAISE EXCEPTION 'Missing subscription RPC functions';
+            END IF;
+            IF has_table_privilege('authenticated','public.organization_payment_connections','INSERT')
+               OR has_table_privilege('authenticated','public.organization_payment_connections','UPDATE')
+               OR has_table_privilege('authenticated','public.organization_payment_connections','DELETE') THEN
+              RAISE EXCEPTION 'Stripe Connect routing is writable by authenticated users';
+            END IF;
+            IF has_function_privilege('authenticated','public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)','EXECUTE')
+               OR has_function_privilege('anon','public.process_civicflow_subscription_webhook(text,text)','EXECUTE') THEN
+              RAISE EXCEPTION 'Privileged subscription RPC exposed to untrusted role';
+            END IF;
+            IF NOT has_function_privilege('service_role','public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)','EXECUTE') THEN
+              RAISE EXCEPTION 'Service role cannot reconcile subscription';
+            END IF;
+            BEGIN
+              PERFORM public.process_civicflow_subscription_webhook('{"id":"evt_test"}','t=1,v1=invalid');
+              RAISE EXCEPTION 'Unsigned webhook was accepted';
+            EXCEPTION WHEN OTHERS THEN
+              IF SQLERRM = 'Unsigned webhook was accepted' THEN RAISE; END IF;
+            END;
+            RAISE NOTICE 'Subscription RPC, role grants, and unsigned webhook checks passed';
+          END
+          $test$;
+          SQL
