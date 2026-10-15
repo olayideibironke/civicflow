@@ -12,6 +12,14 @@ describe("Connect financial event classifier", () => {
     expect(classifyConnectFinancialEvent({ ...base, type: "refund.created", data: { object: { id: "re_1" } }, livemode: "false" })).toBeNull();
     expect(classifyConnectFinancialEvent({ ...base, type: "checkout.session.completed", data: { object: { id: "cs_1" } } })).toBeNull();
   });
+  it("holds refund and dispute events without a payment intent for enrichment", () => {
+    for (const type of ["refund.created", "charge.dispute.created"]) {
+      expect(classifyConnectFinancialEvent({
+        ...base, type,
+        data: { object: { id: "re_or_dp_1", amount: 500, currency: "usd" } },
+      })).toBeNull();
+    }
+  });
   it("captures a partial refund without treating it as an invoice payment", () => {
     const result = classifyConnectFinancialEvent({
       ...base, type: "refund.created",
