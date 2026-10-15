@@ -24,6 +24,13 @@ describe("financial adjustment projection", () => {
       openDisputeCents: 0, wonDisputeCents: 3000, lostDisputeCents: 500,
     });
   });
+  it("does not treat a closed dispute warning as recovered money", () => {
+    const result = projectFinancialAdjustments([
+      row("evt_warning", "dp_warning", "charge.dispute.closed", 2500, "warning_closed"),
+    ], 5000);
+    expect(result.wonDisputeCents).toBe(0);
+    expect(result.needsReview).toBe(true);
+  });
   it("flags over-refunding for investigation", () => {
     const events = [
       row("evt_1", "re_1", "refund.updated", 3500, "succeeded"),
