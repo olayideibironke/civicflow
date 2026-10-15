@@ -70,9 +70,8 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
   const status = asString(object.status);
 
   if (currency && !/^[a-z]{3}$/.test(currency)) return null;
-  // A refund or dispute without a resolvable payment intent must be held for
-  // Stripe-side enrichment, never guessed from client-provided invoice data.
-  if ((category === "refund" || category === "dispute") && !paymentIntentId) return null;
+  // Unmatched events may enter the verified inbox for Stripe enrichment.
+  // They must not be applied to invoice accounting without a payment match.
   return {
     stripeEventId: eventId,
     connectedAccountId: account,
