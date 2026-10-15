@@ -6,6 +6,8 @@ import type { VerifiedInvoicePayment } from "./authorizeFinancialAdjustment";
  * Stripe Connect event. Never accept these values from an unauthenticated user.
  * Returns all matches so the caller can reject ambiguous results.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function lookupOriginalInvoicePayments(
   supabaseUrl: string,
   serviceKey: string,
@@ -36,7 +38,7 @@ export async function lookupOriginalInvoicePayments(
   if (!connection || typeof connection !== "object" || Array.isArray(connection) ||
       connection.provider !== "stripe" ||
       connection.mode !== (livemode ? "live" : "sandbox") ||
-      typeof connection.organization_id !== "string")
+      typeof connection.organization_id !== "string" || !UUID.test(connection.organization_id))
     throw new Error("Connected account environment mismatch");
 
   const paymentQuery = new URLSearchParams({
@@ -64,7 +66,8 @@ export async function lookupOriginalInvoicePayments(
     if (!invoice || row.organization_id !== connection.organization_id ||
         invoice.organization_id !== connection.organization_id ||
         typeof invoice.currency !== "string" ||
-        typeof row.id !== "string" || typeof row.invoice_id !== "string" ||
+        typeof row.id !== "string" || !UUID.test(row.id) ||
+        typeof row.invoice_id !== "string" || !UUID.test(row.invoice_id) ||
         typeof row.amount_cents !== "number" || !Number.isSafeInteger(row.amount_cents) ||
         row.amount_cents <= 0 || row.processor_reference !== paymentIntentId)
       throw new Error("Original payment has inconsistent invoice data");
