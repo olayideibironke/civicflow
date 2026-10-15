@@ -52,10 +52,11 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
   const data = asRecord(event.data);
   const object = asRecord(data?.object);
   const objectId = asString(object?.id);
-  if (!/^evt_[A-Za-z0-9]+$/.test(eventId ?? "") || !/^acct_[A-Za-z0-9]+$/.test(account ?? "") ||
+  if (!eventId || !/^evt_[A-Za-z0-9]+$/.test(eventId) ||
+      !account || !/^acct_[A-Za-z0-9]+$/.test(account) ||
       typeof livemode !== "boolean" ||
       typeof created !== "number" || !Number.isSafeInteger(created) || created <= 0 ||
-      !objectId || created > 8640000000000) return null;
+      !object || !objectId || created > 8640000000000) return null;
 
   const category: FinancialEventCategory = type.startsWith("refund.")
     ? "refund" : type.startsWith("charge.dispute.") ? "dispute"
