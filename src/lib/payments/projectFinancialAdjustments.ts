@@ -96,7 +96,12 @@ export function projectFinancialAdjustments(
     else if (openDispute.has(dispute.status)) result.openDisputeCents += dispute.amountCents;
     else result.needsReview = true;
   }
-  if (result.succeededRefundCents + result.pendingRefundCents > originalPaymentCents) {
+  // Flag totals that exceed JavaScript's safe integer range rather than
+  // silently accepting imprecise monetary arithmetic.
+  const totals = [result.succeededRefundCents, result.pendingRefundCents,
+    result.openDisputeCents, result.lostDisputeCents, result.wonDisputeCents];
+  if (totals.some(total => !Number.isSafeInteger(total)) ||
+      BigInt(result.succeededRefundCents) + BigInt(result.pendingRefundCents) > BigInt(originalPaymentCents)) {
     result.needsReview = true;
   }
   return result;
