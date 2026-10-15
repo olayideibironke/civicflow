@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { classifyConnectFinancialEvent } from "@/lib/payments/connectFinancialEvents";
+import { CONNECT_FINANCIAL_EVENTS, classifyConnectFinancialEvent } from "@/lib/payments/connectFinancialEvents";
 import { routeVerifiedFinancialEvent } from "@/lib/payments/routeVerifiedFinancialEvent";
 import { verifyConnectWebhookSignature } from "@/lib/payments/verifyConnectWebhookSignature";
 
@@ -11,7 +11,7 @@ const respond = (error: string, status: number) => NextResponse.json({ error }, 
  * Stripe Connect refund/dispute webhook intake.
  *
  * This endpoint is deliberately DISABLED until the inbox migration and
- * tenant-scoped idempotent ingestion RPC have been independently validated.
+ * tenant-scoped idempotent inbox ingestion have been independently validated.
  * Never return a success acknowledgement for an event not durably persisted.
  * Do not reuse the CivicFlow subscription webhook signing secret.
  */
@@ -42,10 +42,11 @@ export async function POST(request: Request) {
     // event outside this financial-event allowlist is intentionally ignored.
     const envelope = payload && typeof payload === "object" && !Array.isArray(payload)
       ? payload as Record<string, unknown> : null;
-    if (typeof envelope?.type === "string" &&
-        !["refund.created", "refund.updated", "charge.dispute.created",
-          "charge.dispute.updated", "charge.dispute.closed",
-          "payment_intent.payment_failed", "payment_intent.canceled"].includes(envelope.type)) {
+    if (typeof envelope?.id === "string" && /^evt_[A-Za-z0-9]+$/.test(envelope.id) &&
+        typeof envelope?.account === "string" && /^acct_[A-Za-z0-9]+$/.test(envelope.account) &&
+        typeof envelope?.livemode === "boolean" &&
+        typeof envelope?.type === "string" && envelope.type.length > 0 &&
+        !CONNECT_FINANCIAL_EVENTS.some(known => known === envelope.type)) {
       return NextResponse.json({ received: true, ignored: true });
     }
     return respond("Malformed Connect financial event.", 400);
