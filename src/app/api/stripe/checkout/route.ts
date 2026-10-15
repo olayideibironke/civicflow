@@ -198,6 +198,11 @@ export async function POST(request: Request) {
   }
 
   const origin = new URL(request.url).origin;
+  const configuredOrigin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
+  if (context.connection_mode === "live" &&
+      (!configuredOrigin || origin !== configuredOrigin || request.headers.get("origin") !== configuredOrigin)) {
+    return responseError("Live payment origin verification failed.", 403);
+  }
   const stripeBody = new URLSearchParams();
 
   stripeBody.set("mode", "payment");
