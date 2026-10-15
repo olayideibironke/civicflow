@@ -30,6 +30,10 @@ describe("attorney payment plan authorization", () => {
     expect(authorizePlanAction(actor, active, "cancel_verified").allowed).toBe(false);
     expect(authorizePlanAction(actor, active, "cancel_verified", true).allowed).toBe(true);
   });
+  it("rejects local cancellation of a subscription-free active plan", () => {
+    const inconsistent = { ...plan, status: "active" as const };
+    expect(authorizePlanAction(actor, inconsistent, "cancel_verified").allowed).toBe(false);
+  });
   it("allows draft cancellation without a Stripe call", () => {
     expect(authorizePlanAction(actor, plan, "cancel_verified").allowed).toBe(true);
   });
