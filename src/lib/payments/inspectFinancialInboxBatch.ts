@@ -46,15 +46,19 @@ export async function inspectFinancialInboxBatch(
       decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
       continue;
     }
-    if (!row.stripe_payment_intent_id) {
-      decisions.push({ state: "needs_enrichment" });
-      continue;
-    }
     if (typeof row.event_type !== "string" ||
         typeof row.livemode !== "boolean" ||
         typeof row.stripe_object_id !== "string" ||
-        typeof row.occurred_at !== "string") {
+        typeof row.occurred_at !== "string" ||
+        !Number.isFinite(Date.parse(row.occurred_at)) ||
+        (row.amount_cents !== null && (!Number.isSafeInteger(row.amount_cents) || row.amount_cents < 0)) ||
+        (row.currency !== null && (typeof row.currency !== "string" || !/^[a-z]{3}$/.test(row.currency))) ||
+        (row.stripe_payment_intent_id !== null && (typeof row.stripe_payment_intent_id !== "string" || !/^pi_[A-Za-z0-9]+$/.test(row.stripe_payment_intent_id)))) {
       decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
+      continue;
+    }
+    if (!row.stripe_payment_intent_id) {
+      decisions.push({ state: "needs_enrichment" });
       continue;
     }
     const event: ClassifiedConnectEvent = {
