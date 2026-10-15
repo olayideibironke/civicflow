@@ -32,8 +32,9 @@ export async function lookupOriginalInvoicePayments(
   const connections: unknown = await connectionResponse.json();
   if (!Array.isArray(connections) || connections.length !== 1)
     throw new Error("Connected account mapping is not unique");
-  const connection = connections[0] as Record<string, unknown>;
-  if (connection.provider !== "stripe" ||
+  const connection = connections[0] as Record<string, unknown> | null;
+  if (!connection || typeof connection !== "object" || Array.isArray(connection) ||
+      connection.provider !== "stripe" ||
       connection.mode !== (livemode ? "live" : "sandbox") ||
       typeof connection.organization_id !== "string")
     throw new Error("Connected account environment mismatch");
@@ -53,8 +54,13 @@ export async function lookupOriginalInvoicePayments(
   if (!paymentResponse.ok) throw new Error("Original payment lookup unavailable");
   const rows: unknown = await paymentResponse.json();
   if (!Array.isArray(rows)) throw new Error("Unexpected payment lookup result");
-  return rows.map((row: Record<string, unknown>) => {
-    const invoice = row.billing_invoices as Record<string, unknown> | null;
+  return rows.map((raw: unknown) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw))
+      throw new Error("Original payment has inconsistent invoice data");
+    const row = raw as Record<string, unknown>;
+    const invoiceValue = row.billing_invoices;
+    const invoice = invoiceValue && typeof invoiceValue === "object" && !Array.isArray(invoiceValue)
+      ? invoiceValue as Record<string, unknown> : null;
     if (!invoice || row.organization_id !== connection.organization_id ||
         invoice.organization_id !== connection.organization_id ||
         typeof invoice.currency !== "string" ||
