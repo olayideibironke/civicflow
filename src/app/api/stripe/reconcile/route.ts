@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-const CONNECTOR = "stripe/civicflow-stripe-sandbox";
-const SESSION_ID = /^cs_test_[A-Za-z0-9]+$/;
+const SANDBOX_CONNECTOR = "stripe/civicflow-stripe-sandbox";
+const LIVE_CONNECTOR = process.env.CIVICFLOW_STRIPE_LIVE_CONNECTOR;
+const SESSION_ID = /^cs_(test|live)_[A-Za-z0-9]+$/;
 type StripeSession = {
  id?: string; mode?: string; status?: string; payment_status?: string;
  amount_total?: number; currency?: string; payment_intent?: string;
@@ -27,20 +28,6 @@ export async function POST(request:Request) {
  const anon=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
  const service=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if (!url||!anon||!service) return error("Payment reconciliation unavailable",503);
- const oidc=request.headers.get("x-vercel-oidc-token")??process.env.VERCEL_OIDC_TOKEN??"";
- if (!oidc) return error("Stripe connector identity unavailable",503);
- const tokenResponse=await fetch(`https://api.vercel.com/v1/connect/token/${encodeURIComponent(CONNECTOR)}`,{
-   method:"POST",headers:{Authorization:`Bearer ${oidc}`,"Content-Type":"application/json"},
-   body:JSON.stringify({subject:{type:"app"},scopes:["*"]}),cache:"no-store"
- });
- const tokenData=await tokenResponse.json().catch(()=>null) as {token?:string}|null;
- if (!tokenResponse.ok||!tokenData?.token?.startsWith("sk_test_"))
-   return error("Sandbox Stripe verification unavailable",503);
- // First look up the session on the connected firm account. The account ID is
- // obtained from CivicFlow's authorization-scoped invoice context, not the caller.
- // The platform lookup cannot retrieve direct charges on connected accounts.
- // Stripe Checkout's client_reference_id is read after finding its registered
- // account via the trusted RPC below.
  const lookup=await fetch(`${url}/rest/v1/rpc/get_authorized_invoice_checkout_session`,{
    method:"POST",headers:{apikey:anon,Authorization:bearer,"Content-Type":"application/json"},
    body:JSON.stringify({p_checkout_session_id:input.sessionId}),cache:"no-store"
@@ -48,14 +35,35 @@ export async function POST(request:Request) {
  if (!lookup.ok) return error("Checkout session not available for this client",403);
  const records=await lookup.json() as InvoiceContext[]|InvoiceContext;
  const context=Array.isArray(records)?records[0]:records;
- if (!context||context.connection_mode!=="sandbox") return error("Sandbox invoice unavailable",403);
+ if (!context || !["sandbox","live"].includes(context.connection_mode)) return error("Invoice payment mode unavailable",403);
+ const live=context.connection_mode==="live";
+ if ((live && !input.sessionId.startsWith("cs_live_")) || (!live && !input.sessionId.startsWith("cs_test_")))
+   return error("Checkout session mode mismatch",403);
+ if (live && (process.env.VERCEL_ENV!=="production" || process.env.CIVICFLOW_LIVE_INVOICES_ENABLED!=="true"))
+   return error("Live invoice reconciliation is disabled",503);
+ const connector=live ? LIVE_CONNECTOR : SANDBOX_CONNECTOR;
+ if (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector)) return error("Stripe connector unavailable",503);
+ const oidc=request.headers.get("x-vercel-oidc-token")??process.env.VERCEL_OIDC_TOKEN??"";
+ if (!oidc) return error("Stripe connector identity unavailable",503);
+ const tokenResponse=await fetch(`https://api.vercel.com/v1/connect/token/${encodeURIComponent(connector)}`,{
+   method:"POST",headers:{Authorization:`Bearer ${oidc}`,"Content-Type":"application/json"},
+   body:JSON.stringify({subject:{type:"app"},scopes:["*"]}),cache:"no-store"
+ });
+ const tokenData=await tokenResponse.json().catch(()=>null) as {token?:string}|null;
+ if (!tokenResponse.ok||!tokenData?.token?.startsWith(live ? "sk_live_" : "sk_test_"))
+   return error("Stripe verification unavailable",503);
+ // First look up the session on the connected firm account. The account ID is
+ // obtained from CivicFlow's authorization-scoped invoice context, not the caller.
+ // The platform lookup cannot retrieve direct charges on connected accounts.
+ // Stripe Checkout's client_reference_id is read after finding its registered
+ // account via the trusted RPC below.
  const stripeResponse=await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(input.sessionId)}`,{
   headers:{Authorization:`Bearer ${tokenData.token}`,"Stripe-Account":context.connected_account_id},cache:"no-store"
  });
  if (!stripeResponse.ok) return error("Stripe could not verify this payment",409);
  const session=await stripeResponse.json() as StripeSession;
  if (session.id!==input.sessionId||session.mode!=="payment"||session.status!=="complete"||
- session.payment_status!=="paid"||session.livemode!==false||
+ session.payment_status!=="paid"||session.livemode!==live||
  session.client_reference_id!==context.invoice_id||
  session.amount_total!==context.balance_cents||session.currency?.toLowerCase()!==context.currency.toLowerCase()||
  session.metadata?.invoice_id!==context.invoice_id||
