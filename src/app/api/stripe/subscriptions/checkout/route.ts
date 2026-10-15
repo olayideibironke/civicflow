@@ -81,7 +81,9 @@ export async function POST(request: Request) {
     return error("Subscription pricing is not configured.", 503);
   }
   // Subscription charges always use the CivicFlow platform account, never a firm's Connect account.
-  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
+  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE === "live"
+    ? (process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY)
+    : process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
   if (!secret || !/^sk_(test|live)_/.test(secret)) {
     return error("Subscription payments are not configured.", 503);
   }
