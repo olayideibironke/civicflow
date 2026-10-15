@@ -38,6 +38,25 @@ describe("financial adjustment projection", () => {
     ];
     expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
   });
+  it("rejects unsupported event types and mismatched Stripe object identifiers", () => {
+    expect(() => projectFinancialAdjustments([
+      row("evt_bad1", "dp_1", "refund.created", 100, "pending"),
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+    expect(() => projectFinancialAdjustments([
+      row("evt_bad2", "re_1", "charge.dispute.created", 100, "needs_response"),
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+    expect(() => projectFinancialAdjustments([
+      { ...row("evt_bad3", "re_1", "refund.created", 100, "pending"), type: "charge.refunded" as FinancialSnapshot["type"] },
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+  });
+  it("rejects invalid event metadata before computing totals", () => {
+    expect(() => projectFinancialAdjustments([
+      { ...row("evt_1", "re_1", "refund.created", 100, "pending"), status: "" },
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+    expect(() => projectFinancialAdjustments([
+      { ...row("evt_1", "re_1", "refund.created", 100, "pending"), eventId: "bad" },
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+  });
   it("rejects conflicting duplicate event IDs", () => {
     expect(() => projectFinancialAdjustments([
       row("evt_1", "re_1", "refund.created", 100, "pending"),
