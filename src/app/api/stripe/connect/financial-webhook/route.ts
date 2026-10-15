@@ -42,8 +42,60 @@ export async function POST(request: Request) {
   const disposition = routeVerifiedFinancialEvent(event);
   if (disposition.state === "rejected") return respond("Invalid payment reference.", 400);
 
-  // The remaining work must resolve event.connectedAccountId to exactly one
-  // firm, confirm live/test mode, and durably enqueue the event with a
-  // conflict-safe unique key. Acknowledging before this is unsafe.
-  return respond("Verified event ingestion is not yet available.", 503);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) return respond("Financial event inbox unavailable.", 503);
+  const headers = {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+    "Content-Type": "application/json",
+  };
+  // Resolve tenant ownership from our own registered account mapping.
+  // Never trust invoice or organization IDs supplied in Stripe metadata.
+  const accountQuery = new URLSearchParams({
+    select: "organization_id,mode,provider",
+    stripe_account_id: `eq.${event.connectedAccountId}`,
+    limit: "2",
+  });
+  const accountResponse = await fetch(
+    `${supabaseUrl}/rest/v1/organization_payment_connections?${accountQuery}`,
+    { headers, cache: "no-store" }
+  ).catch(() => null);
+  if (!accountResponse?.ok) return respond("Account verification unavailable.", 503);
+  const accounts: unknown = await accountResponse.json().catch(() => null);
+  if (!Array.isArray(accounts) || accounts.length !== 1)
+    return respond("Connected account is not uniquely registered.", 403);
+  const account = accounts[0] as Record<string, unknown>;
+  const mode = event.livemode ? "live" : "sandbox";
+  if (account.provider !== "stripe" || account.mode !== mode ||
+      typeof account.organization_id !== "string")
+    return respond("Connected account environment mismatch.", 403);
+
+  // Insert-only deduplication. On conflict, PostgREST ignores the duplicate
+  // without replacing an existing processed or review state.
+  const inboxResponse = await fetch(
+    `${supabaseUrl}/rest/v1/client_payment_event_inbox?on_conflict=connected_account_id,stripe_event_id`,
+    {
+      method: "POST",
+      headers: { ...headers, Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({
+        organization_id: account.organization_id,
+        connected_account_id: event.connectedAccountId,
+        stripe_event_id: event.stripeEventId,
+        stripe_object_id: event.objectId,
+        stripe_payment_intent_id: event.paymentIntentId,
+        event_type: event.type,
+        livemode: event.livemode,
+        occurred_at: event.occurredAt,
+        processing_state: disposition.state,
+      }),
+      cache: "no-store",
+    }
+  ).catch(() => null);
+  if (!inboxResponse?.ok) {
+    console.error("Connect event inbox persistence failed", { status: inboxResponse?.status });
+    return respond("Financial event inbox unavailable.", 503);
+  }
+  // Accepted means durably queued, NOT applied to the customer's invoice.
+  return NextResponse.json({ received: true });
 }
