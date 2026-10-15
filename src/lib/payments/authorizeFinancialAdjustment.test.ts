@@ -28,6 +28,9 @@ describe("verified invoice adjustment authorization", () => {
       amountCents: 1200, eventType: "refund.created", livemode: false,
     });
   });
+  it("rejects malformed payment intent identifiers", () => {
+    expect(authorizeFinancialAdjustment({ ...event(1200), paymentIntentId: "invalid" }, { ...payment, stripePaymentIntentId: "invalid" })).toBeNull();
+  });
   it("rejects a refund larger than the original payment", () => {
     expect(authorizeFinancialAdjustment(event(5001), payment)).toBeNull();
   });
