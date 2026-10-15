@@ -21,7 +21,7 @@ type StripeSubscription = {
 
 export async function verifyPlatformSubscription(subscriptionId: string): Promise<VerifiedSubscription> {
   if (!/^sub_[A-Za-z0-9]+$/.test(subscriptionId)) throw new Error("Invalid subscription identifier");
-  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
+  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE === "live" ? (process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY) : process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
   const mode = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE;
   if (!secret || (mode !== "test" && mode !== "live") ||
       !secret.startsWith(mode === "live" ? "sk_live_" : "sk_test_")) {
