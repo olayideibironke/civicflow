@@ -37,7 +37,19 @@ export async function POST(request: Request) {
     try { return JSON.parse(rawBody) as unknown; } catch { return null; }
   })();
   const event = classifyConnectFinancialEvent(payload);
-  if (!event) return respond("Unsupported or malformed Connect event.", 400);
+  if (!event) {
+    // Stripe sends many event types to shared Connect destinations. A verified
+    // event outside this financial-event allowlist is intentionally ignored.
+    const envelope = payload && typeof payload === "object" && !Array.isArray(payload)
+      ? payload as Record<string, unknown> : null;
+    if (typeof envelope?.type === "string" &&
+        !["refund.created", "refund.updated", "charge.dispute.created",
+          "charge.dispute.updated", "charge.dispute.closed",
+          "payment_intent.payment_failed", "payment_intent.canceled"].includes(envelope.type)) {
+      return NextResponse.json({ received: true, ignored: true });
+    }
+    return respond("Malformed Connect financial event.", 400);
+  }
 
   const disposition = routeVerifiedFinancialEvent(event);
   if (disposition.state === "rejected") return respond("Invalid payment reference.", 400);
