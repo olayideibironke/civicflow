@@ -70,14 +70,19 @@ export function projectFinancialAdjustments(
   );
   const refunds = new Map<string, FinancialSnapshot>();
   const disputes = new Map<string, FinancialSnapshot>();
+  let conflictingObjectAmounts = false;
   for (const snapshot of ordered) {
-    if (snapshot.type.startsWith("refund.")) refunds.set(snapshot.objectId, snapshot);
-    else disputes.set(snapshot.objectId, snapshot);
+    const target = snapshot.type.startsWith("refund.") ? refunds : disputes;
+    const previous = target.get(snapshot.objectId);
+    // One Stripe object cannot legitimately change its monetary amount between
+    // lifecycle snapshots. Keep the latest snapshot but require human review.
+    if (previous && previous.amountCents !== snapshot.amountCents) conflictingObjectAmounts = true;
+    target.set(snapshot.objectId, snapshot);
   }
   const result: FinancialProjection = {
     succeededRefundCents: 0, pendingRefundCents: 0,
     openDisputeCents: 0, lostDisputeCents: 0,
-    wonDisputeCents: 0, needsReview: false,
+    wonDisputeCents: 0, needsReview: conflictingObjectAmounts,
   };
   for (const refund of refunds.values()) {
     if (settledRefund.has(refund.status)) result.succeededRefundCents += refund.amountCents;
