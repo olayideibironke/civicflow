@@ -44,6 +44,7 @@ export function authorizeFinancialAdjustment(
   payment: VerifiedInvoicePayment
 ): AuthorizedFinancialAdjustment | null {
   if (!event.paymentIntentId || event.paymentIntentId !== payment.stripePaymentIntentId ||
+      !/^pi_[A-Za-z0-9]+$/.test(event.paymentIntentId) ||
       event.connectedAccountId !== payment.stripeAccountId ||
       event.livemode !== payment.livemode ||
       !event.currency || event.currency !== payment.currency.toLowerCase() ||
