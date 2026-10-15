@@ -41,16 +41,17 @@ export async function POST(request:Request) {
    return error("Checkout session mode mismatch",403);
  if (live && (process.env.VERCEL_ENV!=="production" || process.env.CIVICFLOW_LIVE_INVOICES_ENABLED!=="true"))
    return error("Live invoice reconciliation is disabled",503);
+ const directLiveKey=live && process.env.VERCEL_ENV==="production" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") ? process.env.STRIPE_SECRET_KEY : "";
  const connector=live ? LIVE_CONNECTOR : SANDBOX_CONNECTOR;
- if (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector)) return error("Stripe connector unavailable",503);
+ if (!directLiveKey && (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector))) return error("Stripe connector unavailable",503);
  const oidc=request.headers.get("x-vercel-oidc-token")??process.env.VERCEL_OIDC_TOKEN??"";
- if (!oidc) return error("Stripe connector identity unavailable",503);
- const tokenResponse=await fetch(`https://api.vercel.com/v1/connect/token/${encodeURIComponent(connector)}`,{
+ if (!oidc && !directLiveKey) return error("Stripe connector identity unavailable",503);
+ const tokenResponse=directLiveKey ? null : await fetch(`https://api.vercel.com/v1/connect/token/${encodeURIComponent(connector!)}`,{
    method:"POST",headers:{Authorization:`Bearer ${oidc}`,"Content-Type":"application/json"},
    body:JSON.stringify({subject:{type:"app"},scopes:["*"]}),cache:"no-store"
  });
- const tokenData=await tokenResponse.json().catch(()=>null) as {token?:string}|null;
- if (!tokenResponse.ok||!tokenData?.token?.startsWith(live ? "sk_live_" : "sk_test_"))
+ const tokenData=directLiveKey ? {token:directLiveKey} : await tokenResponse!.json().catch(()=>null) as {token?:string}|null;
+ if ((!directLiveKey && !tokenResponse?.ok)||!tokenData?.token?.startsWith(live ? "sk_live_" : "sk_test_"))
    return error("Stripe verification unavailable",503);
  // First look up the session on the connected firm account. The account ID is
  // obtained from CivicFlow's authorization-scoped invoice context, not the caller.
