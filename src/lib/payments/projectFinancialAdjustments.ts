@@ -28,7 +28,7 @@ export type FinancialProjection = {
 const settledRefund = new Set(["succeeded"]);
 const pendingRefund = new Set(["pending", "requires_action"]);
 const lostDispute = new Set(["lost"]);
-const wonDispute = new Set(["won", "warning_closed"]);
+const wonDispute = new Set(["won"]);
 const openDispute = new Set([
   "warning_needs_response", "warning_under_review", "needs_response",
   "under_review",
@@ -81,6 +81,7 @@ export function projectFinancialAdjustments(
   for (const dispute of disputes.values()) {
     if (lostDispute.has(dispute.status)) result.lostDisputeCents += dispute.amountCents;
     else if (wonDispute.has(dispute.status)) result.wonDisputeCents += dispute.amountCents;
+    else if (dispute.status === "warning_closed") result.needsReview = true;
     else if (openDispute.has(dispute.status)) result.openDisputeCents += dispute.amountCents;
     else result.needsReview = true;
   }
