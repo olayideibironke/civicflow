@@ -6,323 +6,97 @@ import MarketingHeader from "@/components/MarketingHeader";
 import SiteFooter from "@/components/marketing/SiteFooter";
 import { plans } from "@/components/marketing/content";
 import { supabase } from "@/lib/supabase";
-import {
-  getFirstValidationError,
-  validateRequiredEmail,
-  validateRequiredText,
-} from "@/lib/validation";
 
-type FormState = {
-  name: string;
-  workEmail: string;
-  firmName: string;
-  firmSize: string;
-  currentSoftware: string;
-  selectedPlan: string;
-  primaryNeed: string;
-};
-
-const defaultState: FormState = {
-  name: "",
-  workEmail: "",
-  firmName: "",
-  firmSize: "Solo",
-  currentSoftware: "Another practice-management platform",
-  selectedPlan: "Basic",
-  primaryNeed: "Matter management",
-};
-
-function splitName(value: string) {
-  const parts = value.trim().split(/\s+/).filter(Boolean);
-  return {
-    firstName: parts[0] ?? "",
-    lastName: parts.slice(1).join(" ") || parts[0] || "",
-  };
-}
+type Plan = "basic" | "pro" | "advanced";
+const isPlan = (value: string | null): value is Plan => value === "basic" || value === "pro" || value === "advanced";
+const key = "civicflow_pending_registration_v1";
 
 export default function GetStartedPage() {
-  const [formState, setFormState] = useState<FormState>(defaultState);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [subscriptionNotice, setSubscriptionNotice] = useState<"processing" | "cancelled" | null>(null);
+  const [plan, setPlan] = useState<Plan>("basic");
+  const [seats, setSeats] = useState(1);
+  const [firmName, setFirmName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [complete, setComplete] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const plan = params.get("plan");
-    const subscription = params.get("subscription");
-    if (subscription === "processing" || subscription === "cancelled") {
-      setSubscriptionNotice(subscription);
-    }
-
-    if (plan && ["basic", "pro", "advanced"].includes(plan.toLowerCase())) {
-      const normalized = `${plan.charAt(0).toUpperCase()}${plan.slice(1).toLowerCase()}`;
-      setFormState((current) => ({ ...current, selectedPlan: normalized }));
-    }
+    const requested = new URLSearchParams(window.location.search).get("plan");
+    if (isPlan(requested)) setPlan(requested);
   }, []);
 
-  function updateField(field: keyof FormState, value: string) {
-    setFormState((current) => ({ ...current, [field]: value }));
-    setFormError("");
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function register(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    const validationError = getFirstValidationError([
-      validateRequiredText(formState.name, "Name"),
-      validateRequiredEmail(formState.workEmail, "Work email"),
-      validateRequiredText(formState.firmName, "Firm name"),
-      validateRequiredText(formState.firmSize, "Firm size"),
-      validateRequiredText(formState.currentSoftware, "Current setup"),
-      validateRequiredText(formState.selectedPlan, "Plan"),
-      validateRequiredText(formState.primaryNeed, "Primary need"),
-    ]);
-
-    if (validationError) {
-      setFormError(validationError);
-      return;
+    if (busy) return;
+    setNotice("");
+    if (!firmName.trim() || !firstName.trim() || !lastName.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setNotice("Enter your firm name, full name and valid work email."); return;
     }
-
-    setSubmitting(true);
-    setFormError("");
-
-    const { firstName, lastName } = splitName(formState.name);
-    const landingPage =
-      window.sessionStorage.getItem("civicflow_landing") ||
-      `${window.location.pathname}${window.location.search}`;
-    const referrer =
-      window.sessionStorage.getItem("civicflow_referrer") ||
-      document.referrer ||
-      "direct";
-    const conversionPage = `${window.location.pathname}${window.location.search}`;
-
-    const { error } = await supabase.from("demo_requests").insert({
-      first_name: firstName,
-      last_name: lastName,
-      work_email: formState.workEmail.trim(),
-      phone: null,
-      organization_name: formState.firmName.trim(),
-      role_title: "Product inquiry",
-      organization_type: "Law firm",
-      team_size: formState.firmSize,
-      primary_need: formState.primaryNeed,
-      timeline: formState.currentSoftware,
-      preferred_contact: "Email",
-      message: [
-        `Selected plan: ${formState.selectedPlan}.`,
-        `Current setup: ${formState.currentSoftware}.`,
-        `Primary need: ${formState.primaryNeed}.`,
-        `Landing page: ${landingPage}.`,
-        `Conversion page: ${conversionPage}.`,
-        `Referrer: ${referrer}.`,
-      ].join(" "),
-      source: "CivicFlow Get Started",
-      status: "New",
-    });
-
-    if (error) {
-      setSubmitting(false);
-      setFormError(error.message);
-      return;
+    if (password.length < 12) { setNotice("Choose a password of at least 12 characters."); return; }
+    if (!Number.isSafeInteger(seats) || seats < 1 || seats > 250) { setNotice("Choose between 1 and 250 seats."); return; }
+    setBusy(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) throw new Error("You are already signed in. Sign out before registering a new firm.");
+      const pending = { firmName: firmName.trim(), firstName: firstName.trim(), lastName: lastName.trim(), plan, seats, email: email.trim().toLowerCase() };
+      window.localStorage.setItem(key, JSON.stringify(pending));
+      const { error } = await supabase.auth.signUp({
+        email: pending.email,
+        password,
+        options: { emailRedirectTo: `${window.location.origin}/onboarding` },
+      });
+      if (error) throw error;
+      setComplete(true);
+      setPassword("");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Registration is temporarily unavailable.");
+    } finally {
+      setBusy(false);
     }
-
-    setSubmitting(false);
-    setSubmitted(true);
-    setFormState(defaultState);
   }
 
-  return (
-    <main className="mk min-h-screen">
-      <MarketingHeader activePage="get-started" />
-
-      {subscriptionNotice && (
-        <div role="status" aria-live="polite" className="mk-container pt-6">
-          <div className="rounded-xl border border-line bg-white px-5 py-4 text-sm text-ink">
-            {subscriptionNotice === "processing"
-              ? "Stripe checkout has returned. Your subscription is being verified. Payment does not automatically activate a firm account. Our team will confirm your onboarding and access."
-              : "You left Stripe checkout without completing your subscription. No subscription has been activated. You can still submit your firm details below."}
+  const price = plans.find(item => item.key === plan)?.price ?? 30;
+  return <main className="mk min-h-screen">
+    <MarketingHeader activePage="get-started" />
+    <section className="mk-container grid gap-12 py-14 sm:py-20 lg:grid-cols-2">
+      <div>
+        <p className="mk-eyebrow">Create your firm account</p>
+        <h1 className="mk-h2 mt-5 text-ink">Your practice. Your workspace.</h1>
+        <p className="mk-lead mt-5">Create your account, verify your email and complete secure checkout to activate your firm workspace.</p>
+        <ol className="mt-9 space-y-4 text-sm text-slate-600">
+          <li>01 · Create your account</li><li>02 · Verify your work email</li><li>03 · Pay securely and activate</li>
+        </ol>
+        <p className="mt-9 text-sm text-slate-600">Want to speak with us first? <Link className="font-semibold underline" href="/request-demo">Request a demo</Link>.</p>
+      </div>
+      <div className="rounded-[18px] border border-line bg-white p-7 shadow-[0_30px_70px_-40px_rgba(8,18,42,0.35)] sm:p-10">
+        {complete ? <div role="status">
+          <p className="mk-eyebrow">Check your inbox</p>
+          <h2 className="mt-4 text-2xl font-semibold text-ink">Verify your email to continue.</h2>
+          <p className="mt-4 text-slate-600">We sent account verification instructions to {email}. After verification, continue to firm setup and payment.</p>
+          <Link href="/onboarding" className="mk-btn mk-btn-primary mt-7">Continue setup</Link>
+        </div> : <form onSubmit={register} className="space-y-5">
+          <h2 className="text-xl font-semibold text-ink">Firm registration</h2>
+          <label className="mk-label">Firm name<input className="mk-field" required maxLength={160} autoComplete="organization" value={firmName} onChange={e=>setFirmName(e.target.value)} /></label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="mk-label">First name<input className="mk-field" required maxLength={80} autoComplete="given-name" value={firstName} onChange={e=>setFirstName(e.target.value)} /></label>
+            <label className="mk-label">Last name<input className="mk-field" required maxLength={80} autoComplete="family-name" value={lastName} onChange={e=>setLastName(e.target.value)} /></label>
           </div>
-        </div>
-      )}
-      <section className="relative overflow-hidden">
-        <div className="mk-hairline-grid pointer-events-none absolute inset-x-0 top-0 h-[520px] [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true" />
-        <div className="mk-container relative grid gap-12 py-14 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-          <div className="lg:sticky lg:top-28 lg:self-start">
-            <p className="mk-eyebrow mk-rise">Get started</p>
-            <h1 className="mk-h2 mk-rise mk-rise-1 mt-5 text-ink">Tell us about your firm. We will map the right setup.</h1>
-            <p className="mk-lead mk-rise mk-rise-1 mt-5 max-w-lg">
-              Share your firm size, current setup and the workflow you want to improve first. We use it to recommend a plan and an onboarding path that fits.
-            </p>
-
-            <div className="mk-rise mk-rise-2 mt-10">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-slate-400">Choose a plan</p>
-              <div className="mt-3 grid gap-2" role="radiogroup" aria-label="Plan">
-                {plans.map((plan) => {
-                  const selected = formState.selectedPlan === plan.name;
-                  return (
-                    <button
-                      key={plan.key}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => updateField("selectedPlan", plan.name)}
-                      className={`mk-focus flex items-center justify-between gap-4 rounded-[12px] border px-5 py-4 text-left transition ${
-                        selected
-                          ? "border-navy bg-white shadow-[0_0_0_1px_var(--color-navy)]"
-                          : "border-line bg-white/70 hover:border-line-strong"
-                      }`}
-                    >
-                      <span className="flex items-center gap-3.5">
-                        <span className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border ${selected ? "border-navy" : "border-line-strong"}`}>
-                          {selected ? <span className="h-2 w-2 rounded-full bg-navy" /> : null}
-                        </span>
-                        <span>
-                          <span className="block font-semibold text-ink">{plan.name}</span>
-                          <span className="block text-[0.82rem] text-slate-500">{plan.bestFor}</span>
-                        </span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="mk-display block text-[1.5rem] leading-none text-ink">${plan.price}</span>
-                        <span className="text-[0.72rem] text-slate-500">per user / mo</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <Link href="/pricing" className="mk-link mt-4 text-sm">
-                Compare plan features
-                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" className="mk-arrow h-3.5 w-3.5">
-                  <path d="M3 8h9.5M8.5 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-            </div>
-
-            <ol className="mt-12 hidden gap-5 border-t border-line pt-8 lg:grid">
-              {[
-                ["Share your details", "Firm, team size, current setup and primary need."],
-                ["We review your request", "We look at how your firm works today and what to move first."],
-                ["Plan your onboarding", "We recommend the right plan and map your setup path."],
-              ].map(([t, d], i) => (
-                <li key={t} className="flex gap-4">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line-strong font-mono text-[0.7rem] text-navy">{i + 1}</span>
-                  <span>
-                    <span className="block font-semibold text-ink">{t}</span>
-                    <span className="mt-0.5 block text-[0.9rem] leading-6 text-slate-600">{d}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
+          <label className="mk-label">Work email<input className="mk-field" type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} /></label>
+          <label className="mk-label">Create password<input className="mk-field" type="password" minLength={12} required autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} /></label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="mk-label">Subscription plan<select className="mk-field" value={plan} onChange={e=>setPlan(e.target.value as Plan)}>{plans.map(p=><option key={p.key} value={p.key}>{p.name} · ${p.price}/seat</option>)}</select></label>
+            <label className="mk-label">Staff seats<input className="mk-field" type="number" min={1} max={250} step={1} required value={seats} onChange={e=>setSeats(Number(e.target.value))}/></label>
           </div>
-
-          <div className="mk-rise mk-rise-2 rounded-[18px] border border-line bg-white shadow-[0_30px_70px_-40px_rgba(8,18,42,0.35)]">
-            {submitted ? (
-              <div className="p-8 sm:p-10">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200">
-                  <svg viewBox="0 0 20 20" fill="none" className="h-5 w-5" aria-hidden="true">
-                    <path d="m5 10.5 3.2 3.2L15 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <p className="mt-6 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-emerald-700">Request received</p>
-                <h2 className="mk-display mt-3 text-[2rem] leading-tight text-ink">Thank you. We have your firm information.</h2>
-                <p className="mt-4 max-w-xl text-[0.98rem] leading-7 text-slate-600">
-                  Your product inquiry has been recorded. We will use the information you provided to determine the right plan and onboarding path for your firm.
-                </p>
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Link href="/pricing" className="mk-btn mk-btn-primary">Review plans</Link>
-                  <Link href="/" className="mk-btn mk-btn-outline">Back to home</Link>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="border-b border-line px-7 py-7 sm:px-10 sm:py-8">
-                  <h2 className="text-[1.35rem] font-semibold tracking-tight text-ink">Firm details</h2>
-                  <p className="mt-1.5 text-[0.92rem] text-slate-500">All fields are required.</p>
-                </div>
-
-                <div className="px-7 py-8 sm:px-10">
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="mk-label">
-                      Your name
-                      <input required autoComplete="name" value={formState.name} onChange={(event) => updateField("name", event.target.value)} placeholder="Your name" className="mk-field" />
-                    </label>
-
-                    <label className="mk-label">
-                      Work email
-                      <input type="email" required autoComplete="email" value={formState.workEmail} onChange={(event) => updateField("workEmail", event.target.value)} placeholder="name@lawfirm.com" className="mk-field" />
-                    </label>
-
-                    <label className="mk-label md:col-span-2">
-                      Firm name
-                      <input required autoComplete="organization" value={formState.firmName} onChange={(event) => updateField("firmName", event.target.value)} placeholder="Law firm name" className="mk-field" />
-                    </label>
-
-                    <label className="mk-label">
-                      Firm size
-                      <select required value={formState.firmSize} onChange={(event) => updateField("firmSize", event.target.value)} className="mk-field">
-                        <option>Solo</option>
-                        <option>2-5 attorneys</option>
-                        <option>6-10 attorneys</option>
-                        <option>11-25 attorneys</option>
-                        <option>26+ attorneys</option>
-                      </select>
-                    </label>
-
-                    <label className="mk-label">
-                      Current setup
-                      <select required value={formState.currentSoftware} onChange={(event) => updateField("currentSoftware", event.target.value)} className="mk-field">
-                        <option>Another practice-management platform</option>
-                        <option>Spreadsheets and shared drives</option>
-                        <option>Mixed tools / no single system</option>
-                        <option>None</option>
-                        <option>Other</option>
-                      </select>
-                    </label>
-
-                    <label className="mk-label">
-                      Plan
-                      <select required value={formState.selectedPlan} onChange={(event) => updateField("selectedPlan", event.target.value)} className="mk-field">
-                        <option>Basic</option>
-                        <option>Pro</option>
-                        <option>Advanced</option>
-                      </select>
-                    </label>
-
-                    <label className="mk-label">
-                      Primary need
-                      <select required value={formState.primaryNeed} onChange={(event) => updateField("primaryNeed", event.target.value)} className="mk-field">
-                        <option>Matter management</option>
-                        <option>Document organization</option>
-                        <option>Staff workflow</option>
-                        <option>Client intake</option>
-                        <option>Follow-up tracking</option>
-                        <option>Reporting</option>
-                        <option>Migration from current software</option>
-                        <option>Other</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  {formError ? (
-                    <div className="mk-alert mk-alert-error mt-6" role="alert">{formError}</div>
-                  ) : null}
-
-                  <div className="mt-8 flex flex-col gap-5 border-t border-line pt-7 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="max-w-sm text-[0.85rem] leading-6 text-slate-500">
-                      We use this information only to understand your firm&apos;s setup and onboarding needs.
-                    </p>
-                    <button type="submit" disabled={submitting} className="mk-btn mk-btn-primary mk-btn-lg">
-                      {submitting ? "Submitting..." : "Submit request"}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
-  );
+          <p className="text-sm font-semibold text-ink">Monthly total: ${Number.isSafeInteger(seats) && seats >= 1 && seats <= 250 ? price*seats : "—"}</p>
+          {notice && <p role="alert" className="mk-alert mk-alert-error">{notice}</p>}
+          <button className="mk-btn mk-btn-primary mk-btn-lg w-full" disabled={busy}>{busy ? "Creating account…" : "Create account"}</button>
+          <p className="text-center text-sm text-slate-500">Already have an account? <Link href="/attorney-login" className="underline">Sign in</Link></p>
+        </form>}
+      </div>
+    </section>
+    <SiteFooter />
+  </main>;
 }
