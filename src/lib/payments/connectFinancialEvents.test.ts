@@ -27,7 +27,7 @@ describe("Connect financial event classifier", () => {
       ...base, type: "charge.refunded",
       data: { object: { id: "ch_1", amount: 10000, amount_refunded: 3500, currency: "usd", payment_intent: "pi_123" } },
     });
-    expect(result?.amountCents).toBeNull();
+    expect(result).toBeNull();
   });
   it("captures dispute transitions for separate accounting reconciliation", () => {
     for (const type of ["charge.dispute.created", "charge.dispute.updated", "charge.dispute.closed"]) {
