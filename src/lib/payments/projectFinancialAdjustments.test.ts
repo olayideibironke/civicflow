@@ -57,6 +57,19 @@ describe("financial adjustment projection", () => {
       { ...row("evt_1", "re_1", "refund.created", 100, "pending"), eventId: "bad" },
     ], 5000)).toThrow("Invalid financial adjustment snapshot");
   });
+  it("flags inconsistent amounts for the same Stripe refund or dispute", () => {
+    const refundEvents = [
+      row("evt_r1", "re_1", "refund.created", 1200, "pending"),
+      row("evt_r2", "re_1", "refund.updated", 1300, "succeeded", "2026-10-15T13:00:00Z"),
+    ];
+    const disputeEvents = [
+      row("evt_d1", "dp_1", "charge.dispute.created", 2000, "needs_response"),
+      row("evt_d2", "dp_1", "charge.dispute.closed", 2100, "lost", "2026-10-15T13:00:00Z"),
+    ];
+    expect(projectFinancialAdjustments(refundEvents, 5000).needsReview).toBe(true);
+    expect(projectFinancialAdjustments([...refundEvents].reverse(), 5000).needsReview).toBe(true);
+    expect(projectFinancialAdjustments(disputeEvents, 5000).needsReview).toBe(true);
+  });
   it("rejects conflicting duplicate event IDs", () => {
     expect(() => projectFinancialAdjustments([
       row("evt_1", "re_1", "refund.created", 100, "pending"),
