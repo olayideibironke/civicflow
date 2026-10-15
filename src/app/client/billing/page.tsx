@@ -65,12 +65,39 @@ export default function ClientBillingPage() {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
     if (payment === "success") {
-      setPaymentNotice("Payment Successful");
+      const sessionId = params.get("session_id");
+      if (sessionId) {
+        setPaymentNotice("Verifying payment...");
+        void (async () => {
+          const { data: auth } = await supabase.auth.getSession();
+          if (!auth.session?.access_token) {
+            setPaymentNotice("Sign in to confirm your payment.");
+            await loadData();
+            return;
+          }
+          try {
+            const result = await fetch("/api/stripe/reconcile", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${auth.session.access_token}`,
+              },
+              body: JSON.stringify({ sessionId }),
+            });
+            setPaymentNotice(result.ok ? "Payment Successful" : "Payment confirmation is pending. Contact your firm if the balance remains due.");
+          } catch {
+            setPaymentNotice("Payment confirmation is pending. Contact your firm if the balance remains due.");
+          }
+          await loadData();
+        })();
+        return;
+      }
+      setPaymentNotice("Payment confirmation is pending.");
     } else if (payment === "cancelled") {
       setPaymentNotice("Stripe Checkout was cancelled. No payment was recorded.");
     }
 
-    loadData();
+    void loadData();
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
