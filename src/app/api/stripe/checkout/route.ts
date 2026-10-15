@@ -32,6 +32,9 @@ function responseError(message: string, status: number) {
 }
 
 async function getStripeCredential(request: Request, mode: "sandbox" | "live") {
+  if (mode === "live" && process.env.VERCEL_ENV === "production" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")) {
+    return { token: process.env.STRIPE_SECRET_KEY, error: "" };
+  }
   const connector = mode === "live" ? STRIPE_CONNECTOR_LIVE : STRIPE_CONNECTOR_SANDBOX;
   if (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector)) {
     return { token: "", error: "Stripe connector is not configured for this payment mode." };
