@@ -70,10 +70,12 @@ export function authorizePlanAction(
       (!plan.clientConsentedAt || !plan.stripeSubscriptionId)) {
     return { allowed: false, reason: "Verified client consent and subscription required" };
   }
-  // Draft cancellation has no Stripe subscription. All other Stripe-linked
-  // transitions must be confirmed against the connected Stripe account.
+  // Any subscription-bearing cancellation requires confirmation from Stripe.
+  // Only a local draft or unaccepted offer without a subscription can be
+  // cancelled without a Stripe call.
   if (requiresStripeConfirmation.has(action) &&
-      !(action === "cancel_verified" && !plan.stripeSubscriptionId) &&
+      !(action === "cancel_verified" && !plan.stripeSubscriptionId &&
+        (plan.status === "draft" || plan.status === "awaiting_client_consent")) &&
       !verifiedStripeTransition) {
     return { allowed: false, reason: "Stripe confirmation required" };
   }
