@@ -26,8 +26,8 @@ export async function POST(request: Request) {
   const origin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
   if (!origin || new URL(request.url).origin !== origin || request.headers.get("origin") !== origin)
     return failure("Invalid origin.", 403);
-  if (process.env.VERCEL_ENV !== "production" || process.env.CIVICFLOW_LIVE_INVOICES_ENABLED !== "true")
-    return failure("Live Stripe Connect onboarding is disabled.", 503);
+  if (process.env.VERCEL_ENV !== "production")
+    return failure("Live Stripe Connect onboarding is unavailable outside production.", 503);
 
   const key = process.env.STRIPE_SECRET_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
