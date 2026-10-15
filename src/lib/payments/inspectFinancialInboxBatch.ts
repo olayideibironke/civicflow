@@ -1,4 +1,4 @@
-import type { ClassifiedConnectEvent } from "./connectFinancialEvents";
+import { CONNECT_FINANCIAL_EVENTS, type ClassifiedConnectEvent } from "./connectFinancialEvents";
 import { matchFinancialEventToPayment } from "./matchFinancialEventToPayment";
 import { lookupOriginalInvoicePayments } from "./lookupOriginalInvoicePayments";
 
@@ -40,15 +40,20 @@ export async function inspectFinancialInboxBatch(
   const decisions: Decision[] = [];
   for (const raw of rows) {
     const row = raw as InboxRow | null;
-    if (!row || typeof row !== "object" || !UUID.test(row.id) || !UUID.test(row.organization_id) ||
-        !/^acct_[A-Za-z0-9]+$/.test(row.connected_account_id) ||
-        !/^evt_[A-Za-z0-9]+$/.test(row.stripe_event_id)) {
+    if (!row || typeof row !== "object" ||
+        typeof row.id !== "string" || !UUID.test(row.id) ||
+        typeof row.organization_id !== "string" || !UUID.test(row.organization_id) ||
+        typeof row.connected_account_id !== "string" || !/^acct_[A-Za-z0-9]+$/.test(row.connected_account_id) ||
+        typeof row.stripe_event_id !== "string" || !/^evt_[A-Za-z0-9]+$/.test(row.stripe_event_id)) {
       decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
       continue;
     }
     if (typeof row.event_type !== "string" ||
+        !CONNECT_FINANCIAL_EVENTS.some(known => known === row.event_type) ||
+        (row.processing_state !== "pending" && row.processing_state !== "needs_payment_match") ||
         typeof row.livemode !== "boolean" ||
-        typeof row.stripe_object_id !== "string" ||
+        typeof row.stripe_object_id !== "string" || !row.stripe_object_id ||
+        (row.stripe_status !== null && typeof row.stripe_status !== "string") ||
         typeof row.occurred_at !== "string" ||
         !Number.isFinite(Date.parse(row.occurred_at)) ||
         (row.amount_cents !== null && (!Number.isSafeInteger(row.amount_cents) || row.amount_cents < 0)) ||
