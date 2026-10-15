@@ -5,7 +5,6 @@
  * Never mark an invoice paid from this classifier.
  */
 export const CONNECT_FINANCIAL_EVENTS = [
-  "charge.refunded",
   "refund.created",
   "refund.updated",
   "charge.dispute.created",
@@ -58,14 +57,13 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
       typeof created !== "number" || !Number.isSafeInteger(created) || created <= 0 ||
       !objectId) return null;
 
-  const category: FinancialEventCategory = type.startsWith("refund.") || type === "charge.refunded"
+  const category: FinancialEventCategory = type.startsWith("refund.")
     ? "refund" : type.startsWith("charge.dispute.") ? "dispute"
     : type.endsWith(".canceled") ? "canceled" : "failed";
 
   // A charge.refunded event's amount_refunded is cumulative, not the incremental
   // amount for this event. The ledger must reconcile the refund objects by ID.
-  const amount = type === "charge.refunded" ? null :
-    asAmount(object.amount);
+  const amount = asAmount(object.amount);
   const paymentIntentId = asString(object.payment_intent) ??
     (type.startsWith("payment_intent.") ? objectId : null);
   const currency = asString(object.currency)?.toLowerCase() ?? null;
