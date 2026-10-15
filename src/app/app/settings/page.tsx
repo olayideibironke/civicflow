@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import AppShell from "@/components/AppShell";
 import FirmSubscriptionBilling from "@/components/FirmSubscriptionBilling";
+import FirmStripeConnect from "@/components/FirmStripeConnect";
 import { supabase } from "@/lib/supabase";
 import {
   getFirstValidationError,
@@ -430,6 +431,7 @@ export default function SettingsPage() {
 
           <aside className="space-y-6">
             <FirmSubscriptionBilling isAdmin={isFirmAdmin} />
+            <FirmStripeConnect isAdmin={isFirmAdmin} />
             <section className="premium-dark">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Firm Intake</p>
               <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">A dedicated intake link for this firm.</h2>
