@@ -39,6 +39,37 @@ describe("read-only financial inbox inspection", () => {
         { state: "needs_review", errorCode: "invalid_inbox_row" },
       ] });
   });
+  it("rejects unsupported event types before payment lookup", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [{
+        ...row, event_type: "charge.refunded",
+        stripe_payment_intent_id: "pi_123",
+      }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 1, decisions: [
+        { state: "needs_review", errorCode: "invalid_inbox_row" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("rejects malformed fields and unexpected processing states", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row, connected_account_id: null },
+        { ...row, stripe_status: 123 },
+        { ...row, processing_state: "processed" },
+        { ...row, stripe_object_id: "" },
+        { ...row, stripe_event_id: null },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 5, decisions: Array.from({ length: 5 }, () => ({
+        state: "needs_review", errorCode: "invalid_inbox_row",
+      })) });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
