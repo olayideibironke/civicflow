@@ -52,10 +52,10 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
   const data = asRecord(event.data);
   const object = asRecord(data?.object);
   const objectId = asString(object?.id);
-  if (!eventId?.startsWith("evt_") || !account?.startsWith("acct_") ||
+  if (!/^evt_[A-Za-z0-9]+$/.test(eventId ?? "") || !/^acct_[A-Za-z0-9]+$/.test(account ?? "") ||
       typeof livemode !== "boolean" ||
       typeof created !== "number" || !Number.isSafeInteger(created) || created <= 0 ||
-      !objectId) return null;
+      !objectId || created > 8640000000000) return null;
 
   const category: FinancialEventCategory = type.startsWith("refund.")
     ? "refund" : type.startsWith("charge.dispute.") ? "dispute"
@@ -70,6 +70,9 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
   const status = asString(object.status);
 
   if (currency && !/^[a-z]{3}$/.test(currency)) return null;
+  // A refund or dispute without a resolvable payment intent must be held for
+  // Stripe-side enrichment, never guessed from client-provided invoice data.
+  if ((category === "refund" || category === "dispute") && !paymentIntentId) return null;
   return {
     stripeEventId: eventId,
     connectedAccountId: account,
