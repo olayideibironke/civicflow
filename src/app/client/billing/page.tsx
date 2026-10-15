@@ -65,7 +65,7 @@ export default function ClientBillingPage() {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
     if (payment === "success") {
-      setPaymentNotice("Stripe received the payment. CivicFlow will show the final paid status as soon as Stripe confirms the transaction.");
+      setPaymentNotice("Payment Successful");
     } else if (payment === "cancelled") {
       setPaymentNotice("Stripe Checkout was cancelled. No payment was recorded.");
     }
