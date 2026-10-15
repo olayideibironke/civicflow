@@ -43,7 +43,13 @@ export function projectFinancialAdjustments(
   }
   const uniqueEvents = new Map<string, FinancialSnapshot>();
   for (const snapshot of snapshots) {
-    if (!snapshot.eventId || !snapshot.objectId ||
+    if (!snapshot || typeof snapshot !== "object" ||
+        typeof snapshot.eventId !== "string" || !/^evt_[A-Za-z0-9]+$/.test(snapshot.eventId) ||
+        typeof snapshot.objectId !== "string" ||
+        !(/^(re_[A-Za-z0-9]+)$/.test(snapshot.objectId) && (snapshot.type === "refund.created" || snapshot.type === "refund.updated") ||
+          /^(dp_[A-Za-z0-9]+)$/.test(snapshot.objectId) && (snapshot.type === "charge.dispute.created" || snapshot.type === "charge.dispute.updated" || snapshot.type === "charge.dispute.closed")) ||
+        typeof snapshot.status !== "string" || !snapshot.status ||
+        typeof snapshot.occurredAt !== "string" ||
         !Number.isSafeInteger(snapshot.amountCents) ||
         snapshot.amountCents < 0 || snapshot.amountCents > originalPaymentCents ||
         !Number.isFinite(Date.parse(snapshot.occurredAt))) {
