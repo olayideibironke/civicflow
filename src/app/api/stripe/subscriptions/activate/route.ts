@@ -28,7 +28,9 @@ export async function POST(request: Request) {
   const sessionId = body?.sessionId;
   if (typeof sessionId !== "string" || !/^cs_(test_|live_)[A-Za-z0-9]+$/.test(sessionId))
     return NextResponse.json({ error: "Invalid Checkout session." }, { status: 400 });
-  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
+  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE === "live"
+    ? (process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY)
+    : process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
   const mode = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE;
   if (!secret || (mode !== "test" && mode !== "live") ||
       !secret.startsWith(mode === "live" ? "sk_live_" : "sk_test_"))
