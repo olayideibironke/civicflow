@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 const STRIPE_API_BASE = "https://api.stripe.com/v1";
-const STRIPE_CONNECTOR = "stripe/civicflow-stripe-sandbox";
+const STRIPE_CONNECTOR_SANDBOX = "stripe/civicflow-stripe-sandbox";
+const STRIPE_CONNECTOR_LIVE = process.env.CIVICFLOW_STRIPE_LIVE_CONNECTOR;
 
 type CheckoutContext = {
   invoice_id: string;
@@ -30,7 +31,14 @@ function responseError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-async function getStripeCredential(request: Request) {
+async function getStripeCredential(request: Request, mode: "sandbox" | "live") {
+  if (mode === "live" && process.env.VERCEL_ENV === "production" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")) {
+    return { token: process.env.STRIPE_SECRET_KEY, error: "" };
+  }
+  const connector = mode === "live" ? STRIPE_CONNECTOR_LIVE : STRIPE_CONNECTOR_SANDBOX;
+  if (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector)) {
+    return { token: "", error: "Stripe connector is not configured for this payment mode." };
+  }
   const oidc =
     request.headers.get("x-vercel-oidc-token") ??
     process.env.VERCEL_OIDC_TOKEN ??
@@ -45,7 +53,7 @@ async function getStripeCredential(request: Request) {
   }
 
   const response = await fetch(
-    `https://api.vercel.com/v1/connect/token/${encodeURIComponent(STRIPE_CONNECTOR)}`,
+    `https://api.vercel.com/v1/connect/token/${encodeURIComponent(connector)}`,
     {
       method: "POST",
       headers: {
@@ -69,7 +77,7 @@ async function getStripeCredential(request: Request) {
       token: "",
       error:
         result?.error?.message ??
-        "Vercel Connect could not issue the CivicFlow Stripe sandbox credential.",
+        "Vercel Connect could not issue the CivicFlow Stripe credential.",
     };
   }
 
@@ -107,7 +115,18 @@ async function callSupabaseRpc<T>(
     };
   }
 
-  return { data: (await result.json()) as T, error: "" };
+  // Supabase RPCs returning void succeed with an empty response body.
+  // Parsing that body as JSON would throw after checkout registration succeeds.
+  const responseText = await result.text();
+  if (!responseText.trim()) {
+    return { data: null, error: "" };
+  }
+
+  try {
+    return { data: JSON.parse(responseText) as T, error: "" };
+  } catch {
+    return { data: null, error: "CivicFlow received an invalid payment service response." };
+  }
 }
 
 async function expireStripeSession(
@@ -157,30 +176,33 @@ export async function POST(request: Request) {
     return responseError("This invoice is not available for Stripe Checkout.", 403);
   }
 
-  if (context.connection_mode !== "sandbox") {
-    return responseError(
-      "This CivicFlow build is configured for sandbox payments only.",
-      503
-    );
+  if (context.connection_mode !== "sandbox" && context.connection_mode !== "live") {
+    return responseError("Invalid payment mode.", 503);
+  }
+  if (context.connection_mode === "live" &&
+      (process.env.VERCEL_ENV !== "production" || process.env.CIVICFLOW_LIVE_INVOICES_ENABLED !== "true")) {
+    return responseError("Live invoice payments are not enabled.", 503);
   }
 
   if (context.balance_cents <= 0) {
     return responseError("This invoice has no remaining balance.", 409);
   }
 
-  const credential = await getStripeCredential(request);
+  const credential = await getStripeCredential(request, context.connection_mode);
   if (!credential.token) {
     return responseError(credential.error, 503);
   }
 
-  if (!credential.token.startsWith("sk_test_")) {
-    return responseError(
-      "CivicFlow refused a non-sandbox Stripe credential in the sandbox payment flow.",
-      503
-    );
+  if (!credential.token.startsWith(context.connection_mode === "live" ? "sk_live_" : "sk_test_")) {
+    return responseError("Stripe credential does not match the payment mode.", 503);
   }
 
   const origin = new URL(request.url).origin;
+  const configuredOrigin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
+  if (context.connection_mode === "live" &&
+      (!configuredOrigin || origin !== configuredOrigin || request.headers.get("origin") !== configuredOrigin)) {
+    return responseError("Live payment origin verification failed.", 403);
+  }
   const stripeBody = new URLSearchParams();
 
   stripeBody.set("mode", "payment");

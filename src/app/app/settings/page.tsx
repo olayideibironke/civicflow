@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import AppShell from "@/components/AppShell";
+import FirmSubscriptionBilling from "@/components/FirmSubscriptionBilling";
+import FirmStripeConnect from "@/components/FirmStripeConnect";
 import { supabase } from "@/lib/supabase";
 import {
   getFirstValidationError,
@@ -123,6 +125,7 @@ function StatusCard({
 
 export default function SettingsPage() {
   const [organizationId, setOrganizationId] = useState("");
+  const [isFirmAdmin, setIsFirmAdmin] = useState(false);
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [siteOrigin, setSiteOrigin] = useState("https://civicflowapp.org");
@@ -154,6 +157,7 @@ export default function SettingsPage() {
       }
 
       const workspaceOrganizationId = workspaceResult.workspace.organization.id;
+      setIsFirmAdmin(workspaceResult.workspace.profile.role === "admin");
 
       const { data, error } = await supabase
         .from("organizations")
@@ -426,6 +430,8 @@ export default function SettingsPage() {
           </section>
 
           <aside className="space-y-6">
+            <FirmSubscriptionBilling isAdmin={isFirmAdmin} />
+            <FirmStripeConnect isAdmin={isFirmAdmin} />
             <section className="premium-dark">
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-blue-200/80">Firm Intake</p>
               <h2 className="mt-5 text-2xl font-bold leading-tight tracking-tight text-white">A dedicated intake link for this firm.</h2>

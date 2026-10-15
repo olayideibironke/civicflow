@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+
+export async function POST(request: Request) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    return NextResponse.json({ error: "Subscription webhook is not configured." }, { status: 503 });
+  }
+  if (process.env.CIVICFLOW_SUBSCRIPTION_WEBHOOK_ENABLED !== "true") {
+    return NextResponse.json({ error: "Subscription webhook is disabled." }, { status: 503 });
+  }
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) {
+    return NextResponse.json({ error: "Missing Stripe signature." }, { status: 400 });
+  }
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && Number(contentLength) > 1024 * 1024) {
+    return NextResponse.json({ error: "Event too large." }, { status: 413 });
+  }
+  const payload = await request.text();
+  // Stripe signs raw UTF-8 bytes; JavaScript string length is not a byte limit.
+  if (new TextEncoder().encode(payload).byteLength > 1024 * 1024) {
+    return NextResponse.json({ error: "Event too large." }, { status: 413 });
+  }
+  // Supabase verifies the original raw Stripe payload against the dedicated Vault secret.
+  const response = await fetch(`${url}/rest/v1/rpc/process_civicflow_subscription_webhook`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_payload: payload, p_signature: signature }),
+    cache: "no-store",
+  }).catch(() => null);
+  if (!response?.ok) {
+    console.error("CivicFlow subscription webhook processing failed", { status: response?.status });
+    return NextResponse.json({ error: "Event processing failed." }, { status: 500 });
+  }
+  return NextResponse.json({ received: true });
+}

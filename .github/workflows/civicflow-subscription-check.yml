@@ -1,0 +1,101 @@
+name: CivicFlow subscription checks
+on:
+  push:
+    branches: [civicflow-stripe-subscriptions-integration]
+  pull_request:
+    branches: [civicflow-commercial-workflows]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: civicflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d civicflow_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://rvnaixlydhpefptyqqgs.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'ci-public-placeholder-key'
+      - name: Parse subscription SQL migrations
+        run: |
+          python -m pip install --disable-pip-version-check pglast==7.11
+          python - <<'PY'
+          from pathlib import Path
+          from pglast import parse_sql
+          migration_dir = Path("supabase/migrations")
+          files = sorted(set(migration_dir.glob("*subscription*.sql")) | set(migration_dir.glob("*stripe_connect*.sql")))
+          assert len(files) >= 3, "Expected subscription ledger, reconciliation, and Connect routing migrations"
+          for path in files:
+              statements = parse_sql(path.read_text(encoding="utf-8"))
+              print(f"{path}: {len(statements)} PostgreSQL statements parsed")
+          PY
+      - name: Execute subscription migrations in isolated PostgreSQL
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test <<'SQL'
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN;
+          CREATE SCHEMA private;
+          CREATE SCHEMA auth;
+          CREATE SCHEMA vault;
+          CREATE SCHEMA extensions;
+          CREATE TABLE public.organizations (id uuid PRIMARY KEY);
+          CREATE TABLE public.organization_payment_connections (organization_id uuid);
+          CREATE TABLE vault.decrypted_secrets (name text, decrypted_secret text, updated_at timestamptz);
+          CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS 'SELECT NULL::uuid';
+          CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql AS 'SELECT NULL::text';
+          CREATE FUNCTION public.is_staff_for_org(uuid) RETURNS boolean LANGUAGE sql AS 'SELECT false';
+          CREATE FUNCTION extensions.hmac(bytea,bytea,text) RETURNS bytea LANGUAGE sql AS 'SELECT NULL::bytea';
+          SQL
+          for file in supabase/migrations/20261012190000_civicflow_platform_subscription_ledger.sql supabase/migrations/20261012191000_restrict_stripe_connect_routing_mutations.sql supabase/migrations/20261012193000_subscription_trusted_reconciliation.sql; do
+            echo "Applying $file to isolated PostgreSQL"
+            psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test -f "$file"
+          done
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d civicflow_test <<'SQL'
+          DO $test$
+          BEGIN
+            IF (SELECT count(*) FROM pg_proc WHERE proname IN
+              ('process_civicflow_subscription_webhook','get_civicflow_subscription_entitlement','reconcile_civicflow_subscription')) <> 3 THEN
+              RAISE EXCEPTION 'Missing subscription RPC functions';
+            END IF;
+            IF has_table_privilege('authenticated','public.organization_payment_connections','INSERT')
+               OR has_table_privilege('authenticated','public.organization_payment_connections','UPDATE')
+               OR has_table_privilege('authenticated','public.organization_payment_connections','DELETE') THEN
+              RAISE EXCEPTION 'Stripe Connect routing is writable by authenticated users';
+            END IF;
+            IF has_function_privilege('authenticated','public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)','EXECUTE')
+               OR has_function_privilege('anon','public.process_civicflow_subscription_webhook(text,text)','EXECUTE') THEN
+              RAISE EXCEPTION 'Privileged subscription RPC exposed to untrusted role';
+            END IF;
+            IF NOT has_function_privilege('service_role','public.reconcile_civicflow_subscription(text,text,text,text,uuid,text,text,integer,text,boolean)','EXECUTE') THEN
+              RAISE EXCEPTION 'Service role cannot reconcile subscription';
+            END IF;
+            BEGIN
+              PERFORM public.process_civicflow_subscription_webhook('{"id":"evt_test"}','t=1,v1=invalid');
+              RAISE EXCEPTION 'Unsigned webhook was accepted';
+            EXCEPTION WHEN OTHERS THEN
+              IF SQLERRM = 'Unsigned webhook was accepted' THEN RAISE; END IF;
+            END;
+            RAISE NOTICE 'Subscription RPC, role grants, and unsigned webhook checks passed';
+          END
+          $test$;
+          SQL
