@@ -70,6 +70,16 @@ describe("financial adjustment projection", () => {
     expect(projectFinancialAdjustments([...refundEvents].reverse(), 5000).needsReview).toBe(true);
     expect(projectFinancialAdjustments(disputeEvents, 5000).needsReview).toBe(true);
   });
+  it("flags aggregate monetary totals outside the safe integer range", () => {
+    const maximum = Number.MAX_SAFE_INTEGER;
+    const events = [
+      row("evt_large1", "re_large1", "refund.updated", maximum, "succeeded"),
+      row("evt_large2", "re_large2", "refund.updated", maximum, "succeeded"),
+    ];
+    const result = projectFinancialAdjustments(events, maximum);
+    expect(result.needsReview).toBe(true);
+    expect(Number.isSafeInteger(result.succeededRefundCents)).toBe(false);
+  });
   it("rejects conflicting duplicate event IDs", () => {
     expect(() => projectFinancialAdjustments([
       row("evt_1", "re_1", "refund.created", 100, "pending"),
