@@ -9,7 +9,7 @@ type InboxRow = {
   event_type: ClassifiedConnectEvent["type"]; livemode: boolean; occurred_at: string;
   processing_state: string;
 };
-type Decision = { state: "needs_enrichment" | "needs_payment_match" | "rejected" | "processed"; matchedPaymentId?: string; errorCode?: string };
+type Decision = { state: "needs_enrichment" | "needs_payment_match" | "needs_review" | "ready_for_posting"; matchedPaymentId?: string; errorCode?: string };
 const headers = (key: string) => ({
   apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json",
 });
@@ -39,15 +39,22 @@ export async function inspectFinancialInboxBatch(
   if (!Array.isArray(rows)) throw new Error("Unexpected financial inbox response");
   const decisions: Decision[] = [];
   for (const raw of rows) {
-    const row = raw as InboxRow;
-    if (!UUID.test(row.id) || !UUID.test(row.organization_id) ||
+    const row = raw as InboxRow | null;
+    if (!row || typeof row !== "object" || !UUID.test(row.id) || !UUID.test(row.organization_id) ||
         !/^acct_[A-Za-z0-9]+$/.test(row.connected_account_id) ||
         !/^evt_[A-Za-z0-9]+$/.test(row.stripe_event_id)) {
-      decisions.push({ state: "rejected", errorCode: "invalid_inbox_row" });
+      decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
       continue;
     }
     if (!row.stripe_payment_intent_id) {
       decisions.push({ state: "needs_enrichment" });
+      continue;
+    }
+    if (typeof row.event_type !== "string" ||
+        typeof row.livemode !== "boolean" ||
+        typeof row.stripe_object_id !== "string" ||
+        typeof row.occurred_at !== "string") {
+      decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
       continue;
     }
     const event: ClassifiedConnectEvent = {
@@ -67,14 +74,13 @@ export async function inspectFinancialInboxBatch(
     const decision = matchFinancialEventToPayment(event, candidates);
     if (decision.state === "authorized") {
       if (decision.adjustment.organizationId !== row.organization_id) {
-        decisions.push({ state: "rejected", errorCode: "tenant_mismatch" });
+        decisions.push({ state: "needs_review", errorCode: "tenant_mismatch" });
       } else {
-        // 'processed' here means eligible for ledger projection only.
-        // No DB mutation or financial posting occurs in this inspection.
-        decisions.push({ state: "processed", matchedPaymentId: decision.adjustment.paymentId });
+        // Read-only eligibility is NOT a ledger posting or completed event.
+        decisions.push({ state: "ready_for_posting", matchedPaymentId: decision.adjustment.paymentId });
       }
     } else if (decision.state === "needs_review") {
-      decisions.push({ state: "rejected", errorCode: "verification_failed" });
+      decisions.push({ state: "needs_review", errorCode: "verification_failed" });
     } else {
       decisions.push({ state: decision.state });
     }
