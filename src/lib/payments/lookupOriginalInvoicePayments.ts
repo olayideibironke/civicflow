@@ -55,10 +55,12 @@ export async function lookupOriginalInvoicePayments(
   if (!Array.isArray(rows)) throw new Error("Unexpected payment lookup result");
   return rows.map((row: Record<string, unknown>) => {
     const invoice = row.billing_invoices as Record<string, unknown> | null;
-    if (!invoice || invoice.organization_id !== connection.organization_id ||
+    if (!invoice || row.organization_id !== connection.organization_id ||
+        invoice.organization_id !== connection.organization_id ||
         typeof invoice.currency !== "string" ||
         typeof row.id !== "string" || typeof row.invoice_id !== "string" ||
-        typeof row.amount_cents !== "number" || !Number.isSafeInteger(row.amount_cents))
+        typeof row.amount_cents !== "number" || !Number.isSafeInteger(row.amount_cents) ||
+        row.amount_cents <= 0 || row.processor_reference !== paymentIntentId)
       throw new Error("Original payment has inconsistent invoice data");
     return {
       organizationId: connection.organization_id as string,
