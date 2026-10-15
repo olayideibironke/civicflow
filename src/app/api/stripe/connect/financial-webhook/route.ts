@@ -78,10 +78,12 @@ export async function POST(request: Request) {
   const accounts: unknown = await accountResponse.json().catch(() => null);
   if (!Array.isArray(accounts) || accounts.length !== 1)
     return respond("Connected account is not uniquely registered.", 403);
-  const account = accounts[0] as Record<string, unknown>;
+  const account = accounts[0] as Record<string, unknown> | null;
   const mode = event.livemode ? "live" : "sandbox";
-  if (account.provider !== "stripe" || account.mode !== mode ||
-      typeof account.organization_id !== "string")
+  if (!account || typeof account !== "object" || Array.isArray(account) ||
+      account.provider !== "stripe" || account.mode !== mode ||
+      typeof account.organization_id !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(account.organization_id))
     return respond("Connected account environment mismatch.", 403);
 
   // Insert-only deduplication. On conflict, PostgREST ignores the duplicate
