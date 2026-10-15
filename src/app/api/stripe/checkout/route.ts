@@ -107,7 +107,18 @@ async function callSupabaseRpc<T>(
     };
   }
 
-  return { data: (await result.json()) as T, error: "" };
+  // Supabase RPCs returning void succeed with an empty response body.
+  // Parsing that body as JSON would throw after checkout registration succeeds.
+  const responseText = await result.text();
+  if (!responseText.trim()) {
+    return { data: null, error: "" };
+  }
+
+  try {
+    return { data: JSON.parse(responseText) as T, error: "" };
+  } catch {
+    return { data: null, error: "CivicFlow received an invalid payment service response." };
+  }
 }
 
 async function expireStripeSession(
