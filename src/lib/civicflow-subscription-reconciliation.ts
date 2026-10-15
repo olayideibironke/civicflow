@@ -13,7 +13,9 @@ export async function reconcileVerifiedFirmSubscription(input: {
       !/^cs_(test_|live_)[A-Za-z0-9]+$/.test(checkoutSessionId)) {
     throw new Error("Invalid onboarding reference");
   }
-  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
+  const secret = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE === "live"
+    ? (process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY)
+    : process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_SECRET_KEY;
   const mode = process.env.CIVICFLOW_STRIPE_SUBSCRIPTION_MODE;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
