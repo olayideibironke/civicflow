@@ -41,6 +41,48 @@ create index if not exists client_payment_event_inbox_pending_idx
 create index if not exists client_payment_event_inbox_intent_idx
   on public.client_payment_event_inbox(connected_account_id, stripe_payment_intent_id);
 
+-- Once authorization has selected a payment, event evidence must be
+-- immutable. Only the state machine may advance ready_for_posting to processed.
+create or replace function public.guard_client_payment_event_inbox_update()
+returns trigger
+language plpgsql
+set search_path = ''
+as $guard_financial_inbox$
+begin
+  if old.processing_state in ('ready_for_posting', 'processed', 'rejected') then
+    if row(
+      new.organization_id, new.connected_account_id, new.stripe_event_id,
+      new.stripe_object_id, new.stripe_payment_intent_id, new.amount_cents,
+      new.currency, new.stripe_status, new.event_type, new.livemode,
+      new.occurred_at, new.created_at, new.matched_payment_id
+    ) is distinct from row(
+      old.organization_id, old.connected_account_id, old.stripe_event_id,
+      old.stripe_object_id, old.stripe_payment_intent_id, old.amount_cents,
+      old.currency, old.stripe_status, old.event_type, old.livemode,
+      old.occurred_at, old.created_at, old.matched_payment_id
+    ) then
+      raise exception 'Authorized financial event evidence cannot be changed'
+        using errcode = '23514';
+    end if;
+    if old.processing_state = 'processed' or old.processing_state = 'rejected' then
+      raise exception 'Terminal financial inbox events cannot be changed'
+        using errcode = '23514';
+    end if;
+    if new.processing_state <> 'processed' or new.processed_at is null then
+      raise exception 'Authorized financial event may only complete posting'
+        using errcode = '23514';
+    end if;
+  end if;
+  return new;
+end;
+$guard_financial_inbox$;
+
+drop trigger if exists client_payment_event_inbox_update_guard
+  on public.client_payment_event_inbox;
+create trigger client_payment_event_inbox_update_guard
+before update on public.client_payment_event_inbox
+for each row execute function public.guard_client_payment_event_inbox_update();
+
 alter table public.client_payment_event_inbox enable row level security;
 revoke all on public.client_payment_event_inbox from public, anon, authenticated;
 -- Service-role only; no browser-facing RLS policies.
