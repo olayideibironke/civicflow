@@ -21,7 +21,7 @@ create table if not exists public.client_payment_event_inbox (
   livemode boolean not null,
   occurred_at timestamptz not null,
   processing_state text not null default 'pending' check (processing_state in (
-    'pending', 'needs_enrichment', 'needs_payment_match', 'needs_review', 'processed', 'rejected'
+    'pending', 'needs_enrichment', 'needs_payment_match', 'needs_review', 'ready_for_posting', 'processed', 'rejected'
   )),
   attempts integer not null default 0 check (attempts >= 0),
   last_error_code text,
