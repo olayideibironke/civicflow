@@ -90,6 +90,27 @@ begin
      or (select count(*) from public.client_payment_adjustments) <> 1 then
    raise exception 'Failed posting left partial accounting changes';
   end if;
+  -- An adjustment larger than its original successful payment must fail.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('88888888-8888-4888-8888-888888888888','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test3','re_test3','pi_test1',10001,'usd','succeeded',
+    'refund.created',false,now());
+  begin
+   perform public.authorize_client_payment_adjustment_posting(
+    '88888888-8888-4888-8888-888888888888','44444444-4444-4444-8444-444444444444');
+   raise exception 'Oversized refund authorization was accepted';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox
+      where id='88888888-8888-4888-8888-888888888888') <> 'pending' then
+   raise exception 'Oversized refund changed inbox state';
+  end if;
+  if (select count(*) from public.client_payment_adjustments) <> 1 then
+   raise exception 'Oversized refund created a ledger entry';
+  end if;
 end;
 $regression$;
 rollback;
