@@ -76,6 +76,12 @@ describe("original Stripe invoice payment lookup", () => {
         .rejects.toThrow("Original payment has inconsistent invoice data");
     }
   });
+  it("rejects oversized payment lookup responses", async () => {
+    stubLookup([connection], [payment, payment, payment]);
+    await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+      .rejects.toThrow("Unexpected payment lookup result");
+  });
+
   it("rejects ambiguous connected-account mappings", async () => {
     const fetchMock = stubLookup([connection, connection], [payment]);
     await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
