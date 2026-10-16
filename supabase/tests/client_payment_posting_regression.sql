@@ -58,6 +58,34 @@ begin
  end if;
  update public.billing_payments set status='succeeded'
  where id='44444444-4444-4444-8444-444444444444';
+ -- Stripe reference drift after authorization must fail closed.
+ update public.billing_payments set processor_reference='pi_changed'
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
+  raise exception 'Changed Stripe reference was accepted';
+ exception when sqlstate '23514' then null;
+ end;
+ update public.billing_payments set processor_reference='pi_test1'
+ where id='44444444-4444-4444-8444-444444444444';
+
+ -- An original payment cannot switch tenants between authorization and posting.
+ update public.billing_payments set organization_id='22222222-2222-4222-8222-222222222222'
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
+  raise exception 'Reassigned original payment was accepted';
+ exception when sqlstate '23514' then null;
+ end;
+ update public.billing_payments set organization_id='11111111-1111-4111-8111-111111111111'
+ where id='44444444-4444-4444-8444-444444444444';
+ if (select processing_state from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting'
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Rejected payment identity changes caused partial posting';
+ end if;
  first_post := public.post_verified_client_payment_adjustment(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
  replay_post := public.post_verified_client_payment_adjustment(
