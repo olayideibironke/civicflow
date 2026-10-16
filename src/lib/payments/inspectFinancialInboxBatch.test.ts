@@ -29,6 +29,17 @@ describe("read-only financial inbox inspection", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][1].method).toBeUndefined();
   });
+  it("includes persisted needs_enrichment events without posting or looking up payments", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [{ ...row, processing_state: "needs_enrichment" }],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 1, decisions: [{ state: "needs_enrichment" }] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = new URL(fetchMock.mock.calls[0][0]);
+    expect(url.searchParams.get("processing_state")).toContain("needs_enrichment");
+  });
   it("holds malformed inbox rows for review without throwing", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true, json: async () => [null, { ...row, id: "invalid" }],
