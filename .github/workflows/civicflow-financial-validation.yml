@@ -129,6 +129,27 @@ jobs:
                '81818181-8181-4818-8818-818181818181',
                '82828282-8282-4828-8828-828282828282',
                1000,'failed','stripe','pi_duplicate_ci');
+            BEGIN
+              UPDATE public.billing_payments SET status='succeeded'
+              WHERE id='86868686-8686-4868-8868-868686868686';
+              RAISE EXCEPTION 'Index allowed failed payment to become duplicate success';
+            EXCEPTION WHEN unique_violation THEN NULL;
+            END;
+            IF (SELECT status FROM public.billing_payments
+                WHERE id='86868686-8686-4868-8868-868686868686') <> 'failed' THEN
+              RAISE EXCEPTION 'Rejected status transition changed payment';
+            END IF;
+            INSERT INTO public.organizations(id)
+            VALUES ('87878787-8787-4878-8878-878787878787');
+            INSERT INTO public.billing_invoices(id,organization_id,currency)
+            VALUES ('88888888-8888-4888-8888-888888888888',
+                    '87878787-8787-4878-8878-878787878787','usd');
+            INSERT INTO public.billing_payments
+              (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+            VALUES ('89898989-8989-4898-8898-898989898989',
+                    '87878787-8787-4878-8878-878787878787',
+                    '88888888-8888-4888-8888-888888888888',
+                    1000,'succeeded','stripe','pi_duplicate_ci');
           END;
           $uniqueness$;
           SQL
