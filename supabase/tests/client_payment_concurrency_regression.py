@@ -104,3 +104,42 @@ if sql(
 ).stdout.strip() != "1":
     raise AssertionError("Concurrent replay duplicated a financial adjustment")
 print("PASS: two concurrent replays return one stable ledger ID without duplication.")
+
+# Race the INITIAL posting of one authorized inbox row. Unlike replay of an
+# already-processed event, both sessions begin before the first ledger insert.
+fresh = "17171717-1717-4717-8717-171717171717"
+sql(f"""
+insert into public.client_payment_event_inbox
+(id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+values ('{fresh}','12121212-1212-4212-8212-121212121212',
+'acct_concurrency','evt_concurrency3','re_concurrency3','pi_concurrency',
+4000,'usd','succeeded','refund.created',false,now());
+select public.authorize_client_payment_adjustment_posting('{fresh}','{PAYMENT}');
+""")
+initial_barrier = Barrier(2)
+
+
+def first_post(_: int) -> subprocess.CompletedProcess[str]:
+    initial_barrier.wait(timeout=10)
+    return sql(
+        f"select public.post_verified_client_payment_adjustment('{fresh}','{PAYMENT}');",
+        expect_success=False,
+    )
+
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    initial_results = list(executor.map(first_post, range(2)))
+initial_ids = [result.stdout.strip() for result in initial_results]
+if any(result.returncode != 0 for result in initial_results) or len(set(initial_ids)) != 1:
+    raise AssertionError(f"Concurrent initial posting did not converge: {initial_results!r}")
+if sql(
+    "select count(*) from public.client_payment_adjustments "
+    "where stripe_event_id='evt_concurrency3'"
+).stdout.strip() != "1":
+    raise AssertionError("Concurrent first posting created duplicate ledger entries")
+if sql(
+    f"select processing_state from public.client_payment_event_inbox where id='{fresh}'"
+).stdout.strip() != "processed":
+    raise AssertionError("Concurrent first posting failed to complete inbox")
+print("PASS: concurrent initial posting returns one ledger ID and processes the inbox once.")
