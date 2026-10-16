@@ -72,3 +72,45 @@ begin
 end;
 $authenticated_denial$;
 reset role;
+
+-- Prove the SECURITY INVOKER functions work with service_role privileges
+-- rather than relying on the superuser's privileges from the main tests.
+begin;
+insert into public.organizations(id) values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+insert into public.billing_invoices(id,organization_id,currency)
+ values ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','cccccccc-cccc-4ccc-8ccc-cccccccccccc','usd');
+insert into public.billing_payments
+ (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+ values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+         'dddddddd-dddd-4ddd-8ddd-dddddddddddd',6000,'succeeded','stripe','pi_role_test');
+insert into public.organization_payment_connections
+ (organization_id,stripe_account_id,provider,mode)
+ values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','acct_role_test','stripe','sandbox');
+insert into public.client_payment_event_inbox
+ (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+  stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+ values ('ffffffff-ffff-4fff-8fff-ffffffffffff','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+         'acct_role_test','evt_role_test','re_role_test','pi_role_test',1200,'usd',
+         'succeeded','refund.created',false,now());
+set role service_role;
+do $service_execution$
+declare
+  ledger_id uuid;
+begin
+  if not public.authorize_client_payment_adjustment_posting(
+     'ffffffff-ffff-4fff-8fff-ffffffffffff','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee') then
+    raise exception 'Service role could not authorize valid adjustment';
+  end if;
+  ledger_id := public.post_verified_client_payment_adjustment(
+     'ffffffff-ffff-4fff-8fff-ffffffffffff','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+  if ledger_id is null then
+    raise exception 'Service role could not post valid adjustment';
+  end if;
+  if ledger_id is distinct from public.post_verified_client_payment_adjustment(
+     'ffffffff-ffff-4fff-8fff-ffffffffffff','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee') then
+    raise exception 'Service role posting replay changed ledger identity';
+  end if;
+end;
+$service_execution$;
+reset role;
+rollback;
