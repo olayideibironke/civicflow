@@ -85,12 +85,12 @@ insert into public.billing_payments
          'dddddddd-dddd-4ddd-8ddd-dddddddddddd',6000,'succeeded','stripe','pi_role_test');
 insert into public.organization_payment_connections
  (organization_id,stripe_account_id,provider,mode)
- values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','acct_role_test','stripe','sandbox');
+ values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','acct_roletest','stripe','sandbox');
 insert into public.client_payment_event_inbox
  (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
   stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
  values ('ffffffff-ffff-4fff-8fff-ffffffffffff','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-         'acct_role_test','evt_role_test','re_role_test','pi_role_test',1200,'usd',
+         'acct_roletest','evt_role_test','re_role_test','pi_role_test',1200,'usd',
          'succeeded','refund.created',false,now());
 set role service_role;
 do $service_execution$
