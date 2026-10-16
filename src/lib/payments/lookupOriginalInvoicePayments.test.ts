@@ -54,6 +54,20 @@ describe("original Stripe invoice payment lookup", () => {
     }
   });
 
+  it("rejects invalid organization and invoice identifiers", async () => {
+    stubLookup([{ ...connection, organization_id: "invalid" }], [payment]);
+    await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+      .rejects.toThrow("Connected account environment mismatch");
+
+    for (const badPayment of [
+      { ...payment, id: "invalid" },
+      { ...payment, invoice_id: "invalid" },
+    ]) {
+      stubLookup([connection], [badPayment]);
+      await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+        .rejects.toThrow("Original payment has inconsistent invoice data");
+    }
+  });
   it("rejects ambiguous connected-account mappings", async () => {
     const fetchMock = stubLookup([connection, connection], [payment]);
     await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
