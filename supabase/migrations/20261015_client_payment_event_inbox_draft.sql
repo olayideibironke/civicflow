@@ -73,6 +73,20 @@ begin
         using errcode = '23514';
     end if;
   end if;
+  if new.processing_state = 'ready_for_posting' then
+    if old.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match')
+       or new.matched_payment_id is null
+       or new.processed_at is not null then
+      raise exception 'Invalid financial inbox authorization transition'
+        using errcode = '23514';
+    end if;
+  end if;
+  if new.processing_state = 'processed' and
+     (old.processing_state <> 'ready_for_posting'
+      or new.matched_payment_id is null or new.processed_at is null) then
+    raise exception 'Financial inbox posting requires authorization'
+      using errcode = '23514';
+  end if;
   return new;
 end;
 $guard_financial_inbox$;
