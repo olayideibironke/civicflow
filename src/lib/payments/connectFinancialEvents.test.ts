@@ -25,7 +25,7 @@ describe("Connect financial event classifier", () => {
       ...base, type: "refund.created",
       data: { object: { id: "re_1", amount: 100, currency: "usd" } },
     };
-    expect(classifyConnectFinancialEvent({ ...payload, created: 8640000001 })).toBeNull();
+    expect(classifyConnectFinancialEvent({ ...payload, created: 8640000000001 })).toBeNull();
     expect(classifyConnectFinancialEvent({ ...payload, created: Number.MAX_SAFE_INTEGER })).toBeNull();
     expect(classifyConnectFinancialEvent({ ...payload, created: 0 })).toBeNull();
   });
