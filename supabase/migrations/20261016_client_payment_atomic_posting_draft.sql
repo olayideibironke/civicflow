@@ -62,6 +62,32 @@ begin
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
+  -- Revalidate the original payment at posting time. Authorization may
+  -- precede posting, so the original payment must still be trustworthy.
+  perform 1
+  from public.billing_payments p
+  join public.billing_invoices i
+    on i.id = p.invoice_id and i.organization_id = p.organization_id
+  where p.id = p_payment_id
+    and p.organization_id = incoming.organization_id
+    and p.status = 'succeeded'
+    and p.processor = 'stripe'
+    and p.processor_reference = incoming.stripe_payment_intent_id
+    and i.currency = incoming.currency
+    and p.amount_cents >= incoming.amount_cents
+    and exists (
+      select 1 from public.organization_payment_connections c
+      where c.organization_id = incoming.organization_id
+        and c.stripe_account_id = incoming.connected_account_id
+        and c.provider = 'stripe'
+        and c.mode = case when incoming.livemode then 'live' else 'sandbox' end
+    )
+  for share of p, i;
+  if not found then
+    raise exception 'Original payment no longer valid for posting'
+      using errcode = '23514';
+  end if;
+
   -- Serialize adjustments across different inbox events for the same payment.
   -- Refund updates for the same Stripe refund object are snapshots, not
   -- additional refunds. Count each distinct refund at its maximum recorded
