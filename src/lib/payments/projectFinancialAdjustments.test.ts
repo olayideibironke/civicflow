@@ -70,6 +70,15 @@ describe("financial adjustment projection", () => {
     expect(projectFinancialAdjustments([...refundEvents].reverse(), 5000).needsReview).toBe(true);
     expect(projectFinancialAdjustments(disputeEvents, 5000).needsReview).toBe(true);
   });
+  it("flags contradictory same-time lifecycle snapshots without trusting event ID order", () => {
+    const snapshots = [
+      row("evt_a", "re_same", "refund.created", 1200, "pending"),
+      row("evt_b", "re_same", "refund.updated", 1200, "succeeded"),
+    ];
+    for (const events of [snapshots, [...snapshots].reverse()]) {
+      expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
+    }
+  });
   it("flags aggregate monetary totals outside the safe integer range", () => {
     const maximum = Number.MAX_SAFE_INTEGER;
     const events = [
