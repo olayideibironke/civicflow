@@ -65,6 +65,13 @@ export async function inspectFinancialInboxBatch(
       decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
       continue;
     }
+    // A failed or canceled PaymentIntent is not a refund or dispute against
+    // an already succeeded invoice payment. Never qualify it for ledger posting.
+    if (row.event_type === "payment_intent.payment_failed" ||
+        row.event_type === "payment_intent.canceled") {
+      decisions.push({ state: "needs_review", errorCode: "non_adjustment_payment_lifecycle" });
+      continue;
+    }
     if (!row.stripe_payment_intent_id) {
       decisions.push({ state: "needs_enrichment" });
       continue;
