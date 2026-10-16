@@ -56,7 +56,7 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
       !account || !/^acct_[A-Za-z0-9]+$/.test(account) ||
       typeof livemode !== "boolean" ||
       typeof created !== "number" || !Number.isSafeInteger(created) || created <= 0 ||
-      !object || !objectId || created > 8640000000) return null;
+      !object || !objectId || created > 8640000000000) return null;
 
   const category: FinancialEventCategory = type.startsWith("refund.")
     ? "refund" : type.startsWith("charge.dispute.") ? "dispute"
