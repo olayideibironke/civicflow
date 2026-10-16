@@ -54,6 +54,44 @@ jobs:
                   raise ValueError(f"No SQL statements in {filename}")
               print(f"Parsed {len(statements)} statements: {filename}")
           PY
+      - name: Validate draft migrations in disposable PostgreSQL
+        run: |
+          sudo systemctl start postgresql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE civicflow_financial_ci"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci <<'SQL'
+          CREATE SCHEMA IF NOT EXISTS public;
+          CREATE ROLE anon NOLOGIN;
+          CREATE ROLE authenticated NOLOGIN;
+          CREATE ROLE service_role NOLOGIN BYPASSRLS;
+          CREATE TABLE public.organizations (id uuid PRIMARY KEY);
+          CREATE TABLE public.billing_invoices (
+            id uuid PRIMARY KEY,
+            organization_id uuid NOT NULL REFERENCES public.organizations(id),
+            currency text NOT NULL
+          );
+          CREATE TABLE public.billing_payments (
+            id uuid PRIMARY KEY,
+            organization_id uuid NOT NULL REFERENCES public.organizations(id),
+            invoice_id uuid NOT NULL REFERENCES public.billing_invoices(id),
+            amount_cents bigint NOT NULL,
+            status text NOT NULL,
+            processor text NOT NULL,
+            processor_reference text
+          );
+          CREATE TABLE public.organization_payment_connections (
+            organization_id uuid NOT NULL REFERENCES public.organizations(id),
+            stripe_account_id text NOT NULL,
+            provider text NOT NULL,
+            mode text NOT NULL
+          );
+          SQL
+          for migration in \
+            supabase/migrations/20261015_client_payment_event_inbox_draft.sql \
+            supabase/migrations/20261015_client_payment_adjustment_ledger.sql \
+            supabase/migrations/20261016_client_payment_authorization_draft.sql \
+            supabase/migrations/20261016_client_payment_atomic_posting_draft.sql; do
+            sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci -f "$GITHUB_WORKSPACE/$migration"
+          done
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
