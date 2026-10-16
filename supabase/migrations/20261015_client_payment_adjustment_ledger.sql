@@ -39,12 +39,12 @@ create or replace function public.reject_client_payment_adjustment_mutation()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $immutable_adjustment$
 begin
   raise exception 'Financial adjustment history is append-only'
     using errcode = '23514';
 end;
-$;
+$immutable_adjustment$;
 
 drop trigger if exists client_payment_adjustments_immutable
   on public.client_payment_adjustments;
