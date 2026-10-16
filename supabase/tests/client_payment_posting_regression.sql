@@ -132,6 +132,43 @@ begin
      or (select count(*) from public.client_payment_adjustments) <> 1 then
    raise exception 'Rejected aggregate refund left partial changes';
   end if;
+  -- Same refund object, later Stripe event: count the refund once.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test5','re_test1','pi_test1',2500,'usd','succeeded',
+    'refund.updated',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444');
+  perform public.post_verified_client_payment_adjustment(
+   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','44444444-4444-4444-8444-444444444444');
+  if (select count(*) from public.client_payment_adjustments
+      where stripe_object_id='re_test1') <> 2 then
+   raise exception 'Same-refund update not recorded as separate event';
+  end if;
+  -- A regressed refund snapshot is not valid accounting evidence.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test6','re_test1','pi_test1',2000,'usd','succeeded',
+    'refund.updated',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444');
+  begin
+   perform public.post_verified_client_payment_adjustment(
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','44444444-4444-4444-8444-444444444444');
+   raise exception 'Regressed refund snapshot was posted';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox
+      where id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') <> 'ready_for_posting'
+     or (select count(*) from public.client_payment_adjustments) <> 2 then
+   raise exception 'Regressed snapshot left partial changes';
+  end if;
 end;
 $regression$;
 rollback;
