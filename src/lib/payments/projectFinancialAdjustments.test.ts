@@ -80,6 +80,20 @@ describe("financial adjustment projection", () => {
     expect(result.needsReview).toBe(true);
     expect(Number.isSafeInteger(result.succeededRefundCents)).toBe(false);
   });
+  it("accepts identical replayed events regardless of object property order", () => {
+    const original = row("evt_replay", "re_replay", "refund.updated", 1200, "succeeded");
+    const reordered: FinancialSnapshot = {
+      occurredAt: original.occurredAt,
+      status: original.status,
+      amountCents: original.amountCents,
+      type: original.type,
+      objectId: original.objectId,
+      eventId: original.eventId,
+    };
+    expect(projectFinancialAdjustments([original, reordered], 5000)).toMatchObject({
+      succeededRefundCents: 1200, needsReview: false,
+    });
+  });
   it("rejects conflicting duplicate event IDs", () => {
     expect(() => projectFinancialAdjustments([
       row("evt_1", "re_1", "refund.created", 100, "pending"),
