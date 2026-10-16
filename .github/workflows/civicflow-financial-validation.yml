@@ -11,6 +11,7 @@ on:
       - supabase/migrations/20261015_client_payment_event_inbox_draft.sql
       - supabase/migrations/20261015_client_payment_plans_draft.sql
       - supabase/migrations/20261016_client_payment_atomic_posting_draft.sql
+      - supabase/migrations/20261016_client_payment_authorization_draft.sql
       - src/app/api/stripe/connect/**
       - package.json
       - package-lock.json
@@ -45,6 +46,7 @@ jobs:
               "supabase/migrations/20261015_client_payment_event_inbox_draft.sql",
               "supabase/migrations/20261015_client_payment_plans_draft.sql",
               "supabase/migrations/20261016_client_payment_atomic_posting_draft.sql",
+              "supabase/migrations/20261016_client_payment_authorization_draft.sql",
           )
           for filename in files:
               statements = parse_sql(Path(filename).read_text(encoding="utf-8"))
