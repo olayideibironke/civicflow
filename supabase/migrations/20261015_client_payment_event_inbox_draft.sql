@@ -73,6 +73,23 @@ begin
         using errcode = '23514';
     end if;
   end if;
+  -- Authorization must not silently modify the event it is approving.
+  -- Enrichment is a separate step while the record is still pending.
+  if new.processing_state = 'ready_for_posting'
+     and row(
+       new.organization_id, new.connected_account_id, new.stripe_event_id,
+       new.stripe_object_id, new.stripe_payment_intent_id, new.amount_cents,
+       new.currency, new.stripe_status, new.event_type, new.livemode,
+       new.occurred_at, new.created_at
+     ) is distinct from row(
+       old.organization_id, old.connected_account_id, old.stripe_event_id,
+       old.stripe_object_id, old.stripe_payment_intent_id, old.amount_cents,
+       old.currency, old.stripe_status, old.event_type, old.livemode,
+       old.occurred_at, old.created_at
+     ) then
+    raise exception 'Financial event authorization cannot alter evidence'
+      using errcode = '23514';
+  end if;
   if new.processing_state = 'ready_for_posting' then
     if old.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match')
        or new.matched_payment_id is null
