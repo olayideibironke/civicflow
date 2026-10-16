@@ -103,6 +103,21 @@ describe("read-only financial inbox inspection", () => {
       })) });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("never qualifies failed or canceled payment intents for ledger posting", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row, event_type: "payment_intent.payment_failed", stripe_object_id: "pi_123", stripe_payment_intent_id: "pi_123" },
+        { ...row, event_type: "payment_intent.canceled", stripe_object_id: "pi_456", stripe_payment_intent_id: "pi_456" },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 2, decisions: [
+        { state: "needs_review", errorCode: "non_adjustment_payment_lifecycle" },
+        { state: "needs_review", errorCode: "non_adjustment_payment_lifecycle" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
