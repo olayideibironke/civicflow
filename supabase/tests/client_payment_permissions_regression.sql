@@ -82,7 +82,7 @@ insert into public.billing_invoices(id,organization_id,currency)
 insert into public.billing_payments
  (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
  values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-         'dddddddd-dddd-4ddd-8ddd-dddddddddddd',6000,'succeeded','stripe','pi_role_test');
+         'dddddddd-dddd-4ddd-8ddd-dddddddddddd',6000,'succeeded','stripe','pi_roletest');
 insert into public.organization_payment_connections
  (organization_id,stripe_account_id,provider,mode)
  values ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','acct_roletest','stripe','sandbox');
@@ -90,7 +90,7 @@ insert into public.client_payment_event_inbox
  (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
   stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
  values ('ffffffff-ffff-4fff-8fff-ffffffffffff','cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-         'acct_roletest','evt_role_test','re_role_test','pi_role_test',1200,'usd',
+         'acct_roletest','evt_roletest','re_roletest','pi_roletest',1200,'usd',
          'succeeded','refund.created',false,now());
 set role service_role;
 do $service_execution$
