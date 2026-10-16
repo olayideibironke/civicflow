@@ -24,11 +24,7 @@ begin
     raise exception 'Financial inbox event unavailable' using errcode = '22023';
   end if;
 
-  if incoming.processing_state = 'ready_for_posting'
-     and incoming.matched_payment_id = p_payment_id then
-    return false;
-  end if;
-  if incoming.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match')
+  if incoming.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match', 'ready_for_posting')
      or incoming.event_type not in (
        'refund.created', 'refund.updated', 'charge.dispute.created',
        'charge.dispute.updated', 'charge.dispute.closed'
@@ -68,6 +64,10 @@ begin
          and c.mode = case when incoming.livemode then 'live' else 'sandbox' end
      ) then
     raise exception 'Financial inbox payment verification failed' using errcode = '23514';
+  end if;
+
+  if incoming.processing_state = 'ready_for_posting' then
+    return false;
   end if;
 
   update public.client_payment_event_inbox
