@@ -13,6 +13,7 @@ as $authorize_posting$
 declare
   incoming public.client_payment_event_inbox%rowtype;
   original record;
+  payment_matches integer;
 begin
   if p_inbox_id is null or p_payment_id is null then
     raise exception 'Inbox and payment IDs are required' using errcode = '22023';
@@ -64,6 +65,19 @@ begin
          and c.mode = case when incoming.livemode then 'live' else 'sandbox' end
      ) then
     raise exception 'Financial inbox payment verification failed' using errcode = '23514';
+  end if;
+
+  -- A PaymentIntent must identify exactly one successful invoice payment
+  -- for this organization. Ambiguity requires review, never authorization.
+  select count(*) into payment_matches
+  from public.billing_payments p
+  where p.organization_id = incoming.organization_id
+    and p.processor = 'stripe'
+    and p.status = 'succeeded'
+    and p.processor_reference = incoming.stripe_payment_intent_id;
+  if payment_matches <> 1 then
+    raise exception 'Financial payment match is ambiguous'
+      using errcode = '23514';
   end if;
 
   if incoming.processing_state = 'ready_for_posting' then
