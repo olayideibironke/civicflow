@@ -83,7 +83,13 @@ begin
           and a.stripe_object_id <> incoming.stripe_object_id
         group by a.stripe_object_id
       ) previous_refunds
-    ) + incoming.amount_cents > (
+    ) + greatest(incoming.amount_cents, coalesce((
+      select max(a.amount_cents)
+      from public.client_payment_adjustments a
+      where a.payment_id = p_payment_id
+        and a.event_type like 'refund.%'
+        and a.stripe_object_id = incoming.stripe_object_id
+    ), 0)) > (
       select p.amount_cents from public.billing_payments p where p.id = p_payment_id
     ) then
       raise exception 'Aggregate refunds exceed original payment'
