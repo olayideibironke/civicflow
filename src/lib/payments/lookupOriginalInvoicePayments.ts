@@ -55,7 +55,7 @@ export async function lookupOriginalInvoicePayments(
   );
   if (!paymentResponse.ok) throw new Error("Original payment lookup unavailable");
   const rows: unknown = await paymentResponse.json();
-  if (!Array.isArray(rows)) throw new Error("Unexpected payment lookup result");
+  if (!Array.isArray(rows) || rows.length > 2) throw new Error("Unexpected payment lookup result");
   return rows.map((raw: unknown) => {
     if (!raw || typeof raw !== "object" || Array.isArray(raw))
       throw new Error("Original payment has inconsistent invoice data");
