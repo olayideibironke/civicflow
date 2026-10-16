@@ -39,7 +39,7 @@ export type AuthorizedFinancialAdjustment = {
  * refunded on a charge. A dispute is a reversible state transition, NOT an
  * additional payment or automatic permanent debit.
  */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function authorizeFinancialAdjustment(
   event: ClassifiedConnectEvent,
