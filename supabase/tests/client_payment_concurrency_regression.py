@@ -76,3 +76,31 @@ states = sql(
 if ledger_count != "1" or states != ["processed", "ready_for_posting"]:
     raise AssertionError(f"Partial or duplicate posting: ledger={ledger_count}, states={states}")
 print("PASS: two concurrent 6000-cent refunds against a 10000-cent payment yield one posting.")
+
+# Both workers racing the SAME already-processed event must return the same
+# immutable ledger ID and must not create a second financial entry.
+winner = INBOXES[outcomes.index(successes[0])]
+before = sql(
+    f"select id from public.client_payment_adjustments where stripe_event_id = "
+    f"(select stripe_event_id from public.client_payment_event_inbox where id='{winner}')"
+).stdout.strip()
+replay_barrier = Barrier(2)
+
+
+def replay(_: int) -> subprocess.CompletedProcess[str]:
+    replay_barrier.wait(timeout=10)
+    return sql(
+        f"select public.post_verified_client_payment_adjustment('{winner}','{PAYMENT}');",
+        expect_success=False,
+    )
+
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    replays = list(executor.map(replay, range(2)))
+if any(result.returncode != 0 or result.stdout.strip() != before for result in replays):
+    raise AssertionError(f"Concurrent replay did not return identical ledger ID: {replays!r}")
+if sql(
+    f"select count(*) from public.client_payment_adjustments where payment_id='{PAYMENT}'"
+).stdout.strip() != "1":
+    raise AssertionError("Concurrent replay duplicated a financial adjustment")
+print("PASS: two concurrent replays return one stable ledger ID without duplication.")
