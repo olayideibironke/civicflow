@@ -35,4 +35,8 @@ jobs:
       - name: TypeScript validation
         run: npx tsc --noEmit
       - name: Production build validation
+        env:
+          # Public, non-production CI placeholders. No service-role key or live credentials.
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-public-anon-key
         run: npm run build
