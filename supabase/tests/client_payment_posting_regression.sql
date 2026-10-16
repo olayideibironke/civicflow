@@ -57,6 +57,39 @@ begin
   raise exception 'Inbox deletion was accepted';
  exception when sqlstate '23514' then null;
  end;
+  -- Reject an event whose tenant does not own the original payment.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('77777777-7777-4777-8777-777777777777','22222222-2222-4222-8222-222222222222',
+    'acct_test2','evt_test2','re_test2','pi_test1',1000,'usd','succeeded',
+    'refund.created',false,now());
+  begin
+   perform public.authorize_client_payment_adjustment_posting(
+    '77777777-7777-4777-8777-777777777777','44444444-4444-4444-8444-444444444444');
+   raise exception 'Cross-tenant authorization was accepted';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox
+      where id='77777777-7777-4777-8777-777777777777') <> 'pending' then
+   raise exception 'Rejected authorization mutated inbox state';
+  end if;
+  if (select count(*) from public.client_payment_adjustments) <> 1 then
+   raise exception 'Rejected authorization created a ledger entry';
+  end if;
+  -- A failed posting cannot turn a pending event into processed.
+  begin
+   perform public.post_verified_client_payment_adjustment(
+    '77777777-7777-4777-8777-777777777777','44444444-4444-4444-8444-444444444444');
+   raise exception 'Unauthorized posting was accepted';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox
+      where id='77777777-7777-4777-8777-777777777777') <> 'pending'
+     or (select count(*) from public.client_payment_adjustments) <> 1 then
+   raise exception 'Failed posting left partial accounting changes';
+  end if;
 end;
 $regression$;
 rollback;
