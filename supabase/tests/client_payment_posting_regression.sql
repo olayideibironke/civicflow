@@ -118,6 +118,27 @@ begin
     or (select count(*) from public.client_payment_adjustments) <> 0 then
   raise exception 'Rejected currency drift caused partial posting';
  end if;
+ -- A duplicate successful Stripe payment imported after authorization
+ -- must force review rather than arbitrarily selecting the original.
+ insert into public.billing_payments
+ (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+ values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+ '11111111-1111-4111-8111-111111111111',
+ '33333333-3333-4333-8333-333333333333',
+ 10000,'succeeded','stripe','pi_test1');
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
+  raise exception 'Ambiguous Stripe payment match was accepted';
+ exception when sqlstate '23514' then null;
+ end;
+ delete from public.billing_payments
+ where id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ if (select processing_state from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting'
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Ambiguous match caused partial accounting changes';
+ end if;
  first_post := public.post_verified_client_payment_adjustment(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
  replay_post := public.post_verified_client_payment_adjustment(
