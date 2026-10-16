@@ -97,6 +97,40 @@ create trigger client_payment_event_inbox_update_guard
 before update on public.client_payment_event_inbox
 for each row execute function public.guard_client_payment_event_inbox_update();
 
+-- A financial event cannot enter the inbox already authorized or processed.
+-- Prevent deletion of evidence even by a service-role worker.
+create or replace function public.guard_client_payment_event_inbox_lifecycle()
+returns trigger
+language plpgsql
+set search_path = ''
+as $guard_inbox_lifecycle$
+begin
+  if tg_op = 'DELETE' then
+    raise exception 'Financial inbox history cannot be deleted'
+      using errcode = '23514';
+  end if;
+  if new.processing_state <> 'pending'
+     or new.matched_payment_id is not null
+     or new.processed_at is not null then
+    raise exception 'New financial events must enter as pending'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$guard_inbox_lifecycle$;
+
+drop trigger if exists client_payment_event_inbox_insert_guard
+  on public.client_payment_event_inbox;
+create trigger client_payment_event_inbox_insert_guard
+before insert on public.client_payment_event_inbox
+for each row execute function public.guard_client_payment_event_inbox_lifecycle();
+
+drop trigger if exists client_payment_event_inbox_delete_guard
+  on public.client_payment_event_inbox;
+create trigger client_payment_event_inbox_delete_guard
+before delete on public.client_payment_event_inbox
+for each row execute function public.guard_client_payment_event_inbox_lifecycle();
+
 alter table public.client_payment_event_inbox enable row level security;
 revoke all on public.client_payment_event_inbox from public, anon, authenticated;
 -- Service-role only; no browser-facing RLS policies.
