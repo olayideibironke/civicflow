@@ -32,6 +32,58 @@ create index if not exists client_payment_adjustments_invoice_idx
 create index if not exists client_payment_adjustments_intent_idx
   on public.client_payment_adjustments (connected_account_id, stripe_payment_intent_id);
 
+-- Recheck tenant and original-payment ownership inside the database.
+-- Application-side authorization alone cannot protect a future direct RPC caller.
+create or replace function public.validate_client_payment_adjustment_insert()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $validate_adjustment$
+declare
+  original record;
+begin
+  select p.organization_id, p.invoice_id, p.amount_cents, p.status,
+         p.processor, p.processor_reference, i.currency
+    into original
+  from public.billing_payments p
+  join public.billing_invoices i
+    on i.id = p.invoice_id and i.organization_id = p.organization_id
+  where p.id = new.payment_id
+  for share of p, i;
+
+  if not found or original.organization_id is distinct from new.organization_id
+     or original.invoice_id is distinct from new.invoice_id
+     or original.status is distinct from 'succeeded'
+     or original.processor is distinct from 'stripe'
+     or original.processor_reference is distinct from new.stripe_payment_intent_id
+     or original.currency is distinct from new.currency
+     or original.amount_cents is null
+     or new.amount_cents > original.amount_cents then
+    raise exception 'Financial adjustment original payment verification failed'
+      using errcode = '23514';
+  end if;
+
+  if not exists (
+    select 1 from public.organization_payment_connections c
+    where c.organization_id = new.organization_id
+      and c.stripe_account_id = new.connected_account_id
+      and c.provider = 'stripe'
+      and c.mode = case when new.livemode then 'live' else 'sandbox' end
+  ) then
+    raise exception 'Financial adjustment connected account verification failed'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$validate_adjustment$;
+
+drop trigger if exists client_payment_adjustments_validate_insert
+  on public.client_payment_adjustments;
+create trigger client_payment_adjustments_validate_insert
+before insert on public.client_payment_adjustments
+for each row execute function public.validate_client_payment_adjustment_insert();
+
 -- Historical financial records are append-only, including for service-role
 -- callers. The future posting transaction may INSERT, but must not rewrite
 -- or delete previously recorded events.
