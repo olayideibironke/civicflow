@@ -65,7 +65,7 @@ export async function lookupOriginalInvoicePayments(
       ? invoiceValue as Record<string, unknown> : null;
     if (!invoice || row.organization_id !== connection.organization_id ||
         invoice.organization_id !== connection.organization_id ||
-        typeof invoice.currency !== "string" ||
+        typeof invoice.currency !== "string" || !/^[a-z]{3}$/.test(invoice.currency) ||
         typeof row.id !== "string" || !UUID.test(row.id) ||
         typeof row.invoice_id !== "string" || !UUID.test(row.invoice_id) ||
         typeof row.amount_cents !== "number" || !Number.isSafeInteger(row.amount_cents) ||
