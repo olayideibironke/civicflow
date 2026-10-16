@@ -102,8 +102,6 @@ jobs:
         run: sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_posting_regression.sql
       - name: Verify financial RPC and table privileges
         run: sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_permissions_regression.sql
-      - name: Race independent refund postings in PostgreSQL
-        run: sudo -u postgres python3 - < supabase/tests/client_payment_concurrency_regression.py
       - name: Test Stripe payment uniqueness on disposable PostgreSQL
         run: |
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_unique_intent_regression.sql
@@ -153,6 +151,8 @@ jobs:
           END;
           $uniqueness$;
           SQL
+      - name: Race independent refund postings in PostgreSQL
+        run: sudo -u postgres python3 - < supabase/tests/client_payment_concurrency_regression.py
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
