@@ -13,10 +13,10 @@ describe("Connect financial event classifier", () => {
     expect(classifyConnectFinancialEvent({ ...base, type: "checkout.session.completed", data: { object: { id: "cs_1" } } })).toBeNull();
   });
   it("classifies unmatched refund and dispute events for enrichment only", () => {
-    for (const type of ["refund.created", "charge.dispute.created"]) {
+    for (const [type, objectId] of [["refund.created", "re_1"], ["charge.dispute.created", "dp_1"]]) {
       expect(classifyConnectFinancialEvent({
         ...base, type,
-        data: { object: { id: "re_or_dp_1", amount: 500, currency: "usd" } },
+        data: { object: { id: objectId, amount: 500, currency: "usd" } },
       })).toMatchObject({ paymentIntentId: null });
     }
   });
