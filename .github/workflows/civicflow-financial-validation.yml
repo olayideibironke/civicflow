@@ -10,6 +10,8 @@ on:
       - supabase/tests/client_payment_posting_regression.sql
       - supabase/tests/client_payment_permissions_regression.sql
       - supabase/tests/client_payment_concurrency_regression.py
+      - supabase/tests/client_payment_unique_intent_regression.sql
+      - supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
       - supabase/migrations/20261015_client_payment_adjustment_ledger.sql
       - supabase/migrations/20261015_client_payment_event_inbox_draft.sql
       - supabase/migrations/20261015_client_payment_plans_draft.sql
@@ -50,6 +52,7 @@ jobs:
               "supabase/migrations/20261015_client_payment_plans_draft.sql",
               "supabase/migrations/20261016_client_payment_atomic_posting_draft.sql",
               "supabase/migrations/20261016_client_payment_authorization_draft.sql",
+              "supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql",
           )
           for filename in files:
               statements = parse_sql(Path(filename).read_text(encoding="utf-8"))
@@ -101,6 +104,34 @@ jobs:
         run: sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_permissions_regression.sql
       - name: Race independent refund postings in PostgreSQL
         run: sudo -u postgres python3 - < supabase/tests/client_payment_concurrency_regression.py
+      - name: Test Stripe payment uniqueness on disposable PostgreSQL
+        run: |
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_unique_intent_regression.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci <<'SQL'
+          DO $uniqueness$
+          BEGIN
+            BEGIN
+              INSERT INTO public.billing_payments
+                (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+              VALUES
+                ('85858585-8585-4858-8858-858585858585',
+                 '81818181-8181-4818-8818-818181818181',
+                 '82828282-8282-4828-8828-828282828282',
+                 1000,'succeeded','stripe','pi_duplicate_ci');
+              RAISE EXCEPTION 'Index allowed duplicate succeeded Stripe payment';
+            EXCEPTION WHEN unique_violation THEN NULL;
+            END;
+            INSERT INTO public.billing_payments
+              (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+            VALUES
+              ('86868686-8686-4868-8868-868686868686',
+               '81818181-8181-4818-8818-818181818181',
+               '82828282-8282-4828-8828-828282828282',
+               1000,'failed','stripe','pi_duplicate_ci');
+          END;
+          $uniqueness$;
+          SQL
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
