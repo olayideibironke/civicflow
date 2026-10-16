@@ -39,6 +39,8 @@ export type AuthorizedFinancialAdjustment = {
  * refunded on a charge. A dispute is a reversible state transition, NOT an
  * additional payment or automatic permanent debit.
  */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function authorizeFinancialAdjustment(
   event: ClassifiedConnectEvent,
   payment: VerifiedInvoicePayment
@@ -47,13 +49,14 @@ export function authorizeFinancialAdjustment(
       !/^pi_[A-Za-z0-9]+$/.test(event.paymentIntentId) ||
       event.connectedAccountId !== payment.stripeAccountId ||
       event.livemode !== payment.livemode ||
-      !event.currency || event.currency !== payment.currency.toLowerCase() ||
+      typeof payment.currency !== "string" || !/^[a-z]{3}$/.test(payment.currency) ||
+      !event.currency || event.currency !== payment.currency ||
       event.amountCents === null || !Number.isSafeInteger(event.amountCents) ||
       event.amountCents < 0 || event.amountCents > payment.originalAmountCents ||
       !Number.isSafeInteger(payment.originalAmountCents) || payment.originalAmountCents <= 0 ||
-      !/^[0-9a-f-]{36}$/i.test(payment.organizationId) ||
-      !/^[0-9a-f-]{36}$/i.test(payment.invoiceId) ||
-      !/^[0-9a-f-]{36}$/i.test(payment.paymentId)) {
+      !UUID.test(payment.organizationId) ||
+      !UUID.test(payment.invoiceId) ||
+      !UUID.test(payment.paymentId)) {
     return null;
   }
 
