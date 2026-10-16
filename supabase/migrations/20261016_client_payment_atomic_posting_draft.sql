@@ -98,6 +98,19 @@ begin
       using errcode = '23514';
   end if;
 
+  -- An authorized match can become ambiguous before posting if a second
+  -- succeeded payment is imported with the same Stripe PaymentIntent.
+  if (
+    select count(*) from public.billing_payments p
+    where p.organization_id = incoming.organization_id
+      and p.processor = 'stripe'
+      and p.status = 'succeeded'
+      and p.processor_reference = incoming.stripe_payment_intent_id
+  ) <> 1 then
+    raise exception 'Financial payment match is ambiguous at posting'
+      using errcode = '23514';
+  end if;
+
   -- Serialize adjustments across different inbox events for the same payment.
   -- Refund updates for the same Stripe refund object are snapshots, not
   -- additional refunds. Count each distinct refund at its maximum recorded
