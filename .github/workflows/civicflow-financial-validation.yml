@@ -24,7 +24,7 @@ jobs:
       - name: Install locked project dependencies
         run: npm ci --no-audit --no-fund
       - name: Install temporary test runner without changing tracked lockfile
-        run: npm install --no-save --package-lock=false --no-audit --no-fund vitest@5
+        run: npm install --no-save --package-lock=false --legacy-peer-deps --no-audit --no-fund vitest@5
       - name: Run financial regression suite
         run: npx vitest run src/lib/payments
       - name: TypeScript validation
