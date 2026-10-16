@@ -2,14 +2,14 @@
 -- Do not apply to production before staging validation.
 -- Draft posting transaction. A single row lock serializes concurrent attempts
 -- for the same inbox event. The ledger insert and inbox completion commit together.
--- This function is NOT exposed to anon/authenticated roles.
+-- Only service_role may execute this function; it does not bypass RLS.
 create or replace function public.post_verified_client_payment_adjustment(
   p_inbox_id uuid,
   p_payment_id uuid
 )
 returns uuid
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $post_adjustment$
 declare
