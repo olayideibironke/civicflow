@@ -73,6 +73,27 @@ begin
         using errcode = '23514';
     end if;
   end if;
+  -- An event must never change its Stripe identity or tenant after receipt.
+  -- Enrichment may fill missing payment fields, but not rewrite known values.
+  if row(
+    new.organization_id, new.connected_account_id, new.stripe_event_id,
+    new.stripe_object_id, new.event_type, new.livemode,
+    new.occurred_at, new.created_at
+  ) is distinct from row(
+    old.organization_id, old.connected_account_id, old.stripe_event_id,
+    old.stripe_object_id, old.event_type, old.livemode,
+    old.occurred_at, old.created_at
+  ) or (old.stripe_payment_intent_id is not null and
+          new.stripe_payment_intent_id is distinct from old.stripe_payment_intent_id)
+    or (old.amount_cents is not null and
+          new.amount_cents is distinct from old.amount_cents)
+    or (old.currency is not null and
+          new.currency is distinct from old.currency)
+    or (old.stripe_status is not null and
+          new.stripe_status is distinct from old.stripe_status) then
+    raise exception 'Received financial event identity is immutable'
+      using errcode = '23514';
+  end if;
   -- Authorization must not silently modify the event it is approving.
   -- Enrichment is a separate step while the record is still pending.
   if new.processing_state = 'ready_for_posting'
