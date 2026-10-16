@@ -143,3 +143,44 @@ if sql(
 ).stdout.strip() != "processed":
     raise AssertionError("Concurrent first posting failed to complete inbox")
 print("PASS: concurrent initial posting returns one ledger ID and processes the inbox once.")
+
+# The unique Stripe PaymentIntent index must also hold under simultaneous
+# inserts from independent database sessions, not just sequential operations.
+sql("""
+insert into public.organizations(id) values ('91919191-9191-4919-8919-919191919191');
+insert into public.billing_invoices(id,organization_id,currency) values
+('92929292-9292-4929-8929-929292929292',
+ '91919191-9191-4919-8919-919191919191','usd');
+""")
+unique_barrier = Barrier(2)
+unique_ids = [
+    "93939393-9393-4939-8939-939393939393",
+    "94949494-9494-4949-8949-949494949494",
+]
+
+
+def insert_same_intent(payment_id: str) -> subprocess.CompletedProcess[str]:
+    unique_barrier.wait(timeout=10)
+    return sql(
+        "insert into public.billing_payments "
+        "(id,organization_id,invoice_id,amount_cents,status,processor,processor_reference) "
+        f"values ('{payment_id}','91919191-9191-4919-8919-919191919191',"
+        "'92929292-9292-4929-8929-929292929292',1000,'succeeded',"
+        "'stripe','pi_concurrent_unique');",
+        expect_success=False,
+    )
+
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    unique_results = list(executor.map(insert_same_intent, unique_ids))
+if sum(result.returncode == 0 for result in unique_results) != 1:
+    raise AssertionError(f"Expected exactly one concurrent Stripe insert: {unique_results!r}")
+if sum("duplicate key value violates unique constraint" in result.stderr for result in unique_results) != 1:
+    raise AssertionError(f"Expected unique index rejection: {unique_results!r}")
+if sql(
+    "select count(*) from public.billing_payments "
+    "where organization_id='91919191-9191-4919-8919-919191919191' "
+    "and processor_reference='pi_concurrent_unique' and status='succeeded'"
+).stdout.strip() != "1":
+    raise AssertionError("Concurrent Stripe payment inserts bypassed unique index")
+print("PASS: concurrent succeeded Stripe payment inserts allow exactly one record.")
