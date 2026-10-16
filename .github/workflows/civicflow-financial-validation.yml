@@ -6,6 +6,10 @@ on:
       - feature/self-service-firm-onboarding
     paths:
       - .github/workflows/civicflow-financial-validation.yml
+      - src/lib/payments/**
+      - src/app/api/stripe/connect/**
+      - package.json
+      - package-lock.json
   workflow_dispatch:
 
 permissions:
