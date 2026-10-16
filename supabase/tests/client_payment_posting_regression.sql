@@ -42,6 +42,22 @@ begin
     or (select count(*) from public.client_payment_adjustments) <> 0 then
   raise exception 'Rejected payment redirect mutated accounting state';
  end if;
+ -- Payment status can change between authorization and posting.
+ update public.billing_payments set status='failed'
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
+  raise exception 'Failed original payment was posted';
+ exception when sqlstate '23514' then null;
+ end;
+ if (select processing_state from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting'
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Failed original payment caused partial posting';
+ end if;
+ update public.billing_payments set status='succeeded'
+ where id='44444444-4444-4444-8444-444444444444';
  first_post := public.post_verified_client_payment_adjustment(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
  replay_post := public.post_verified_client_payment_adjustment(
