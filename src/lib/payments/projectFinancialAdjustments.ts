@@ -56,7 +56,7 @@ export function projectFinancialAdjustments(
       throw new Error("Invalid financial adjustment snapshot");
     }
     const existing = uniqueEvents.get(snapshot.eventId);
-    if (existing && existing.objectId !== snapshot.objectId || existing.type !== snapshot.type || existing.amountCents !== snapshot.amountCents || existing.status !== snapshot.status || existing.occurredAt !== snapshot.occurredAt) {
+    if (existing && (existing.objectId !== snapshot.objectId || existing.type !== snapshot.type || existing.amountCents !== snapshot.amountCents || existing.status !== snapshot.status || existing.occurredAt !== snapshot.occurredAt)) {
       throw new Error("Conflicting duplicate Stripe event");
     }
     uniqueEvents.set(snapshot.eventId, snapshot);
