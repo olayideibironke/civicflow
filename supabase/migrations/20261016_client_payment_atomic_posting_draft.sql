@@ -35,13 +35,20 @@ begin
       and stripe_event_id = incoming.stripe_event_id;
     if not found or existing.payment_id is distinct from p_payment_id
        or existing.organization_id is distinct from incoming.organization_id
-       or existing.stripe_object_id is distinct from incoming.stripe_object_id then
+       or existing.stripe_object_id is distinct from incoming.stripe_object_id
+       or existing.stripe_payment_intent_id is distinct from incoming.stripe_payment_intent_id
+       or existing.event_type is distinct from incoming.event_type
+       or existing.amount_cents is distinct from incoming.amount_cents
+       or existing.currency is distinct from incoming.currency
+       or existing.status is distinct from incoming.stripe_status
+       or existing.occurred_at is distinct from incoming.occurred_at
+       or existing.livemode is distinct from incoming.livemode then
       raise exception 'Conflicting processed financial event' using errcode = '23505';
     end if;
     return existing.id;
   end if;
 
-  if incoming.processing_state not in ('pending', 'needs_payment_match', 'needs_enrichment')
+  if incoming.processing_state <> 'ready_for_posting'
      or incoming.event_type not in (
        'refund.created', 'refund.updated', 'charge.dispute.created',
        'charge.dispute.updated', 'charge.dispute.closed'
@@ -51,8 +58,7 @@ begin
      or incoming.currency is null
      or incoming.stripe_status is null
      or incoming.stripe_status = ''
-     or incoming.matched_payment_id is not null
-        and incoming.matched_payment_id <> p_payment_id then
+     or incoming.matched_payment_id is distinct from p_payment_id then
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
@@ -79,6 +85,7 @@ begin
     if not found or existing.payment_id is distinct from p_payment_id
        or existing.organization_id is distinct from incoming.organization_id
        or existing.stripe_object_id is distinct from incoming.stripe_object_id
+       or existing.stripe_payment_intent_id is distinct from incoming.stripe_payment_intent_id
        or existing.event_type is distinct from incoming.event_type
        or existing.amount_cents is distinct from incoming.amount_cents
        or existing.currency is distinct from incoming.currency
@@ -106,6 +113,8 @@ $post_adjustment$;
 
 revoke all on function public.post_verified_client_payment_adjustment(uuid, uuid)
   from public, anon, authenticated;
+grant execute on function public.post_verified_client_payment_adjustment(uuid, uuid)
+  to service_role;
 -- Service-role execution only. The server MUST reauthorize signed Stripe
 -- events and matched payments before calling this RPC; do not expose to clients.
 
