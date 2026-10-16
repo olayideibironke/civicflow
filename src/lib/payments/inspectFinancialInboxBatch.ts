@@ -36,7 +36,7 @@ export async function inspectFinancialInboxBatch(
   });
   if (!response.ok) throw new Error("Financial inbox inspection unavailable");
   const rows: unknown = await response.json();
-  if (!Array.isArray(rows)) throw new Error("Unexpected financial inbox response");
+  if (!Array.isArray(rows) || rows.length > limit) throw new Error("Unexpected financial inbox response");
   const decisions: Decision[] = [];
   for (const raw of rows) {
     const row = raw as InboxRow | null;
@@ -52,7 +52,10 @@ export async function inspectFinancialInboxBatch(
         !CONNECT_FINANCIAL_EVENTS.some(known => known === row.event_type) ||
         (row.processing_state !== "pending" && row.processing_state !== "needs_payment_match") ||
         typeof row.livemode !== "boolean" ||
-        typeof row.stripe_object_id !== "string" || !row.stripe_object_id ||
+        typeof row.stripe_object_id !== "string" ||
+        !(row.event_type.startsWith("refund.") ? /^re_[A-Za-z0-9]+$/.test(row.stripe_object_id) :
+          row.event_type.startsWith("charge.dispute.") ? /^dp_[A-Za-z0-9]+$/.test(row.stripe_object_id) :
+          /^pi_[A-Za-z0-9]+$/.test(row.stripe_object_id)) ||
         (row.stripe_status !== null && typeof row.stripe_status !== "string") ||
         typeof row.occurred_at !== "string" ||
         !Number.isFinite(Date.parse(row.occurred_at)) ||
