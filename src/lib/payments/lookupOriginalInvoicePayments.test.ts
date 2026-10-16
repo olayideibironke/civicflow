@@ -54,6 +54,14 @@ describe("original Stripe invoice payment lookup", () => {
     }
   });
 
+  it("rejects malformed invoice currency codes", async () => {
+    for (const currency of ["", "US", "US D", "usd1", "USD"]) {
+      stubLookup([connection], [{ ...payment, billing_invoices: { ...payment.billing_invoices, currency } }]);
+      await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+        .rejects.toThrow("Original payment has inconsistent invoice data");
+    }
+  });
+
   it("rejects invalid organization and invoice identifiers", async () => {
     stubLookup([{ ...connection, organization_id: "invalid" }], [payment]);
     await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
