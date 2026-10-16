@@ -10,5 +10,11 @@ describe("verified original payment matching", () => {
   it("holds unmatched payments", () => { expect(matchFinancialEventToPayment(event,[]).state).toBe("needs_payment_match"); });
   it("rejects ambiguous matches", () => { expect(matchFinancialEventToPayment(event,[payment,payment]).state).toBe("needs_review"); });
   it("rejects wrong environment", () => { expect(matchFinancialEventToPayment(event,[{...payment,livemode:true}]).state).toBe("needs_review"); });
+  it("never authorizes failed or canceled payment intents as financial adjustments", () => {
+    for (const type of ["payment_intent.payment_failed", "payment_intent.canceled"] as const) {
+      const lifecycleEvent = { ...event, type, category: type.endsWith("canceled") ? "canceled" as const : "failed" as const, objectId: "pi_123" };
+      expect(matchFinancialEventToPayment(lifecycleEvent, [payment]).state).toBe("needs_review");
+    }
+  });
   it("rejects invalid intent references", () => { expect(matchFinancialEventToPayment({...event,paymentIntentId:"invalid"},[payment]).state).toBe("needs_review"); });
 });
