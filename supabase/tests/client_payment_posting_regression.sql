@@ -27,6 +27,21 @@ begin
  if public.authorize_client_payment_adjustment_posting(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444'
  ) then raise exception 'Authorization retry was not idempotent'; end if;
+ -- An already-authorized event must not be redirected before its first posting.
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','66666666-6666-4666-8666-666666666666');
+  raise exception 'Authorized refund was redirected to a different payment';
+ exception when sqlstate '23514' then null;
+ end;
+ if (select processing_state from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting'
+    or (select matched_payment_id from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555')
+       <> '44444444-4444-4444-8444-444444444444'::uuid
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Rejected payment redirect mutated accounting state';
+ end if;
  first_post := public.post_verified_client_payment_adjustment(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
  replay_post := public.post_verified_client_payment_adjustment(
