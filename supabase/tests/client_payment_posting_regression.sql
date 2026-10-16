@@ -86,6 +86,22 @@ begin
     or (select count(*) from public.client_payment_adjustments) <> 0 then
   raise exception 'Rejected payment identity changes caused partial posting';
  end if;
+ -- Connected-account ownership must remain valid through posting.
+ update public.organization_payment_connections set stripe_account_id='acct_changed'
+ where organization_id='11111111-1111-4111-8111-111111111111';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
+  raise exception 'Disconnected Stripe account was accepted';
+ exception when sqlstate '23514' then null;
+ end;
+ update public.organization_payment_connections set stripe_account_id='acct_test1'
+ where organization_id='11111111-1111-4111-8111-111111111111';
+ if (select processing_state from public.client_payment_event_inbox
+     where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting'
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Rejected Stripe connection drift caused partial posting';
+ end if;
  first_post := public.post_verified_client_payment_adjustment(
   '55555555-5555-4555-8555-555555555555','44444444-4444-4444-8444-444444444444');
  replay_post := public.post_verified_client_payment_adjustment(
