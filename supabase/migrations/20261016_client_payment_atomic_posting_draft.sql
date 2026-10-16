@@ -62,6 +62,35 @@ begin
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
+  -- Serialize adjustments across different inbox events for the same payment.
+  -- Refund updates for the same Stripe refund object are snapshots, not
+  -- additional refunds. Count each distinct refund at its maximum recorded
+  -- amount, including pending states, to fail closed.
+  if incoming.event_type like 'refund.%' then
+    perform 1 from public.billing_payments p
+    where p.id = p_payment_id and p.organization_id = incoming.organization_id
+    for update;
+    if not found then
+      raise exception 'Original invoice payment unavailable' using errcode = '23514';
+    end if;
+    if (
+      select coalesce(sum(refund_amount), 0)
+      from (
+        select max(a.amount_cents) as refund_amount
+        from public.client_payment_adjustments a
+        where a.payment_id = p_payment_id
+          and a.event_type like 'refund.%'
+          and a.stripe_object_id <> incoming.stripe_object_id
+        group by a.stripe_object_id
+      ) previous_refunds
+    ) + incoming.amount_cents > (
+      select p.amount_cents from public.billing_payments p where p.id = p_payment_id
+    ) then
+      raise exception 'Aggregate refunds exceed original payment'
+        using errcode = '23514';
+    end if;
+  end if;
+
   insert into public.client_payment_adjustments (
     organization_id, invoice_id, payment_id, connected_account_id,
     stripe_event_id, stripe_object_id, stripe_payment_intent_id,
