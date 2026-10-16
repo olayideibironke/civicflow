@@ -9,6 +9,7 @@ on:
       - src/lib/payments/**
       - supabase/tests/client_payment_posting_regression.sql
       - supabase/tests/client_payment_permissions_regression.sql
+      - supabase/tests/client_payment_concurrency_regression.py
       - supabase/migrations/20261015_client_payment_adjustment_ledger.sql
       - supabase/migrations/20261015_client_payment_event_inbox_draft.sql
       - supabase/migrations/20261015_client_payment_plans_draft.sql
@@ -98,6 +99,8 @@ jobs:
         run: sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_posting_regression.sql
       - name: Verify financial RPC and table privileges
         run: sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_permissions_regression.sql
+      - name: Race independent refund postings in PostgreSQL
+        run: sudo -u postgres python3 supabase/tests/client_payment_concurrency_regression.py
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
