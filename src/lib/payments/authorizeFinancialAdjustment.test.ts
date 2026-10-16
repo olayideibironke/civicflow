@@ -38,6 +38,14 @@ describe("verified invoice adjustment authorization", () => {
     expect(authorizeFinancialAdjustment(event(1200), { ...payment, currency: "USD" })).toBeNull();
     expect(authorizeFinancialAdjustment(event(1200), { ...payment, currency: "us" })).toBeNull();
   });
+  it("rejects malformed Stripe event identity and lifecycle fields", () => {
+    const valid = event(1200);
+    expect(authorizeFinancialAdjustment({ ...valid, stripeEventId: "bad" }, payment)).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...valid, connectedAccountId: "bad" }, { ...payment, stripeAccountId: "bad" })).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...valid, objectId: "dp_wrong" }, payment)).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...valid, type: "charge.refunded" as typeof valid.type }, payment)).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...valid, occurredAt: "not-a-date" }, payment)).toBeNull();
+  });
   it("rejects a refund larger than the original payment", () => {
     expect(authorizeFinancialAdjustment(event(5001), payment)).toBeNull();
   });
