@@ -62,6 +62,16 @@ begin
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
+  -- Acquire the strongest required payment lock first, before reading
+  -- dependent evidence. A later SHARE-to-UPDATE upgrade can deadlock
+  -- when independent workers post refunds for the same payment.
+  perform 1 from public.billing_payments p
+  where p.id = p_payment_id and p.organization_id = incoming.organization_id
+  for update;
+  if not found then
+    raise exception 'Original invoice payment unavailable' using errcode = '23514';
+  end if;
+
   -- Revalidate the original payment at posting time. Authorization may
   -- precede posting, so the original payment must still be trustworthy.
   perform 1
@@ -93,12 +103,6 @@ begin
   -- additional refunds. Count each distinct refund at its maximum recorded
   -- amount, including pending states, to fail closed.
   if incoming.event_type like 'refund.%' then
-    perform 1 from public.billing_payments p
-    where p.id = p_payment_id and p.organization_id = incoming.organization_id
-    for update;
-    if not found then
-      raise exception 'Original invoice payment unavailable' using errcode = '23514';
-    end if;
     if (
       select coalesce(sum(refund_amount), 0)
       from (
