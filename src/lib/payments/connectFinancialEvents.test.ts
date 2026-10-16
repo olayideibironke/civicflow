@@ -20,6 +20,15 @@ describe("Connect financial event classifier", () => {
       })).toMatchObject({ paymentIntentId: null });
     }
   });
+  it("rejects timestamps outside JavaScript Date range without throwing", () => {
+    const payload = {
+      ...base, type: "refund.created",
+      data: { object: { id: "re_1", amount: 100, currency: "usd" } },
+    };
+    expect(classifyConnectFinancialEvent({ ...payload, created: 8640000001 })).toBeNull();
+    expect(classifyConnectFinancialEvent({ ...payload, created: Number.MAX_SAFE_INTEGER })).toBeNull();
+    expect(classifyConnectFinancialEvent({ ...payload, created: 0 })).toBeNull();
+  });
   it("captures a partial refund without treating it as an invoice payment", () => {
     const result = classifyConnectFinancialEvent({
       ...base, type: "refund.created",
