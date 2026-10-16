@@ -28,3 +28,47 @@ begin
   end loop;
 end;
 $permissions$;
+
+-- Test actual execution under the browser-facing roles, not only ACL metadata.
+-- Both calls must fail at the permission boundary before touching any data.
+set role anon;
+do $anon_denial$
+begin
+  begin
+    perform public.authorize_client_payment_adjustment_posting(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222');
+    raise exception 'Anonymous role executed financial authorization';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.post_verified_client_payment_adjustment(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222');
+    raise exception 'Anonymous role executed financial posting';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$anon_denial$;
+reset role;
+
+set role authenticated;
+do $authenticated_denial$
+begin
+  begin
+    perform public.authorize_client_payment_adjustment_posting(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222');
+    raise exception 'Authenticated role executed financial authorization';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.post_verified_client_payment_adjustment(
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222');
+    raise exception 'Authenticated role executed financial posting';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$authenticated_denial$;
+reset role;
