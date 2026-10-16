@@ -33,6 +33,23 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Install temporary test runner without changing tracked lockfile
         run: npm install --no-save --package-lock=false --legacy-peer-deps --no-audit --no-fund vitest@5
+      - name: Validate financial draft SQL syntax without database access
+        run: |
+          python -m pip install --disable-pip-version-check pglast
+          python - <<'PY'
+          from pathlib import Path
+          from pglast import parse_sql
+          files = (
+              "supabase/migrations/20261015_client_payment_adjustment_ledger.sql",
+              "supabase/migrations/20261015_client_payment_event_inbox_draft.sql",
+              "supabase/migrations/20261015_client_payment_plans_draft.sql",
+          )
+          for filename in files:
+              statements = parse_sql(Path(filename).read_text(encoding="utf-8"))
+              if not statements:
+                  raise ValueError(f"No SQL statements in {filename}")
+              print(f"Parsed {len(statements)} statements: {filename}")
+          PY
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
