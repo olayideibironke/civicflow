@@ -73,6 +73,14 @@ end;
 $authenticated_denial$;
 reset role;
 
+-- The CI fixture tables are created by postgres, unlike Supabase-managed
+-- production tables. Mirror service-role table grants for this isolated test.
+grant select on public.organizations, public.billing_invoices,
+  public.billing_payments, public.organization_payment_connections
+  to service_role;
+grant select, insert, update on public.client_payment_event_inbox to service_role;
+grant select, insert on public.client_payment_adjustments to service_role;
+
 -- Prove the SECURITY INVOKER functions work with service_role privileges
 -- rather than relying on the superuser's privileges from the main tests.
 begin;
