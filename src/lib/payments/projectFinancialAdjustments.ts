@@ -76,7 +76,10 @@ export function projectFinancialAdjustments(
     const previous = target.get(snapshot.objectId);
     // One Stripe object cannot legitimately change its monetary amount between
     // lifecycle snapshots. Keep the latest snapshot but require human review.
-    if (previous && previous.amountCents !== snapshot.amountCents) conflictingObjectAmounts = true;
+    if (previous && (previous.amountCents !== snapshot.amountCents ||
+        (Date.parse(previous.occurredAt) === Date.parse(snapshot.occurredAt) && previous.status !== snapshot.status))) {
+      conflictingObjectAmounts = true;
+    }
     target.set(snapshot.objectId, snapshot);
   }
   const result: FinancialProjection = {
