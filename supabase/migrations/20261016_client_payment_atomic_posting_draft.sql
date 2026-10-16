@@ -91,6 +91,20 @@ begin
     end if;
   end if;
 
+  -- A later snapshot for one refund object must never report a smaller
+  -- amount than an already-posted snapshot of that same refund.
+  if incoming.event_type like 'refund.%'
+     and exists (
+       select 1 from public.client_payment_adjustments a
+       where a.payment_id = p_payment_id
+         and a.event_type like 'refund.%'
+         and a.stripe_object_id = incoming.stripe_object_id
+         and a.amount_cents > incoming.amount_cents
+     ) then
+    raise exception 'Refund amount regressed from recorded snapshot'
+      using errcode = '23514';
+  end if;
+
   insert into public.client_payment_adjustments (
     organization_id, invoice_id, payment_id, connected_account_id,
     stripe_event_id, stripe_object_id, stripe_payment_intent_id,
