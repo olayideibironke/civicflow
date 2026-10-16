@@ -90,7 +90,7 @@ jobs:
             supabase/migrations/20261015_client_payment_adjustment_ledger.sql \
             supabase/migrations/20261016_client_payment_authorization_draft.sql \
             supabase/migrations/20261016_client_payment_atomic_posting_draft.sql; do
-            sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci -f "$GITHUB_WORKSPACE/$migration"
+            sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < "$migration"
           done
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
