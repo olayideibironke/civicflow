@@ -90,6 +90,18 @@ begin
     raise exception 'Financial event authorization cannot alter evidence'
       using errcode = '23514';
   end if;
+  -- Only an authorized, already-matched event can be completed. Neither
+  -- the completion timestamp nor the matched payment may be prepopulated.
+  if old.processing_state = 'ready_for_posting' then
+    if old.processed_at is not null
+       or new.attempts is distinct from old.attempts
+       or new.last_error_code is not null
+       or new.created_at is distinct from old.created_at
+       or new.updated_at < old.updated_at then
+      raise exception 'Invalid financial posting metadata transition'
+        using errcode = '23514';
+    end if;
+  end if;
   if new.processing_state = 'ready_for_posting' then
     if old.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match')
        or new.matched_payment_id is null
