@@ -58,6 +58,9 @@ export function classifyConnectFinancialEvent(payload: unknown): ClassifiedConne
       typeof created !== "number" || !Number.isSafeInteger(created) || created <= 0 ||
       !object || !objectId || created > 8640000000000) return null;
 
+  const prefix = type.startsWith("refund.") ? "re_" : type.startsWith("charge.dispute.") ? "dp_" : "pi_";
+  if (!objectId.startsWith(prefix) || !/^[A-Za-z0-9]+$/.test(objectId.slice(prefix.length))) return null;
+
   const category: FinancialEventCategory = type.startsWith("refund.")
     ? "refund" : type.startsWith("charge.dispute.") ? "dispute"
     : type.endsWith(".canceled") ? "canceled" : "failed";
