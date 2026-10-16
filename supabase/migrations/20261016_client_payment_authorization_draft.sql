@@ -7,7 +7,7 @@ create or replace function public.authorize_client_payment_adjustment_posting(
 )
 returns boolean
 language plpgsql
-security definer
+security invoker
 set search_path = ''
 as $authorize_posting$
 declare
