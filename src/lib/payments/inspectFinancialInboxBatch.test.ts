@@ -70,6 +70,28 @@ describe("read-only financial inbox inspection", () => {
       })) });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("rejects inbox responses larger than the requested batch", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true, json: async () => [row, row],
+    }));
+    await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key", 1))
+      .rejects.toThrow("Unexpected financial inbox response");
+  });
+  it("holds Stripe object identifiers that do not match their event category", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row, stripe_object_id: "dp_123" },
+        { ...row, event_type: "charge.dispute.created", stripe_object_id: "re_123" },
+        { ...row, event_type: "payment_intent.canceled", stripe_object_id: "re_123" },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 3, decisions: Array.from({ length: 3 }, () => ({
+        state: "needs_review", errorCode: "invalid_inbox_row",
+      })) });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
