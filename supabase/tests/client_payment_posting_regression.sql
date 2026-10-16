@@ -169,6 +169,38 @@ begin
      or (select count(*) from public.client_payment_adjustments) <> 2 then
    raise exception 'Regressed snapshot left partial changes';
   end if;
+  -- A larger update to an existing refund replaces its accounting snapshot,
+  -- rather than being added as a new refund.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('cccccccc-cccc-4ccc-8ccc-cccccccccccc','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test7','re_test1','pi_test1',3000,'usd','succeeded',
+    'refund.updated',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc','44444444-4444-4444-8444-444444444444');
+  perform public.post_verified_client_payment_adjustment(
+   'cccccccc-cccc-4ccc-8ccc-cccccccccccc','44444444-4444-4444-8444-444444444444');
+  -- A separate 7,500-cent refund now exceeds the remaining 7,000 cents.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test8','re_test8','pi_test1',7500,'usd','succeeded',
+    'refund.created',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   'dddddddd-dddd-4ddd-8ddd-dddddddddddd','44444444-4444-4444-8444-444444444444');
+  begin
+   perform public.post_verified_client_payment_adjustment(
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd','44444444-4444-4444-8444-444444444444');
+   raise exception 'Updated refund snapshot bypassed aggregate cap';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select count(*) from public.client_payment_adjustments) <> 3 then
+   raise exception 'Snapshot accounting unexpectedly created or removed entries';
+  end if;
 end;
 $regression$;
 rollback;
