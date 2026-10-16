@@ -29,6 +29,18 @@ describe("Connect financial event classifier", () => {
     expect(classifyConnectFinancialEvent({ ...payload, created: Number.MAX_SAFE_INTEGER })).toBeNull();
     expect(classifyConnectFinancialEvent({ ...payload, created: 0 })).toBeNull();
   });
+  it("rejects event object IDs from the wrong Stripe category", () => {
+    for (const [type, objectId] of [
+      ["refund.created", "dp_wrong"],
+      ["charge.dispute.created", "re_wrong"],
+      ["payment_intent.canceled", "re_wrong"],
+      ["refund.updated", "re_bad-id"],
+    ]) {
+      expect(classifyConnectFinancialEvent({
+        ...base, type, data: { object: { id: objectId, amount: 100, currency: "usd" } },
+      })).toBeNull();
+    }
+  });
   it("captures a partial refund without treating it as an invoice payment", () => {
     const result = classifyConnectFinancialEvent({
       ...base, type: "refund.created",
