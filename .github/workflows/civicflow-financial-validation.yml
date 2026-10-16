@@ -1,0 +1,33 @@
+name: CivicFlow financial validation
+
+on:
+  push:
+    branches:
+      - feature/self-service-firm-onboarding
+    paths:
+      - .github/workflows/civicflow-financial-validation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  financial-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked project dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install temporary test runner without changing tracked lockfile
+        run: npm install --no-save --package-lock=false --no-audit --no-fund vitest@5
+      - name: Run financial regression suite
+        run: npx vitest run src/lib/payments
+      - name: TypeScript validation
+        run: npx tsc --noEmit
+      - name: Production build validation
+        run: npm run build
