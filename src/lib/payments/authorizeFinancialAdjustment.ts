@@ -50,8 +50,7 @@ export function authorizeFinancialAdjustment(
       !/^acct_[A-Za-z0-9]+$/.test(payment.stripeAccountId) ||
       !(event.type === "refund.created" || event.type === "refund.updated" ||
         event.type === "charge.dispute.created" || event.type === "charge.dispute.updated" ||
-        event.type === "charge.dispute.closed" ||
-        event.type === "payment_intent.payment_failed" || event.type === "payment_intent.canceled") ||
+        event.type === "charge.dispute.closed") ||
       !(event.type.startsWith("refund.") ? /^re_[A-Za-z0-9]+$/.test(event.objectId) :
         event.type.startsWith("charge.dispute.") ? /^dp_[A-Za-z0-9]+$/.test(event.objectId) :
         /^pi_[A-Za-z0-9]+$/.test(event.objectId)) ||
