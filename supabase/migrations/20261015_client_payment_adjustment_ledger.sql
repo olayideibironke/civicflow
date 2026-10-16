@@ -32,6 +32,26 @@ create index if not exists client_payment_adjustments_invoice_idx
 create index if not exists client_payment_adjustments_intent_idx
   on public.client_payment_adjustments (connected_account_id, stripe_payment_intent_id);
 
+-- Historical financial records are append-only, including for service-role
+-- callers. The future posting transaction may INSERT, but must not rewrite
+-- or delete previously recorded events.
+create or replace function public.reject_client_payment_adjustment_mutation()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  raise exception 'Financial adjustment history is append-only'
+    using errcode = '23514';
+end;
+$;
+
+drop trigger if exists client_payment_adjustments_immutable
+  on public.client_payment_adjustments;
+create trigger client_payment_adjustments_immutable
+before update or delete on public.client_payment_adjustments
+for each row execute function public.reject_client_payment_adjustment_mutation();
+
 alter table public.client_payment_adjustments enable row level security;
 revoke all on public.client_payment_adjustments from public, anon, authenticated;
 -- No browser-facing RLS policies. Ledger posting must use a separately reviewed
