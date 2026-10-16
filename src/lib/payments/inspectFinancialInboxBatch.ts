@@ -27,7 +27,7 @@ export async function inspectFinancialInboxBatch(
     throw new Error("Invalid financial inbox inspection context");
   const query = new URLSearchParams({
     select: "id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at,processing_state",
-    processing_state: "in.(pending,needs_payment_match)",
+    processing_state: "in.(pending,needs_enrichment,needs_payment_match)",
     order: "created_at.asc",
     limit: String(limit),
   });
@@ -50,7 +50,7 @@ export async function inspectFinancialInboxBatch(
     }
     if (typeof row.event_type !== "string" ||
         !CONNECT_FINANCIAL_EVENTS.some(known => known === row.event_type) ||
-        (row.processing_state !== "pending" && row.processing_state !== "needs_payment_match") ||
+        (row.processing_state !== "pending" && row.processing_state !== "needs_enrichment" && row.processing_state !== "needs_payment_match") ||
         typeof row.livemode !== "boolean" ||
         typeof row.stripe_object_id !== "string" ||
         !(row.event_type.startsWith("refund.") ? /^re_[A-Za-z0-9]+$/.test(row.stripe_object_id) :
