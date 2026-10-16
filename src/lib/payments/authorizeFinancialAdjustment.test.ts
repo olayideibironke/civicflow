@@ -31,6 +31,13 @@ describe("verified invoice adjustment authorization", () => {
   it("rejects malformed payment intent identifiers", () => {
     expect(authorizeFinancialAdjustment({ ...event(1200), paymentIntentId: "invalid" }, { ...payment, stripePaymentIntentId: "invalid" })).toBeNull();
   });
+  it("rejects malformed UUIDs and currency in reconciled payment context", () => {
+    for (const field of ["organizationId", "invoiceId", "paymentId"] as const) {
+      expect(authorizeFinancialAdjustment(event(1200), { ...payment, [field]: "11111111-1111-1111-1111-11111111111z" })).toBeNull();
+    }
+    expect(authorizeFinancialAdjustment(event(1200), { ...payment, currency: "USD" })).toBeNull();
+    expect(authorizeFinancialAdjustment(event(1200), { ...payment, currency: "us" })).toBeNull();
+  });
   it("rejects a refund larger than the original payment", () => {
     expect(authorizeFinancialAdjustment(event(5001), payment)).toBeNull();
   });
