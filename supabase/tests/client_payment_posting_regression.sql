@@ -111,6 +111,27 @@ begin
   if (select count(*) from public.client_payment_adjustments) <> 1 then
    raise exception 'Oversized refund created a ledger entry';
   end if;
+  -- A second distinct refund must not exceed the remaining payment amount.
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('99999999-9999-4999-8999-999999999999','11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_test4','re_test4','pi_test1',8000,'usd','succeeded',
+    'refund.created',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   '99999999-9999-4999-8999-999999999999','44444444-4444-4444-8444-444444444444');
+  begin
+   perform public.post_verified_client_payment_adjustment(
+    '99999999-9999-4999-8999-999999999999','44444444-4444-4444-8444-444444444444');
+   raise exception 'Aggregate oversized refunds were accepted';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox
+      where id='99999999-9999-4999-8999-999999999999') <> 'ready_for_posting'
+     or (select count(*) from public.client_payment_adjustments) <> 1 then
+   raise exception 'Rejected aggregate refund left partial changes';
+  end if;
 end;
 $regression$;
 rollback;
