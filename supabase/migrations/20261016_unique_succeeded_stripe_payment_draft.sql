@@ -13,7 +13,9 @@
 -- This intentionally excludes pending/failed payments and non-Stripe records.
 -- The index is scoped by tenant because connected accounts can have distinct
 -- PaymentIntent namespaces. No automatic cleanup or payment mutation occurs.
-create unique index if not exists
+-- Do not silently skip an incompatible same-named index. The migration
+-- must fail loudly so the existing index can be investigated.
+create unique index
   billing_payments_unique_succeeded_stripe_intent_per_org
 on public.billing_payments (organization_id, processor_reference)
 where processor = 'stripe'
