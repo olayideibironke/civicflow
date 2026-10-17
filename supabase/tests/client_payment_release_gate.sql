@@ -21,6 +21,15 @@ begin
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%stripe%'
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%succeeded%'
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%processor_reference IS NOT NULL%'
+      and pg_catalog.regexp_count(
+        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\\mAND\\M', 1, 'i'
+      ) = 2
+      and pg_catalog.regexp_count(
+        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\\mOR\\M', 1, 'i'
+      ) = 0
+      and pg_catalog.regexp_count(
+        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\\mNOT\\M', 1, 'i'
+      ) = 1
   ) then
     raise exception 'Required Stripe payment uniqueness index is missing or invalid'
       using errcode='23514';
