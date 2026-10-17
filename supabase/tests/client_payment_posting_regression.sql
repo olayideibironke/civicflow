@@ -102,6 +102,29 @@ begin
     or (select count(*) from public.client_payment_adjustments) <> 0 then
   raise exception 'Rejected Stripe connection drift caused partial posting';
  end if;
+ -- Same-tenant invoice reassignment after authorization must be rejected,
+ -- even when both invoices have the same currency.
+ insert into public.billing_invoices(id,organization_id,currency)
+ values ('f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1',
+         '11111111-1111-4111-8111-111111111111','usd');
+ update public.billing_payments
+ set invoice_id='f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1'
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555',
+   '44444444-4444-4444-8444-444444444444');
+  raise exception 'Changed original invoice was posted after authorization';
+ exception when sqlstate '23514' then null;
+ end;
+ if (select count(*) from public.client_payment_adjustments) <> 0
+    or (select processing_state from public.client_payment_event_inbox
+        where id='55555555-5555-4555-8555-555555555555') <> 'ready_for_posting' then
+  raise exception 'Rejected invoice drift caused partial financial posting';
+ end if;
+ update public.billing_payments
+ set invoice_id='33333333-3333-4333-8333-333333333333'
+ where id='44444444-4444-4444-8444-444444444444';
  -- Invoice currency must still match the signed Stripe evidence at posting.
  update public.billing_invoices set currency='eur'
  where id='33333333-3333-4333-8333-333333333333';
@@ -148,9 +171,6 @@ begin
  end if;
  -- A processed event must not replay after its payment is reassigned
  -- to a different invoice, even within the same organization and currency.
- insert into public.billing_invoices(id,organization_id,currency)
- values ('f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1',
-         '11111111-1111-4111-8111-111111111111','usd');
  update public.billing_payments
  set invoice_id='f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1'
  where id='44444444-4444-4444-8444-444444444444';
