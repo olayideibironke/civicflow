@@ -26,6 +26,7 @@ create table if not exists public.client_payment_event_inbox (
   attempts integer not null default 0 check (attempts >= 0),
   last_error_code text,
   matched_payment_id uuid references public.billing_payments(id),
+  authorized_invoice_id uuid references public.billing_invoices(id),
   processed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -54,12 +55,14 @@ begin
       new.organization_id, new.connected_account_id, new.stripe_event_id,
       new.stripe_object_id, new.stripe_payment_intent_id, new.amount_cents,
       new.currency, new.stripe_status, new.event_type, new.livemode,
-      new.occurred_at, new.created_at, new.matched_payment_id
+      new.occurred_at, new.created_at, new.matched_payment_id,
+      new.authorized_invoice_id
     ) is distinct from row(
       old.organization_id, old.connected_account_id, old.stripe_event_id,
       old.stripe_object_id, old.stripe_payment_intent_id, old.amount_cents,
       old.currency, old.stripe_status, old.event_type, old.livemode,
-      old.occurred_at, old.created_at, old.matched_payment_id
+      old.occurred_at, old.created_at, old.matched_payment_id,
+      old.authorized_invoice_id
     ) then
       raise exception 'Authorized financial event evidence cannot be changed'
         using errcode = '23514';
@@ -126,6 +129,7 @@ begin
   if new.processing_state = 'ready_for_posting' then
     if old.processing_state not in ('pending', 'needs_enrichment', 'needs_payment_match')
        or new.matched_payment_id is null
+       or new.authorized_invoice_id is null
        or new.processed_at is not null then
       raise exception 'Invalid financial inbox authorization transition'
         using errcode = '23514';
@@ -133,7 +137,8 @@ begin
   end if;
   if new.processing_state = 'processed' and
      (old.processing_state <> 'ready_for_posting'
-      or new.matched_payment_id is null or new.processed_at is null) then
+      or new.matched_payment_id is null or new.authorized_invoice_id is null
+      or new.processed_at is null) then
     raise exception 'Financial inbox posting requires authorization'
       using errcode = '23514';
   end if;
@@ -161,6 +166,7 @@ begin
   end if;
   if new.processing_state <> 'pending'
      or new.matched_payment_id is not null
+     or new.authorized_invoice_id is not null
      or new.processed_at is not null then
     raise exception 'New financial events must enter as pending'
       using errcode = '23514';
