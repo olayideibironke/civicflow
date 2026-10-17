@@ -163,6 +163,13 @@ jobs:
             IF EXISTS (
               SELECT 1 FROM public.billing_payments
               WHERE processor = 'stripe' AND status = 'succeeded'
+                AND (processor_reference IS NULL OR btrim(processor_reference) = '')
+            ) THEN
+              RAISE EXCEPTION 'Succeeded Stripe payment missing a usable reference';
+            END IF;
+            IF EXISTS (
+              SELECT 1 FROM public.billing_payments
+              WHERE processor = 'stripe' AND status = 'succeeded'
                 AND processor_reference IS NOT NULL
               GROUP BY organization_id, processor_reference
               HAVING count(*) > 1
