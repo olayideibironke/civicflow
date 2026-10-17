@@ -146,6 +146,34 @@ begin
  if first_post is null or first_post is distinct from replay_post then
   raise exception 'Posting replay did not return the same ledger entry';
  end if;
+ -- A processed event must not replay after its payment is reassigned
+ -- to a different invoice, even within the same organization and currency.
+ insert into public.billing_invoices(id,organization_id,currency)
+ values ('f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1',
+         '11111111-1111-4111-8111-111111111111','usd');
+ update public.billing_payments
+ set invoice_id='f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1'
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555',
+   '44444444-4444-4444-8444-444444444444');
+  raise exception 'Replayed adjustment accepted changed invoice association';
+ exception when sqlstate '23505' then null;
+ end;
+ if (select count(*) from public.client_payment_adjustments) <> 1
+    or (select processing_state from public.client_payment_event_inbox
+        where id='55555555-5555-4555-8555-555555555555') <> 'processed' then
+  raise exception 'Rejected invoice reassignment mutated financial records';
+ end if;
+ update public.billing_payments
+ set invoice_id='33333333-3333-4333-8333-333333333333'
+ where id='44444444-4444-4444-8444-444444444444';
+ if public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555',
+   '44444444-4444-4444-8444-444444444444') is distinct from first_post then
+  raise exception 'Original invoice restoration did not allow idempotent replay';
+ end if;
  if (select count(*) from public.client_payment_adjustments) <> 1 then
   raise exception 'Duplicate ledger entry created';
  end if;
