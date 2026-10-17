@@ -345,6 +345,25 @@ jobs:
           fi
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "DELETE FROM public.billing_payments WHERE id='98989898-9898-4989-8989-989898989898'"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject zero-amount succeeded Stripe payments
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          INSERT INTO public.billing_payments
+            (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+          VALUES ('99999999-9999-4999-8999-999999999999',
+                  '81818181-8181-4818-8818-818181818181',
+                  '82828282-8282-4828-8828-828282828282',
+                  0,'succeeded','stripe','pi_zeroAmountTest');
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted zero-amount succeeded Stripe payment"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "DELETE FROM public.billing_payments WHERE id='99999999-9999-4999-8999-999999999999'"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
