@@ -179,6 +179,36 @@ jobs:
           END;
           $audit$;
           SQL
+      - name: Prove missing Stripe references fail release audit
+        run: |
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci <<'SQL'
+          DO $negative$
+          BEGIN
+            INSERT INTO public.billing_payments
+              (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+            VALUES ('95959595-9595-4959-8959-959595959595',
+                    '81818181-8181-4818-8818-818181818181',
+                    '82828282-8282-4828-8828-828282828282',
+                    1000,'succeeded','stripe','   ');
+            IF NOT EXISTS (
+              SELECT 1 FROM public.billing_payments
+              WHERE processor='stripe' AND status='succeeded'
+                AND (processor_reference IS NULL OR btrim(processor_reference)='')
+            ) THEN
+              RAISE EXCEPTION 'Whitespace-only Stripe reference was not detected';
+            END IF;
+            DELETE FROM public.billing_payments
+            WHERE id='95959595-9595-4959-8959-959595959595';
+            IF EXISTS (
+              SELECT 1 FROM public.billing_payments
+              WHERE processor='stripe' AND status='succeeded'
+                AND (processor_reference IS NULL OR btrim(processor_reference)='')
+            ) THEN
+              RAISE EXCEPTION 'Negative-test fixture was not removed';
+            END IF;
+          END;
+          $negative$;
+          SQL
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
