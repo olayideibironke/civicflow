@@ -81,12 +81,16 @@ begin
   end if;
 
   if incoming.processing_state = 'ready_for_posting' then
+    if incoming.authorized_invoice_id is distinct from original.invoice_id then
+      raise exception 'Authorized invoice association changed' using errcode = '23514';
+    end if;
     return false;
   end if;
 
   update public.client_payment_event_inbox
   set processing_state = 'ready_for_posting',
       matched_payment_id = p_payment_id,
+      authorized_invoice_id = original.invoice_id,
       last_error_code = null,
       updated_at = now()
   where id = p_inbox_id;
