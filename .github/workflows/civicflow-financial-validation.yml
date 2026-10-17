@@ -234,6 +234,20 @@ jobs:
           WHERE id='96969696-9696-4969-8969-969696969696';
           SQL
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Prove financial release gate rejects a missing uniqueness index
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          # Disposable CI database only. Verify fail-closed behavior when the
+          # index disappears, then restore it and verify the clean gate passes.
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c 'DROP INDEX public.billing_payments_unique_succeeded_stripe_intent_per_org'
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted a missing uniqueness index"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
