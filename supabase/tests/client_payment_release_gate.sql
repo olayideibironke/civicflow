@@ -34,41 +34,22 @@ begin
     raise exception 'Required Stripe payment uniqueness index is missing or invalid'
       using errcode='23514';
   end if;
-  -- Whitespace is not a valid PaymentIntent identifier; reject records
-  -- whose references cannot be matched to a Stripe PaymentIntent.
-  if exists (
-    select 1 from public.billing_payments
-    where processor='stripe' and status='succeeded'
-      and processor_reference is not null
-      and (processor_reference <> btrim(processor_reference)
-           or processor_reference !~ '^pi_[A-Za-z0-9_]+
-  ) then
-    raise exception 'Succeeded Stripe payment missing a usable reference'
-      using errcode='23514';
-  end if;
-  if exists (
-    select 1 from public.billing_payments
-    where processor='stripe' and status='succeeded'
-      and processor_reference is not null
-    group by organization_id, processor_reference
-    having count(*) > 1
-  ) then
-    raise exception 'Duplicate successful Stripe payments remain'
-      using errcode='23514';
-  end if;
-end;
-$release_gate$;
-)
-  ) then
-    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference'
-      using errcode='23514';
-  end if;
   if exists (
     select 1 from public.billing_payments
     where processor='stripe' and status='succeeded'
       and (processor_reference is null or btrim(processor_reference)='')
   ) then
     raise exception 'Succeeded Stripe payment missing a usable reference'
+      using errcode='23514';
+  end if;
+  if exists (
+    select 1 from public.billing_payments
+    where processor='stripe' and status='succeeded'
+      and processor_reference is not null
+      and (processor_reference <> btrim(processor_reference)
+           or processor_reference !~ '^pi_[A-Za-z0-9_]+$')
+  ) then
+    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference'
       using errcode='23514';
   end if;
   if exists (
