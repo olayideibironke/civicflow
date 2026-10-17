@@ -1,9 +1,7 @@
--- Read-only release gate. Fail closed on ambiguous or untraceable succeeded
--- Stripe payments. Safe to execute on a reviewed production snapshot.
+-- Read-only release gate for succeeded Stripe payments.
+-- Execute only after installing the reviewed tenant-scoped uniqueness index.
 do $release_gate$
 begin
-  -- The index must be present, valid, unique and enforce the intended
-  -- tenant-scoped partial predicate. A same-named incompatible index is unsafe.
   if not exists (
     select 1
     from pg_catalog.pg_index i
@@ -21,78 +19,35 @@ begin
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%stripe%'
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%succeeded%'
       and pg_catalog.pg_get_expr(i.indpred,i.indrelid) like '%processor_reference IS NOT NULL%'
-      and pg_catalog.regexp_count(
-        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mAND\M', 1, 'i'
-      ) = 2
-      and pg_catalog.regexp_count(
-        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mOR\M', 1, 'i'
-      ) = 0
-      and pg_catalog.regexp_count(
-        pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mNOT\M', 1, 'i'
-      ) = 1
+      and pg_catalog.regexp_count(pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mAND\M', 1, 'i')=2
+      and pg_catalog.regexp_count(pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mOR\M', 1, 'i')=0
+      and pg_catalog.regexp_count(pg_catalog.pg_get_expr(i.indpred,i.indrelid), '\mNOT\M', 1, 'i')=1
   ) then
-    raise exception 'Required Stripe payment uniqueness index is missing or invalid'
-      using errcode='23514';
+    raise exception 'Required Stripe payment uniqueness index is missing or invalid' using errcode='23514';
   end if;
-  -- A successful payment must belong to an invoice in the same tenant,
-  -- and represent a positive amount before ledger posting can be enabled.
   if exists (
-    select 1
-    from public.billing_payments p
+    select 1 from public.billing_payments p
     left join public.billing_invoices i on i.id=p.invoice_id
     where p.processor='stripe' and p.status='succeeded'
-      and (p.amount_cents <= 0 or p.amount_cents is null
-           or i.id is null or i.organization_id is distinct from p.organization_id)
+      and (p.amount_cents is null or p.amount_cents<=0 or i.id is null
+           or i.organization_id is distinct from p.organization_id)
   ) then
-    raise exception 'Succeeded Stripe payment has invalid amount or invoice ownership'
-      using errcode='23514';
+    raise exception 'Succeeded Stripe payment has invalid amount or invoice ownership' using errcode='23514';
   end if;
-  -- The invoice is the authoritative currency source for the payment.
-  -- Reject missing or malformed three-letter currency codes before posting.
   if exists (
-    select 1
-    from public.billing_payments p
+    select 1 from public.billing_payments p
     join public.billing_invoices i on i.id=p.invoice_id
     where p.processor='stripe' and p.status='succeeded'
-      and (i.currency is null or i.currency !~ '^[A-Z]{3} or btrim(processor_reference)='')
+      and (i.currency is null or i.currency !~ '^[a-zA-Z]{3}$')
   ) then
-    raise exception 'Succeeded Stripe payment missing a usable reference'
-      using errcode='23514';
-  end if;
-  if exists (
-    select 1 from public.billing_payments
-    where processor='stripe' and status='succeeded'
-      and processor_reference is not null
-      and (processor_reference <> btrim(processor_reference)
-           or processor_reference !~ '^pi_[A-Za-z0-9_]+$')
-  ) then
-    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference'
-      using errcode='23514';
-  end if;
-  if exists (
-    select 1 from public.billing_payments
-    where processor='stripe' and status='succeeded'
-      and processor_reference is not null
-    group by organization_id, processor_reference
-    having count(*) > 1
-  ) then
-    raise exception 'Duplicate successful Stripe payments remain'
-      using errcode='23514';
-  end if;
-end;
-$release_gate$;
-)
-  ) then
-    raise exception 'Succeeded Stripe payment has invalid invoice currency'
-      using errcode='23514';
+    raise exception 'Succeeded Stripe payment has invalid invoice currency' using errcode='23514';
   end if;
   if exists (
     select 1 from public.billing_payments
     where processor='stripe' and status='succeeded'
       and (processor_reference is null or btrim(processor_reference)='')
   ) then
-    raise exception 'Succeeded Stripe payment missing a usable reference'
-      using errcode='23514';
+    raise exception 'Succeeded Stripe payment missing a usable reference' using errcode='23514';
   end if;
   if exists (
     select 1 from public.billing_payments
@@ -101,18 +56,16 @@ $release_gate$;
       and (processor_reference <> btrim(processor_reference)
            or processor_reference !~ '^pi_[A-Za-z0-9_]+$')
   ) then
-    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference'
-      using errcode='23514';
+    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference' using errcode='23514';
   end if;
   if exists (
     select 1 from public.billing_payments
     where processor='stripe' and status='succeeded'
       and processor_reference is not null
-    group by organization_id, processor_reference
-    having count(*) > 1
+    group by organization_id,processor_reference
+    having count(*)>1
   ) then
-    raise exception 'Duplicate successful Stripe payments remain'
-      using errcode='23514';
+    raise exception 'Duplicate successful Stripe payments remain' using errcode='23514';
   end if;
 end;
 $release_gate$;
