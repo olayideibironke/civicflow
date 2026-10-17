@@ -16,6 +16,29 @@ insert into public.client_payment_event_inbox
  ('55555555-5555-4555-8555-555555555555','11111111-1111-4111-8111-111111111111',
   'acct_test1','evt_test1','re_test1','pi_test1',2500,'usd','succeeded',
   'refund.created',false,now());
+-- Zero-value refund evidence must never be authorized or posted.
+insert into public.client_payment_event_inbox
+ (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+  stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+values
+ ('abababab-abab-4bab-8bab-abababababab','11111111-1111-4111-8111-111111111111',
+  'acct_test1','evt_zero1','re_zero1','pi_test1',0,'usd','succeeded',
+  'refund.created',false,now());
+do $zero_refund$
+begin
+ begin
+  perform public.authorize_client_payment_adjustment_posting(
+   'abababab-abab-4bab-8bab-abababababab','44444444-4444-4444-8444-444444444444');
+  raise exception 'Zero-value refund was authorized';
+ exception when sqlstate '23514' then null;
+ end;
+ if (select processing_state from public.client_payment_event_inbox
+     where id='abababab-abab-4bab-8bab-abababababab') <> 'pending'
+    or (select count(*) from public.client_payment_adjustments) <> 0 then
+  raise exception 'Zero-value authorization caused partial accounting changes';
+ end if;
+end;
+$zero_refund$;
 do $regression$
 declare
  first_post uuid;
