@@ -48,7 +48,7 @@ begin
       using errcode='23514';
   end if;
   -- The invoice is the authoritative currency source for the payment.
-  -- Reject missing or malformed ISO-style currency codes before posting.
+  -- Reject missing or malformed three-letter currency codes before posting.
   if exists (
     select 1
     from public.billing_payments p
