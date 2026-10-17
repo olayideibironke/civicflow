@@ -407,6 +407,25 @@ jobs:
           DELETE FROM public.organizations WHERE id='a9a9a9a9-a9a9-49a9-89a9-a9a9a9a9a9a9';
           SQL
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject negative succeeded Stripe payment amounts
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          INSERT INTO public.billing_payments
+            (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+          VALUES ('dadadada-dada-4ada-8ada-dadadadadada',
+                  '81818181-8181-4818-8818-818181818181',
+                  '82828282-8282-4828-8828-828282828282',
+                  -100,'succeeded','stripe','pi_negativeAmountTest');
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted negative succeeded Stripe payment"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "DELETE FROM public.billing_payments WHERE id='dadadada-dada-4ada-8ada-dadadadadada'"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
