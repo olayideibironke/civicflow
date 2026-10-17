@@ -380,6 +380,33 @@ jobs:
           fi
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "UPDATE public.billing_invoices SET currency='usd' WHERE id='82828282-8282-4828-8828-828282828282'"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject cross-tenant succeeded Stripe invoice ownership
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          INSERT INTO public.organizations(id) VALUES ('a9a9a9a9-a9a9-49a9-89a9-a9a9a9a9a9a9');
+          INSERT INTO public.billing_invoices(id,organization_id,currency)
+          VALUES ('b9b9b9b9-b9b9-49b9-89b9-b9b9b9b9b9b9',
+                  'a9a9a9a9-a9a9-49a9-89a9-a9a9a9a9a9a9','usd');
+          INSERT INTO public.billing_payments
+            (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+          VALUES ('c9c9c9c9-c9c9-49c9-89c9-c9c9c9c9c9c9',
+                  '81818181-8181-4818-8818-818181818181',
+                  'b9b9b9b9-b9b9-49b9-89b9-b9b9b9b9b9b9',
+                  1000,'succeeded','stripe','pi_crossTenantTest');
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted a cross-tenant payment invoice"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          DELETE FROM public.billing_payments WHERE id='c9c9c9c9-c9c9-49c9-89c9-c9c9c9c9c9c9';
+          DELETE FROM public.billing_invoices WHERE id='b9b9b9b9-b9b9-49b9-89b9-b9b9b9b9b9b9';
+          DELETE FROM public.organizations WHERE id='a9a9a9a9-a9a9-49a9-89a9-a9a9a9a9a9a9';
+          SQL
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
