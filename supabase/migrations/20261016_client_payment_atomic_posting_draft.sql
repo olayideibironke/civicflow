@@ -29,6 +29,12 @@ begin
     raise exception 'Financial event inbox row not found' using errcode = '22023';
   end if;
 
+  if incoming.authorized_invoice_id is null or incoming.authorized_invoice_id is distinct from (
+    select p.invoice_id from public.billing_payments p where p.id = p_payment_id
+  ) then
+    raise exception 'Authorized invoice association changed' using errcode = '23514';
+  end if;
+
   if incoming.processing_state = 'processed' then
     select * into existing from public.client_payment_adjustments
     where connected_account_id = incoming.connected_account_id
@@ -61,7 +67,8 @@ begin
      or incoming.currency is null
      or incoming.stripe_status is null
      or incoming.stripe_status = ''
-     or incoming.matched_payment_id is distinct from p_payment_id then
+     or incoming.matched_payment_id is distinct from p_payment_id
+     or incoming.authorized_invoice_id is null then
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
@@ -83,6 +90,7 @@ begin
     on i.id = p.invoice_id and i.organization_id = p.organization_id
   where p.id = p_payment_id
     and p.organization_id = incoming.organization_id
+    and p.invoice_id = incoming.authorized_invoice_id
     and p.status = 'succeeded'
     and p.processor = 'stripe'
     and p.processor_reference = incoming.stripe_payment_intent_id
