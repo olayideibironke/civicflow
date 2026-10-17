@@ -34,6 +34,19 @@ begin
     raise exception 'Required Stripe payment uniqueness index is missing or invalid'
       using errcode='23514';
   end if;
+  -- A successful payment must belong to an invoice in the same tenant,
+  -- and represent a positive amount before ledger posting can be enabled.
+  if exists (
+    select 1
+    from public.billing_payments p
+    left join public.billing_invoices i on i.id=p.invoice_id
+    where p.processor='stripe' and p.status='succeeded'
+      and (p.amount_cents <= 0 or p.amount_cents is null
+           or i.id is null or i.organization_id is distinct from p.organization_id)
+  ) then
+    raise exception 'Succeeded Stripe payment has invalid amount or invoice ownership'
+      using errcode='23514';
+  end if;
   if exists (
     select 1 from public.billing_payments
     where processor='stripe' and status='succeeded'
