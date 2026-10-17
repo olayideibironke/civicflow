@@ -55,6 +55,8 @@ jobs:
               "supabase/migrations/20261016_client_payment_atomic_posting_draft.sql",
               "supabase/migrations/20261016_client_payment_authorization_draft.sql",
               "supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql",
+              "supabase/tests/client_payment_release_gate.sql",
+              "supabase/tests/client_payment_unique_intent_preflight.sql",
           )
           for filename in files:
               statements = parse_sql(Path(filename).read_text(encoding="utf-8"))
