@@ -11,6 +11,7 @@ on:
       - supabase/tests/client_payment_permissions_regression.sql
       - supabase/tests/client_payment_concurrency_regression.py
       - supabase/tests/client_payment_unique_intent_regression.sql
+      - supabase/tests/client_payment_unique_intent_preflight.sql
       - supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
       - supabase/migrations/20261015_client_payment_adjustment_ledger.sql
       - supabase/migrations/20261015_client_payment_event_inbox_draft.sql
@@ -153,6 +154,24 @@ jobs:
           SQL
       - name: Race independent refund postings in PostgreSQL
         run: sudo -u postgres python3 - < supabase/tests/client_payment_concurrency_regression.py
+      - name: Audit succeeded Stripe payment references without mutation
+        run: |
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_unique_intent_preflight.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci <<'SQL'
+          DO $audit$
+          BEGIN
+            IF EXISTS (
+              SELECT 1 FROM public.billing_payments
+              WHERE processor = 'stripe' AND status = 'succeeded'
+                AND processor_reference IS NOT NULL
+              GROUP BY organization_id, processor_reference
+              HAVING count(*) > 1
+            ) THEN
+              RAISE EXCEPTION 'Duplicate successful Stripe payments remain after uniqueness migration';
+            END IF;
+          END;
+          $audit$;
+          SQL
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
