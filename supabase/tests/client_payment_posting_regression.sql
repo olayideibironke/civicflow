@@ -179,7 +179,7 @@ begin
    '55555555-5555-4555-8555-555555555555',
    '44444444-4444-4444-8444-444444444444');
   raise exception 'Replayed adjustment accepted changed invoice association';
- exception when sqlstate '23514' then null;
+ exception when sqlstate '23505' then null;
  end;
  if (select count(*) from public.client_payment_adjustments) <> 1
     or (select processing_state from public.client_payment_event_inbox
