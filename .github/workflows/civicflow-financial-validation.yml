@@ -426,6 +426,15 @@ jobs:
           fi
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "DELETE FROM public.billing_payments WHERE id='dadadada-dada-4ada-8ada-dadadadadada'"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Accept valid mixed-case invoice currency codes
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "UPDATE public.billing_invoices SET currency='USD' WHERE id='82828282-8282-4828-8828-828282828282'"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "UPDATE public.billing_invoices SET currency='usd' WHERE id='82828282-8282-4828-8828-828282828282'"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
