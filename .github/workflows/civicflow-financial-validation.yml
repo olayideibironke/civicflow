@@ -279,6 +279,32 @@ jobs:
           fi
           # The failed DDL must leave the existing enforcement intact.
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < supabase/tests/client_payment_release_gate.sql
+      - name: Prove migration rejects a same-named weaker index
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          migration=supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
+          gate=supabase/tests/client_payment_release_gate.sql
+          # Disposable PostgreSQL only. Install a weaker index under the
+          # production index name, then require migration failure.
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          DROP INDEX public.billing_payments_unique_succeeded_stripe_intent_per_org;
+          CREATE UNIQUE INDEX billing_payments_unique_succeeded_stripe_intent_per_org
+          ON public.billing_payments (organization_id, processor_reference)
+          WHERE processor='stripe' AND status='succeeded'
+            AND processor_reference IS NOT NULL AND amount_cents > 0;
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$migration"; then
+            echo "ERROR: migration accepted a same-named weaker index"
+            exit 1
+          fi
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted a same-named weaker index after failed migration"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c 'DROP INDEX public.billing_payments_unique_succeeded_stripe_intent_per_org'
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$migration"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
