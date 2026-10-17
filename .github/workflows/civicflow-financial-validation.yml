@@ -305,6 +305,25 @@ jobs:
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c 'DROP INDEX public.billing_payments_unique_succeeded_stripe_intent_per_org'
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$migration"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject malformed succeeded Stripe PaymentIntent references
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          INSERT INTO public.billing_payments
+            (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+          VALUES ('97979797-9797-4979-8979-979797979797',
+                  '81818181-8181-4818-8818-818181818181',
+                  '82828282-8282-4828-8828-828282828282',
+                  1000,'succeeded','stripe','not_a_payment_intent');
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted malformed Stripe PaymentIntent"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "DELETE FROM public.billing_payments WHERE id='97979797-9797-4979-8979-979797979797'"
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
