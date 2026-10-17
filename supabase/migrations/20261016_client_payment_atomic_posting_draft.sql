@@ -29,10 +29,10 @@ begin
     raise exception 'Financial event inbox row not found' using errcode = '22023';
   end if;
 
-  if incoming.authorized_invoice_id is null or incoming.authorized_invoice_id is distinct from (
-    select p.invoice_id from public.billing_payments p where p.id = p_payment_id
-  ) then
-    raise exception 'Authorized invoice association changed' using errcode = '23514';
+  -- Validate invoice identity after checking whether this is a processed
+  -- replay, so invalid payment IDs retain the expected replay error.
+  if incoming.authorized_invoice_id is null then
+    raise exception 'Authorized invoice association missing' using errcode = '23514';
   end if;
 
   if incoming.processing_state = 'processed' then
@@ -70,6 +70,12 @@ begin
      or incoming.matched_payment_id is distinct from p_payment_id
      or incoming.authorized_invoice_id is null then
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
+  end if;
+
+  if incoming.authorized_invoice_id is distinct from (
+    select p.invoice_id from public.billing_payments p where p.id = p_payment_id
+  ) then
+    raise exception 'Authorized invoice association changed' using errcode = '23514';
   end if;
 
   -- Acquire the strongest required payment lock first, before reading
