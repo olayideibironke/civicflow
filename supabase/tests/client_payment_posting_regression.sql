@@ -187,6 +187,22 @@ begin
  if first_post is null or first_post is distinct from replay_post then
   raise exception 'Posting replay did not return the same ledger entry';
  end if;
+ -- A completed event must not replay if the original payment amount
+ -- changes after the ledger was recorded.
+ update public.billing_payments set amount_cents=12000
+ where id='44444444-4444-4444-8444-444444444444';
+ begin
+  perform public.post_verified_client_payment_adjustment(
+   '55555555-5555-4555-8555-555555555555',
+   '44444444-4444-4444-8444-444444444444');
+  raise exception 'Processed event replay accepted changed original amount';
+ exception when sqlstate '23505' then null;
+ end;
+ if (select count(*) from public.client_payment_adjustments) <> 1 then
+  raise exception 'Rejected payment amount replay mutated ledger';
+ end if;
+ update public.billing_payments set amount_cents=10000
+ where id='44444444-4444-4444-8444-444444444444';
  -- A processed event must not replay after its payment is reassigned
  -- to a different invoice, even within the same organization and currency.
  update public.billing_payments
