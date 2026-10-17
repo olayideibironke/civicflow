@@ -32,6 +32,7 @@ begin
      )
      or incoming.stripe_payment_intent_id is null
      or incoming.amount_cents is null
+     or incoming.amount_cents <= 0
      or incoming.currency is null
      or incoming.stripe_status is null
      or incoming.stripe_status = ''
