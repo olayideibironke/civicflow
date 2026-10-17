@@ -47,6 +47,45 @@ begin
     raise exception 'Succeeded Stripe payment has invalid amount or invoice ownership'
       using errcode='23514';
   end if;
+  -- The invoice is the authoritative currency source for the payment.
+  -- Reject missing or malformed ISO-style currency codes before posting.
+  if exists (
+    select 1
+    from public.billing_payments p
+    join public.billing_invoices i on i.id=p.invoice_id
+    where p.processor='stripe' and p.status='succeeded'
+      and (i.currency is null or i.currency !~ '^[A-Z]{3} or btrim(processor_reference)='')
+  ) then
+    raise exception 'Succeeded Stripe payment missing a usable reference'
+      using errcode='23514';
+  end if;
+  if exists (
+    select 1 from public.billing_payments
+    where processor='stripe' and status='succeeded'
+      and processor_reference is not null
+      and (processor_reference <> btrim(processor_reference)
+           or processor_reference !~ '^pi_[A-Za-z0-9_]+$')
+  ) then
+    raise exception 'Succeeded Stripe payment has malformed PaymentIntent reference'
+      using errcode='23514';
+  end if;
+  if exists (
+    select 1 from public.billing_payments
+    where processor='stripe' and status='succeeded'
+      and processor_reference is not null
+    group by organization_id, processor_reference
+    having count(*) > 1
+  ) then
+    raise exception 'Duplicate successful Stripe payments remain'
+      using errcode='23514';
+  end if;
+end;
+$release_gate$;
+)
+  ) then
+    raise exception 'Succeeded Stripe payment has invalid invoice currency'
+      using errcode='23514';
+  end if;
   if exists (
     select 1 from public.billing_payments
     where processor='stripe' and status='succeeded'
