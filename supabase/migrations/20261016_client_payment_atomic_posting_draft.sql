@@ -35,6 +35,9 @@ begin
       and stripe_event_id = incoming.stripe_event_id;
     if not found or existing.payment_id is distinct from p_payment_id
        or existing.organization_id is distinct from incoming.organization_id
+       or existing.invoice_id is distinct from (
+         select p.invoice_id from public.billing_payments p where p.id = p_payment_id
+       )
        or existing.stripe_object_id is distinct from incoming.stripe_object_id
        or existing.stripe_payment_intent_id is distinct from incoming.stripe_payment_intent_id
        or existing.event_type is distinct from incoming.event_type
@@ -176,6 +179,9 @@ begin
       and stripe_event_id = incoming.stripe_event_id;
     if not found or existing.payment_id is distinct from p_payment_id
        or existing.organization_id is distinct from incoming.organization_id
+       or existing.invoice_id is distinct from (
+         select p.invoice_id from public.billing_payments p where p.id = p_payment_id
+       )
        or existing.stripe_object_id is distinct from incoming.stripe_object_id
        or existing.stripe_payment_intent_id is distinct from incoming.stripe_payment_intent_id
        or existing.event_type is distinct from incoming.event_type
