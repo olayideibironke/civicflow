@@ -435,6 +435,28 @@ jobs:
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" -c "UPDATE public.billing_invoices SET currency='usd' WHERE id='82828282-8282-4828-8828-828282828282'"
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject null succeeded Stripe payment invoice references
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          ALTER TABLE public.billing_payments ALTER COLUMN invoice_id DROP NOT NULL;
+          INSERT INTO public.billing_payments
+            (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
+          VALUES ('dededede-dede-4ede-8ede-dededededede',
+                  '81818181-8181-4818-8818-818181818181',
+                  NULL,1000,'succeeded','stripe','pi_missingInvoiceTest');
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted succeeded Stripe payment without invoice"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          DELETE FROM public.billing_payments WHERE id='dededede-dede-4ede-8ede-dededededede';
+          ALTER TABLE public.billing_payments ALTER COLUMN invoice_id SET NOT NULL;
+          SQL
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
