@@ -174,6 +174,44 @@ begin
    '44444444-4444-4444-8444-444444444444') is distinct from first_post then
   raise exception 'Original invoice restoration did not allow idempotent replay';
  end if;
+ -- A pre-existing ledger entry must also reject invoice reassignment
+ -- when the inbox is authorized but has not yet been marked processed.
+ begin
+  insert into public.client_payment_event_inbox
+   (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+    stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+  values
+   ('f2f2f2f2-f2f2-42f2-82f2-f2f2f2f2f2f2',
+    '11111111-1111-4111-8111-111111111111',
+    'acct_test1','evt_preexisting1','re_preexisting1','pi_test1',
+    1000,'usd','succeeded','refund.created',false,now());
+  perform public.authorize_client_payment_adjustment_posting(
+   'f2f2f2f2-f2f2-42f2-82f2-f2f2f2f2f2f2',
+   '44444444-4444-4444-8444-444444444444');
+  insert into public.client_payment_adjustments
+   (organization_id,invoice_id,payment_id,connected_account_id,
+    stripe_event_id,stripe_object_id,stripe_payment_intent_id,
+    event_type,amount_cents,currency,status,occurred_at,livemode)
+  select organization_id,invoice_id,id,'acct_test1',
+         'evt_preexisting1','re_preexisting1','pi_test1',
+         'refund.created',1000,'usd','succeeded',now(),false
+  from public.billing_payments where id='44444444-4444-4444-8444-444444444444';
+  update public.billing_payments
+  set invoice_id='f1f1f1f1-f1f1-41f1-81f1-f1f1f1f1f1f1'
+  where id='44444444-4444-4444-8444-444444444444';
+  perform public.post_verified_client_payment_adjustment(
+   'f2f2f2f2-f2f2-42f2-82f2-f2f2f2f2f2f2',
+   '44444444-4444-4444-8444-444444444444');
+  raise exception 'Unprocessed inbox accepted changed invoice replay';
+ exception when sqlstate '23505' then null;
+ end;
+ if (select count(*) from public.client_payment_adjustments) <> 1
+    or (select count(*) from public.client_payment_event_inbox) <> 1
+    or (select invoice_id from public.billing_payments
+        where id='44444444-4444-4444-8444-444444444444')
+        <> '33333333-3333-4333-8333-333333333333'::uuid then
+  raise exception 'Rejected unprocessed replay did not roll back atomically';
+ end if;
  if (select count(*) from public.client_payment_adjustments) <> 1 then
   raise exception 'Duplicate ledger entry created';
  end if;
