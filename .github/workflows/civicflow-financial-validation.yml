@@ -457,6 +457,27 @@ jobs:
           ALTER TABLE public.billing_payments ALTER COLUMN invoice_id SET NOT NULL;
           SQL
           sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+      - name: Reject missing invoice currency in financial release gate
+        run: |
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          ALTER TABLE public.billing_invoices ALTER COLUMN currency DROP NOT NULL;
+          UPDATE public.billing_invoices
+          SET currency=NULL
+          WHERE id='82828282-8282-4828-8828-828282828282';
+          SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: release gate accepted a missing invoice currency"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          UPDATE public.billing_invoices SET currency='usd'
+          WHERE id='82828282-8282-4828-8828-828282828282';
+          ALTER TABLE public.billing_invoices ALTER COLUMN currency SET NOT NULL;
+          SQL
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
