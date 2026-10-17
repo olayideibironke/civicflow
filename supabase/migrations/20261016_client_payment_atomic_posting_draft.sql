@@ -45,6 +45,10 @@ begin
        or existing.invoice_id is distinct from (
          select p.invoice_id from public.billing_payments p where p.id = p_payment_id
        )
+       or incoming.authorized_invoice_id is distinct from existing.invoice_id
+       or incoming.authorized_payment_amount_cents is distinct from (
+         select p.amount_cents from public.billing_payments p where p.id = p_payment_id
+       )
        or existing.stripe_object_id is distinct from incoming.stripe_object_id
        or existing.stripe_payment_intent_id is distinct from incoming.stripe_payment_intent_id
        or existing.event_type is distinct from incoming.event_type
