@@ -210,36 +210,30 @@ jobs:
           END;
           $negative$;
           SQL
-      - name: Execute financial release gate and prove failure on invalid records
+      - name: Execute actual release gate against clean and invalid records
         run: |
-          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci < supabase/tests/client_payment_release_gate.sql
-          sudo -u postgres psql -v ON_ERROR_STOP=1 -d civicflow_financial_ci <<'SQL'
-          BEGIN;
+          set -euo pipefail
+          db=civicflow_financial_ci
+          gate=supabase/tests/client_payment_release_gate.sql
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
+          # The invalid record is inserted in the disposable database only.
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
           INSERT INTO public.billing_payments
             (id,organization_id,invoice_id,amount_cents,status,processor,processor_reference)
           VALUES ('96969696-9696-4969-8969-969696969696',
                   '81818181-8181-4818-8818-818181818181',
                   '82828282-8282-4828-8828-828282828282',
                   1000,'succeeded','stripe',' ');
-          SAVEPOINT invalid_reference;
-          DO $assert_gate$
-          BEGIN
-            BEGIN
-              IF EXISTS (
-                SELECT 1 FROM public.billing_payments
-                WHERE processor='stripe' AND status='succeeded'
-                  AND (processor_reference IS NULL OR btrim(processor_reference)='')
-              ) THEN
-                RAISE EXCEPTION 'Succeeded Stripe payment missing a usable reference'
-                  USING ERRCODE='23514';
-              END IF;
-              RAISE EXCEPTION 'Release gate accepted invalid payment reference';
-            EXCEPTION WHEN SQLSTATE '23514' THEN NULL;
-            END;
-          END;
-          $assert_gate$;
-          ROLLBACK;
           SQL
+          if sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"; then
+            echo "ERROR: actual release gate accepted a whitespace-only Stripe reference"
+            exit 1
+          fi
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" <<'SQL'
+          DELETE FROM public.billing_payments
+          WHERE id='96969696-9696-4969-8969-969696969696';
+          SQL
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$db" < "$gate"
       - name: Run financial regression suite
         run: npx vitest run --config vitest.financial.config.ts
       - name: TypeScript validation
