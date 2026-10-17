@@ -31,7 +31,8 @@ begin
 
   -- Validate invoice identity after checking whether this is a processed
   -- replay, so invalid payment IDs retain the expected replay error.
-  if incoming.authorized_invoice_id is null then
+  if incoming.authorized_invoice_id is null
+     or incoming.authorized_payment_amount_cents is null then
     raise exception 'Authorized invoice association missing' using errcode = '23514';
   end if;
 
@@ -68,7 +69,8 @@ begin
      or incoming.stripe_status is null
      or incoming.stripe_status = ''
      or incoming.matched_payment_id is distinct from p_payment_id
-     or incoming.authorized_invoice_id is null then
+     or incoming.authorized_invoice_id is null
+     or incoming.authorized_payment_amount_cents is null then
     raise exception 'Financial event not eligible for posting' using errcode = '23514';
   end if;
 
@@ -97,6 +99,7 @@ begin
   where p.id = p_payment_id
     and p.organization_id = incoming.organization_id
     and p.invoice_id = incoming.authorized_invoice_id
+    and p.amount_cents = incoming.authorized_payment_amount_cents
     and p.status = 'succeeded'
     and p.processor = 'stripe'
     and p.processor_reference = incoming.stripe_payment_intent_id
