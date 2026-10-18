@@ -118,6 +118,24 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("holds zero-dollar and mismatched-status adjustments for review before payment lookup", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row, amount_cents: 0, stripe_payment_intent_id: "pi_123" },
+        { ...row, stripe_status: "under_review", stripe_payment_intent_id: "pi_123" },
+        { ...row, event_type: "charge.dispute.created", stripe_object_id: "dp_123",
+          stripe_status: "succeeded", stripe_payment_intent_id: "pi_123" },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 3, decisions: [
+        { state: "needs_review", errorCode: "invalid_adjustment_amount" },
+        { state: "needs_review", errorCode: "invalid_adjustment_status" },
+        { state: "needs_review", errorCode: "invalid_adjustment_status" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
