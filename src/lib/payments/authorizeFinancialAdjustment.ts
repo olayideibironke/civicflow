@@ -39,6 +39,12 @@ export type AuthorizedFinancialAdjustment = {
  * refunded on a charge. A dispute is a reversible state transition, NOT an
  * additional payment or automatic permanent debit.
  */
+const REFUND_STATUSES = new Set(["pending", "requires_action", "succeeded", "failed", "canceled"]);
+const DISPUTE_STATUSES = new Set([
+  "warning_needs_response", "warning_under_review", "needs_response",
+  "under_review", "warning_closed", "won", "lost",
+]);
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function authorizeFinancialAdjustment(
@@ -64,6 +70,9 @@ export function authorizeFinancialAdjustment(
       typeof payment.currency !== "string" || !/^[a-z]{3}$/.test(payment.currency) ||
       !event.currency || event.currency !== payment.currency ||
       event.amountCents === null || !Number.isSafeInteger(event.amountCents) ||
+      (event.type.startsWith("refund.") ?
+        !REFUND_STATUSES.has(event.status ?? "") :
+        !DISPUTE_STATUSES.has(event.status ?? "")) ||
       event.amountCents <= 0 || event.amountCents > payment.originalAmountCents ||
       !Number.isSafeInteger(payment.originalAmountCents) || payment.originalAmountCents <= 0 ||
       !UUID.test(payment.organizationId) ||
