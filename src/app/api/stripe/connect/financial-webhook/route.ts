@@ -1,3 +1,4 @@
+import { validatedFinancialSupabaseBaseUrl, validateFinancialServiceKey } from "@/lib/payments/validateFinancialServiceContext";
 import { NextResponse } from "next/server";
 import { CONNECT_FINANCIAL_EVENTS, classifyConnectFinancialEvent } from "@/lib/payments/connectFinancialEvents";
 import { routeVerifiedFinancialEvent } from "@/lib/payments/routeVerifiedFinancialEvent";
@@ -58,6 +59,13 @@ export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) return respond("Financial event inbox unavailable.", 503);
+  let baseUrl: string;
+  try {
+    baseUrl = validatedFinancialSupabaseBaseUrl(supabaseUrl);
+    validateFinancialServiceKey(serviceKey);
+  } catch {
+    return respond("Financial event inbox unavailable.", 503);
+  }
   const headers = {
     apikey: serviceKey,
     Authorization: `Bearer ${serviceKey}`,
@@ -71,8 +79,8 @@ export async function POST(request: Request) {
     limit: "2",
   });
   const accountResponse = await fetch(
-    `${supabaseUrl}/rest/v1/organization_payment_connections?${accountQuery}`,
-    { headers, cache: "no-store" }
+    `${baseUrl}/rest/v1/organization_payment_connections?${accountQuery}`,
+    { headers, cache: "no-store", redirect: "error" }
   ).catch(() => null);
   if (!accountResponse?.ok) return respond("Account verification unavailable.", 503);
   const accounts: unknown = await accountResponse.json().catch(() => null);
@@ -89,7 +97,7 @@ export async function POST(request: Request) {
   // Insert-only deduplication. On conflict, PostgREST ignores the duplicate
   // without replacing an existing processed or review state.
   const inboxResponse = await fetch(
-    `${supabaseUrl}/rest/v1/client_payment_event_inbox?on_conflict=connected_account_id,stripe_event_id`,
+    `${baseUrl}/rest/v1/client_payment_event_inbox?on_conflict=connected_account_id,stripe_event_id`,
     {
       method: "POST",
       headers: { ...headers, Prefer: "resolution=ignore-duplicates,return=minimal" },
@@ -108,6 +116,7 @@ export async function POST(request: Request) {
         processing_state: disposition.state,
       }),
       cache: "no-store",
+      redirect: "error",
     }
   ).catch(() => null);
   if (!inboxResponse?.ok) {

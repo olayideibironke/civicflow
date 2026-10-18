@@ -13,7 +13,7 @@ describe("financial service context validation", () => {
       "", "http://example.supabase.co", "https://", "https://user:pass@example.supabase.co",
       "https://example.supabase.co:4443", "https://example.supabase.co/rest/v1",
       "https://example.supabase.co?token=secret", "https://example.supabase.co/#token",
-      "https://example.supabase.co\\@evil.example", null, 42,
+      "https://example.supabase.co\\@evil.example", "https://example.supabase.co:4443", null, 42,
     ]) {
       expect(() => validatedFinancialSupabaseBaseUrl(candidate as string)).toThrow();
     }
