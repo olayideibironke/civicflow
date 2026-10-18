@@ -36,6 +36,15 @@ begin
      or incoming.currency is null
      or incoming.stripe_status is null
      or incoming.stripe_status = ''
+     or (incoming.event_type like 'refund.%'
+         and incoming.stripe_status not in (
+           'pending', 'requires_action', 'succeeded', 'failed', 'canceled'
+         ))
+     or (incoming.event_type like 'charge.dispute.%'
+         and incoming.stripe_status not in (
+           'warning_needs_response', 'warning_under_review', 'needs_response',
+           'under_review', 'warning_closed', 'won', 'lost'
+         ))
      or incoming.matched_payment_id is not null
         and incoming.matched_payment_id <> p_payment_id then
     raise exception 'Financial inbox event cannot be authorized' using errcode = '23514';
