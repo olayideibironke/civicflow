@@ -79,6 +79,19 @@ describe("financial adjustment projection", () => {
       expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
     }
   });
+  it("flags later reversal of a terminal refund or dispute outcome", () => {
+    const refund = [
+      row("evt_terminal1", "re_terminal", "refund.updated", 1200, "succeeded"),
+      row("evt_terminal2", "re_terminal", "refund.updated", 1200, "pending", "2026-10-16T12:00:00Z"),
+    ];
+    const dispute = [
+      row("evt_terminal3", "dp_terminal", "charge.dispute.closed", 1200, "won"),
+      row("evt_terminal4", "dp_terminal", "charge.dispute.updated", 1200, "under_review", "2026-10-16T12:00:00Z"),
+    ];
+    for (const events of [refund, [...refund].reverse(), dispute, [...dispute].reverse()]) {
+      expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
+    }
+  });
   it("flags aggregate monetary totals outside the safe integer range", () => {
     const maximum = Number.MAX_SAFE_INTEGER;
     const events = [
