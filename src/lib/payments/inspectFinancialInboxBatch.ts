@@ -132,10 +132,19 @@ export async function inspectFinancialInboxBatch(
         row.event_type.endsWith(".canceled") ? "canceled" : "failed",
       livemode: row.livemode, occurredAt: row.occurred_at,
     };
-    const candidates = await lookupOriginalInvoicePayments(
-      supabaseUrl, serviceKey, row.connected_account_id,
-      row.stripe_payment_intent_id, row.livemode
-    );
+    let candidates: Awaited<ReturnType<typeof lookupOriginalInvoicePayments>>;
+    try {
+      candidates = await lookupOriginalInvoicePayments(
+        supabaseUrl, serviceKey, row.connected_account_id,
+        row.stripe_payment_intent_id, row.livemode
+      );
+    } catch {
+      // One unavailable or inconsistent original payment must not prevent
+      // inspection of the remaining independent inbox records.
+      // Never qualify a record when its verification lookup fails.
+      decisions.push({ state: "needs_review", errorCode: "payment_lookup_unavailable" });
+      continue;
+    }
     const decision = matchFinancialEventToPayment(event, candidates);
     if (decision.state === "authorized") {
       if (decision.adjustment.organizationId !== row.organization_id) {
