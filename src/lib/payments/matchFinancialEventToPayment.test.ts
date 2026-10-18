@@ -24,6 +24,18 @@ describe("verified original payment matching", () => {
     expect(matchFinancialEventToPayment(event, [unrelated, payment]).state).toBe("authorized");
     expect(matchFinancialEventToPayment(event, [unrelated, payment, second]).state).toBe("needs_review");
   });
+  it("fails closed when the candidate collection contains malformed entries", () => {
+    for (const candidates of [
+      [payment, null],
+      [payment, 42],
+      [payment, []],
+      null,
+    ]) {
+      expect(matchFinancialEventToPayment(
+        event, candidates as unknown as VerifiedInvoicePayment[]
+      ).state).toBe("needs_review");
+    }
+  });
   it("rejects wrong environment", () => { expect(matchFinancialEventToPayment(event,[{...payment,livemode:true}]).state).toBe("needs_review"); });
   it("never authorizes failed or canceled payment intents as financial adjustments", () => {
     for (const type of ["payment_intent.payment_failed", "payment_intent.canceled"] as const) {
