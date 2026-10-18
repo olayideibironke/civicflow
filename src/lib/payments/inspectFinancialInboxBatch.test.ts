@@ -217,6 +217,25 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+  it("fails closed on malformed inbox JSON instead of returning empty decisions", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true, json: async () => ({ rows: [row] }),
+    }));
+    await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .rejects.toThrow("Unexpected financial inbox response");
+  });
+  it("fails closed on thrown inbox network errors", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network unavailable")));
+    await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .rejects.toThrow("network unavailable");
+  });
+  it("fails closed when inbox JSON parsing fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true, json: async () => { throw new SyntaxError("invalid JSON"); },
+    }));
+    await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .rejects.toThrow("invalid JSON");
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
