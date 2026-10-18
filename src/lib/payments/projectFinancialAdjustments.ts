@@ -25,6 +25,11 @@ export type FinancialProjection = {
   needsReview: boolean;
 };
 
+const knownRefundStatuses = new Set(["pending", "requires_action", "succeeded", "failed", "canceled"]);
+const knownDisputeStatuses = new Set([
+  "warning_needs_response", "warning_under_review", "needs_response",
+  "under_review", "warning_closed", "won", "lost",
+]);
 const settledRefund = new Set(["succeeded"]);
 const pendingRefund = new Set(["pending", "requires_action"]);
 const lostDispute = new Set(["lost"]);
@@ -72,7 +77,11 @@ export function projectFinancialAdjustments(
   const disputes = new Map<string, FinancialSnapshot>();
   let conflictingObjectAmounts = false;
   for (const snapshot of ordered) {
-    const target = snapshot.type.startsWith("refund.") ? refunds : disputes;
+    const isRefund = snapshot.type.startsWith("refund.");
+    if (!(isRefund ? knownRefundStatuses : knownDisputeStatuses).has(snapshot.status)) {
+      conflictingObjectAmounts = true;
+    }
+    const target = isRefund ? refunds : disputes;
     const previous = target.get(snapshot.objectId);
     // One Stripe object cannot legitimately change its monetary amount between
     // lifecycle snapshots. Keep the latest snapshot but require human review.
