@@ -3,6 +3,9 @@ import { authorizeFinancialAdjustment, type VerifiedInvoicePayment } from "./aut
 
 /** Only a uniquely matched, server-verified original payment may be adjusted. */
 export function matchFinancialEventToPayment(event: ClassifiedConnectEvent, candidates: readonly VerifiedInvoicePayment[]) {
+  if (!Array.isArray(candidates) || candidates.some(p => !p || typeof p !== "object" || Array.isArray(p)))
+    return { state: "needs_review" } as const;
+  if (!event || typeof event !== "object") return { state: "needs_review" } as const;
   if (!event.paymentIntentId) return { state: "needs_enrichment" } as const;
   if (!/^pi_[A-Za-z0-9]+$/.test(event.paymentIntentId)) return { state: "needs_review" } as const;
   const matches = candidates.filter(p => p.stripeAccountId === event.connectedAccountId && p.stripePaymentIntentId === event.paymentIntentId);
