@@ -43,7 +43,7 @@ export async function lookupOriginalInvoicePayments(
     throw new Error("Connected account environment mismatch");
 
   const paymentQuery = new URLSearchParams({
-    select: "id,organization_id,invoice_id,amount_cents,processor_reference,billing_invoices!inner(currency,organization_id)",
+    select: "id,organization_id,invoice_id,amount_cents,processor_reference,billing_invoices!inner(id,currency,organization_id)",
     organization_id: `eq.${connection.organization_id}`,
     processor: "eq.stripe",
     status: "eq.succeeded",
@@ -66,6 +66,7 @@ export async function lookupOriginalInvoicePayments(
       ? invoiceValue as Record<string, unknown> : null;
     if (!invoice || row.organization_id !== connection.organization_id ||
         invoice.organization_id !== connection.organization_id ||
+        invoice.id !== row.invoice_id ||
         typeof invoice.currency !== "string" || !/^[a-z]{3}$/.test(invoice.currency) ||
         typeof row.id !== "string" || !UUID.test(row.id) ||
         typeof row.invoice_id !== "string" || !UUID.test(row.invoice_id) ||
