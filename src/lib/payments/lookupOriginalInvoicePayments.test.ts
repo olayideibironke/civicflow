@@ -48,7 +48,7 @@ describe("original Stripe invoice payment lookup", () => {
     ]) {
       await expect(lookupOriginalInvoicePayments(
         unsafe, "service-key", "acct_firm1", "pi_payment1", false
-      )).rejects.toThrow("Invalid original payment lookup context");
+      )).rejects.toThrow("Invalid financial Supabase base URL");
     }
     expect(fetchMock).not.toHaveBeenCalled();
   });

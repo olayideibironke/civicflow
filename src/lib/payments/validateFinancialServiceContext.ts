@@ -6,7 +6,7 @@ export function validatedFinancialSupabaseBaseUrl(value: string): string {
   catch { throw new Error("Invalid financial Supabase base URL"); }
   if (parsed.protocol !== "https:" || !parsed.hostname || parsed.username ||
       parsed.password || parsed.search || parsed.hash || parsed.pathname !== "/" ||
-      !value.startsWith("https://"))
+      !value.startsWith("https://") || parsed.port)
     throw new Error("Invalid financial Supabase base URL");
   return parsed.origin;
 }
