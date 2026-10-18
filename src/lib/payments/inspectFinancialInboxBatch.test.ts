@@ -200,6 +200,30 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("blocks cross-tenant original payments even when Stripe identifiers match", async () => {
+    const foreignTenant = "99999999-9999-4999-8999-999999999999";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [{
+        ...row, stripe_payment_intent_id: "pi_match", stripe_status: "succeeded",
+      }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{
+        organization_id: foreignTenant, mode: "sandbox", provider: "stripe",
+      }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => [{
+        id: "88888888-8888-4888-8888-888888888888",
+        organization_id: foreignTenant,
+        invoice_id: "77777777-7777-4777-8777-777777777777",
+        amount_cents: 500,
+        processor_reference: "pi_match",
+        billing_invoices: { organization_id: foreignTenant, currency: "usd" },
+      }] });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 1, decisions: [
+        { state: "needs_review", errorCode: "tenant_mismatch" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
   it("isolates payment lookup failures and continues inspecting later inbox rows", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [
