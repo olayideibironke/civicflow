@@ -75,11 +75,13 @@ export function projectFinancialAdjustments(
   );
   const refunds = new Map<string, FinancialSnapshot>();
   const disputes = new Map<string, FinancialSnapshot>();
+  const disputedObjects = new Set<string>();
   let conflictingObjectAmounts = false;
   for (const snapshot of ordered) {
     const isRefund = snapshot.type.startsWith("refund.");
     if (!(isRefund ? knownRefundStatuses : knownDisputeStatuses).has(snapshot.status)) {
       conflictingObjectAmounts = true;
+      disputedObjects.add(snapshot.objectId);
     }
     const target = isRefund ? refunds : disputes;
     const previous = target.get(snapshot.objectId);
@@ -88,6 +90,7 @@ export function projectFinancialAdjustments(
     if (previous && (previous.amountCents !== snapshot.amountCents ||
         (Date.parse(previous.occurredAt) === Date.parse(snapshot.occurredAt) && previous.status !== snapshot.status))) {
       conflictingObjectAmounts = true;
+      disputedObjects.add(snapshot.objectId);
     }
     // A terminal outcome followed by an incompatible later snapshot must
     // never be silently accepted as a routine lifecycle update.
@@ -98,6 +101,7 @@ export function projectFinancialAdjustments(
         ["won", "lost", "warning_closed"].includes(previous.status);
       if ((refundTerminal || disputeTerminal) && snapshot.status !== previous.status) {
         conflictingObjectAmounts = true;
+        disputedObjects.add(snapshot.objectId);
       }
     }
     target.set(snapshot.objectId, snapshot);
@@ -108,6 +112,7 @@ export function projectFinancialAdjustments(
     wonDisputeCents: 0, needsReview: conflictingObjectAmounts,
   };
   for (const refund of refunds.values()) {
+    if (disputedObjects.has(refund.objectId)) continue;
     if (settledRefund.has(refund.status)) result.succeededRefundCents += refund.amountCents;
     else if (pendingRefund.has(refund.status)) result.pendingRefundCents += refund.amountCents;
     else if (refund.status !== "failed" && refund.status !== "canceled") result.needsReview = true;
