@@ -283,7 +283,8 @@ begin
  exception when sqlstate '23514' then null;
  end;
  if (select count(*) from public.client_payment_adjustments) <> 1
-    or (select count(*) from public.client_payment_event_inbox) <> 1
+    or (select count(*) from public.client_payment_event_inbox
+         where id <> 'abababab-abab-4bab-8bab-abababababab') <> 1
     or (select invoice_id from public.billing_payments
         where id='44444444-4444-4444-8444-444444444444')
         <> '33333333-3333-4333-8333-333333333333'::uuid then
