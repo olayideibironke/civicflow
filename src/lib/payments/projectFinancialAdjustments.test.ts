@@ -79,6 +79,19 @@ describe("financial adjustment projection", () => {
       expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
     }
   });
+  it("flags unsupported or cross-category statuses even if later snapshots look valid", () => {
+    const badRefund = [
+      row("evt_unknown1", "re_unknown", "refund.created", 1200, "under_review"),
+      row("evt_unknown2", "re_unknown", "refund.updated", 1200, "succeeded", "2026-10-16T12:00:00Z"),
+    ];
+    const badDispute = [
+      row("evt_unknown3", "dp_unknown", "charge.dispute.created", 1200, "succeeded"),
+      row("evt_unknown4", "dp_unknown", "charge.dispute.closed", 1200, "won", "2026-10-16T12:00:00Z"),
+    ];
+    for (const events of [badRefund, [...badRefund].reverse(), badDispute, [...badDispute].reverse()]) {
+      expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
+    }
+  });
   it("flags later reversal of a terminal refund or dispute outcome", () => {
     const refund = [
       row("evt_terminal1", "re_terminal", "refund.updated", 1200, "succeeded"),
