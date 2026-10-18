@@ -28,6 +28,19 @@ describe("verified invoice adjustment authorization", () => {
       amountCents: 1200, eventType: "refund.created", livemode: false,
     });
   });
+  it("rejects malformed runtime Stripe environment values on either side", () => {
+    const valid = event(1200);
+    expect(authorizeFinancialAdjustment(
+      { ...valid, livemode: "false" as unknown as boolean }, payment
+    )).toBeNull();
+    expect(authorizeFinancialAdjustment(
+      valid, { ...payment, livemode: "false" as unknown as boolean }
+    )).toBeNull();
+    expect(authorizeFinancialAdjustment(
+      { ...valid, livemode: "false" as unknown as boolean },
+      { ...payment, livemode: "false" as unknown as boolean }
+    )).toBeNull();
+  });
   it("rejects malformed payment intent identifiers", () => {
     expect(authorizeFinancialAdjustment({ ...event(1200), paymentIntentId: "invalid" }, { ...payment, stripePaymentIntentId: "invalid" })).toBeNull();
   });
