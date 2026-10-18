@@ -111,6 +111,17 @@ export function projectFinancialAdjustments(
     openDisputeCents: 0, lostDisputeCents: 0,
     wonDisputeCents: 0, needsReview: conflictingObjectAmounts,
   };
+  // Quarantined refund snapshots are omitted from reported totals, but their
+  // potential exposure still counts toward the payment-level safety ceiling.
+  let quarantinedRefundExposure = 0n;
+  for (const refund of refunds.values()) {
+    if (!disputedObjects.has(refund.objectId)) continue;
+    const objectSnapshots = ordered.filter(snapshot =>
+      snapshot.objectId === refund.objectId && snapshot.type.startsWith("refund."));
+    const maximum = objectSnapshots.reduce((max, snapshot) =>
+      Math.max(max, snapshot.amountCents), 0);
+    quarantinedRefundExposure += BigInt(maximum);
+  }
   for (const refund of refunds.values()) {
     if (disputedObjects.has(refund.objectId)) continue;
     if (settledRefund.has(refund.status)) result.succeededRefundCents += refund.amountCents;
@@ -130,7 +141,7 @@ export function projectFinancialAdjustments(
   const totals = [result.succeededRefundCents, result.pendingRefundCents,
     result.openDisputeCents, result.lostDisputeCents, result.wonDisputeCents];
   if (totals.some(total => !Number.isSafeInteger(total)) ||
-      BigInt(result.succeededRefundCents) + BigInt(result.pendingRefundCents) > BigInt(originalPaymentCents)) {
+      BigInt(result.succeededRefundCents) + BigInt(result.pendingRefundCents) + quarantinedRefundExposure > BigInt(originalPaymentCents)) {
     result.needsReview = true;
   }
   return result;
