@@ -56,7 +56,7 @@ export function projectFinancialAdjustments(
         typeof snapshot.status !== "string" || !snapshot.status ||
         typeof snapshot.occurredAt !== "string" ||
         !Number.isSafeInteger(snapshot.amountCents) ||
-        snapshot.amountCents < 0 || snapshot.amountCents > originalPaymentCents ||
+        snapshot.amountCents <= 0 || snapshot.amountCents > originalPaymentCents ||
         !Number.isFinite(Date.parse(snapshot.occurredAt))) {
       throw new Error("Invalid financial adjustment snapshot");
     }
