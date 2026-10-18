@@ -163,7 +163,7 @@ describe("read-only financial inbox inspection", () => {
     vi.stubGlobal("fetch", fetchMock);
     expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
       .toEqual({ examined: 2, decisions: [
-        { state: "needs_enrichment" },
+        { state: "needs_review", errorCode: "duplicate_inbox_event" },
         { state: "needs_review", errorCode: "duplicate_inbox_event" },
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
