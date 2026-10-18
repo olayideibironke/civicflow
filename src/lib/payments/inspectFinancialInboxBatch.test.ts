@@ -67,10 +67,10 @@ describe("read-only financial inbox inspection", () => {
   it("rejects malformed fields and unexpected processing states", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [
-        { ...row, stripe_event_id: "evt_case01", connected_account_id: null },
-        { ...row, stripe_event_id: "evt_case02", stripe_status: 123 },
-        { ...row, stripe_event_id: "evt_case03", processing_state: "processed" },
-        { ...row, stripe_event_id: "evt_case04", stripe_object_id: "" },
+        { ...row, id: "00000000-0000-4000-8000-000000000001", stripe_event_id: "evt_case01", connected_account_id: null },
+        { ...row, id: "00000000-0000-4000-8000-000000000002", stripe_event_id: "evt_case02", stripe_status: 123 },
+        { ...row, id: "00000000-0000-4000-8000-000000000003", stripe_event_id: "evt_case03", processing_state: "processed" },
+        { ...row, id: "00000000-0000-4000-8000-000000000004", stripe_event_id: "evt_case04", stripe_object_id: "" },
         { ...row, stripe_event_id: null },
       ],
     });
@@ -91,9 +91,9 @@ describe("read-only financial inbox inspection", () => {
   it("holds Stripe object identifiers that do not match their event category", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [
-        { ...row, stripe_event_id: "evt_case11", stripe_object_id: "dp_123" },
-        { ...row, stripe_event_id: "evt_case12", event_type: "charge.dispute.created", stripe_object_id: "re_123" },
-        { ...row, stripe_event_id: "evt_case13", event_type: "payment_intent.canceled", stripe_object_id: "re_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000101", stripe_event_id: "evt_case11", stripe_object_id: "dp_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000102", stripe_event_id: "evt_case12", event_type: "charge.dispute.created", stripe_object_id: "re_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000103", stripe_event_id: "evt_case13", event_type: "payment_intent.canceled", stripe_object_id: "re_123" },
       ],
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -106,8 +106,8 @@ describe("read-only financial inbox inspection", () => {
   it("never qualifies failed or canceled payment intents for ledger posting", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [
-        { ...row, stripe_event_id: "evt_case21", event_type: "payment_intent.payment_failed", stripe_object_id: "pi_123", stripe_payment_intent_id: "pi_123" },
-        { ...row, stripe_event_id: "evt_case22", event_type: "payment_intent.canceled", stripe_object_id: "pi_456", stripe_payment_intent_id: "pi_456" },
+        { ...row, id: "00000000-0000-4000-8000-000000000201", stripe_event_id: "evt_case21", event_type: "payment_intent.payment_failed", stripe_object_id: "pi_123", stripe_payment_intent_id: "pi_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000202", stripe_event_id: "evt_case22", event_type: "payment_intent.canceled", stripe_object_id: "pi_456", stripe_payment_intent_id: "pi_456" },
       ],
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -121,9 +121,9 @@ describe("read-only financial inbox inspection", () => {
   it("holds missing amount, currency, and status for enrichment even when payment intent exists", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [
-        { ...row, stripe_event_id: "evt_case31", stripe_payment_intent_id: "pi_123", amount_cents: null },
-        { ...row, stripe_event_id: "evt_case32", stripe_payment_intent_id: "pi_123", currency: null },
-        { ...row, stripe_event_id: "evt_case33", stripe_payment_intent_id: "pi_123", stripe_status: null },
+        { ...row, id: "00000000-0000-4000-8000-000000000301", stripe_event_id: "evt_case31", stripe_payment_intent_id: "pi_123", amount_cents: null },
+        { ...row, id: "00000000-0000-4000-8000-000000000302", stripe_event_id: "evt_case32", stripe_payment_intent_id: "pi_123", currency: null },
+        { ...row, id: "00000000-0000-4000-8000-000000000303", stripe_event_id: "evt_case33", stripe_payment_intent_id: "pi_123", stripe_status: null },
       ],
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -138,9 +138,9 @@ describe("read-only financial inbox inspection", () => {
   it("holds zero-dollar and mismatched-status adjustments for review before payment lookup", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [
-        { ...row, stripe_event_id: "evt_case41", amount_cents: 0, stripe_payment_intent_id: "pi_123" },
-        { ...row, stripe_event_id: "evt_case42", stripe_status: "under_review", stripe_payment_intent_id: "pi_123" },
-        { ...row, stripe_event_id: "evt_case43", event_type: "charge.dispute.created", stripe_object_id: "dp_123",
+        { ...row, id: "00000000-0000-4000-8000-000000000401", stripe_event_id: "evt_case41", amount_cents: 0, stripe_payment_intent_id: "pi_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000402", stripe_event_id: "evt_case42", stripe_status: "under_review", stripe_payment_intent_id: "pi_123" },
+        { ...row, id: "00000000-0000-4000-8000-000000000403", stripe_event_id: "evt_case43", event_type: "charge.dispute.created", stripe_object_id: "dp_123",
           stripe_status: "succeeded", stripe_payment_intent_id: "pi_123" },
       ],
     });
