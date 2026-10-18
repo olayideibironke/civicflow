@@ -153,6 +153,21 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("quarantines repeated Stripe event IDs in a batch without duplicate payment lookups", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row },
+        { ...row, id: "22222222-2222-4222-8222-222222222222" },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 2, decisions: [
+        { state: "needs_enrichment" },
+        { state: "needs_review", errorCode: "duplicate_inbox_event" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
