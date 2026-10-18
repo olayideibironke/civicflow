@@ -36,6 +36,15 @@ describe("original Stripe invoice payment lookup", () => {
     expect(fetchMock.mock.calls[1][0]).toContain("organization_id=eq.");
   });
 
+  it("rejects malformed runtime Stripe environment before any network access", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(lookupOriginalInvoicePayments(
+      url, "service-key", "acct_firm1", "pi_payment1", "false" as unknown as boolean
+    )).rejects.toThrow("Invalid original payment lookup context");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects null and malformed connected-account records before payment lookup", async () => {
     for (const connections of [[null], [42], [[]]]) {
       const fetchMock = stubLookup(connections, [payment]);
