@@ -215,7 +215,7 @@ describe("read-only financial inbox inspection", () => {
         invoice_id: "77777777-7777-4777-8777-777777777777",
         amount_cents: 500,
         processor_reference: "pi_match",
-        billing_invoices: { organization_id: foreignTenant, currency: "usd" },
+        billing_invoices: { id: "77777777-7777-4777-8777-777777777777", organization_id: foreignTenant, currency: "usd" },
       }] });
     vi.stubGlobal("fetch", fetchMock);
     expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
