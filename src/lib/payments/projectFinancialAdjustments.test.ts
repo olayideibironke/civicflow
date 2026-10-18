@@ -155,6 +155,14 @@ describe("financial adjustment projection", () => {
       succeededRefundCents: 1200, needsReview: false,
     });
   });
+  it("rejects zero-value adjustment snapshots rather than treating them as valid ledger evidence", () => {
+    expect(() => projectFinancialAdjustments([
+      row("evt_zerorefund", "re_zerorefund", "refund.updated", 0, "succeeded"),
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+    expect(() => projectFinancialAdjustments([
+      row("evt_zerodispute", "dp_zerodispute", "charge.dispute.closed", 0, "lost"),
+    ], 5000)).toThrow("Invalid financial adjustment snapshot");
+  });
   it("rejects conflicting duplicate event IDs", () => {
     expect(() => projectFinancialAdjustments([
       row("evt_1", "re_1", "refund.created", 100, "pending"),
