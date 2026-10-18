@@ -81,10 +81,10 @@ describe("financial adjustment projection", () => {
   });
   it("excludes contradictory dispute histories from won, lost and open totals", () => {
     const snapshots = [
-      row("evt_dispute_bad1", "dp_bad", "charge.dispute.created", 1500, "needs_response"),
-      row("evt_dispute_bad2", "dp_bad", "charge.dispute.closed", 1500, "won", "2026-10-16T12:00:00Z"),
-      row("evt_dispute_bad3", "dp_bad", "charge.dispute.updated", 1500, "under_review", "2026-10-17T12:00:00Z"),
-      row("evt_dispute_clean", "dp_clean", "charge.dispute.closed", 400, "lost", "2026-10-17T13:00:00Z"),
+      row("evt_disputebad1", "dp_bad", "charge.dispute.created", 1500, "needs_response"),
+      row("evt_disputebad2", "dp_bad", "charge.dispute.closed", 1500, "won", "2026-10-16T12:00:00Z"),
+      row("evt_disputebad3", "dp_bad", "charge.dispute.updated", 1500, "under_review", "2026-10-17T12:00:00Z"),
+      row("evt_disputeclean", "dp_clean", "charge.dispute.closed", 400, "lost", "2026-10-17T13:00:00Z"),
     ];
     for (const events of [snapshots, [...snapshots].reverse()]) {
       expect(projectFinancialAdjustments(events, 5000)).toMatchObject({
