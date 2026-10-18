@@ -72,6 +72,21 @@ export async function inspectFinancialInboxBatch(
       decisions.push({ state: "needs_review", errorCode: "non_adjustment_payment_lifecycle" });
       continue;
     }
+    // Do not classify malformed monetary evidence as merely incomplete.
+    // Missing fields may be enriched; zero or negative amounts and unsupported
+    // statuses require review before any payment matching.
+    if (row.amount_cents !== null && row.amount_cents <= 0) {
+      decisions.push({ state: "needs_review", errorCode: "invalid_adjustment_amount" });
+      continue;
+    }
+    const allowedStatuses = row.event_type.startsWith("refund.") ?
+      ["pending", "requires_action", "succeeded", "failed", "canceled"] :
+      ["warning_needs_response", "warning_under_review", "needs_response",
+        "under_review", "warning_closed", "won", "lost"];
+    if (row.stripe_status !== null && !allowedStatuses.includes(row.stripe_status)) {
+      decisions.push({ state: "needs_review", errorCode: "invalid_adjustment_status" });
+      continue;
+    }
     if (!row.stripe_payment_intent_id) {
       decisions.push({ state: "needs_enrichment" });
       continue;
