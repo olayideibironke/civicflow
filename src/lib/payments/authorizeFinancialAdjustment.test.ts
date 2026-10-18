@@ -46,6 +46,10 @@ describe("verified invoice adjustment authorization", () => {
     expect(authorizeFinancialAdjustment({ ...valid, type: "charge.refunded" as typeof valid.type }, payment)).toBeNull();
     expect(authorizeFinancialAdjustment({ ...valid, occurredAt: "not-a-date" }, payment)).toBeNull();
   });
+  it("rejects zero-value financial adjustments before accounting", () => {
+    expect(authorizeFinancialAdjustment(event(0), payment)).toBeNull();
+    expect(authorizeFinancialAdjustment(event(1), payment)).not.toBeNull();
+  });
   it("rejects a refund larger than the original payment", () => {
     expect(authorizeFinancialAdjustment(event(5001), payment)).toBeNull();
   });
