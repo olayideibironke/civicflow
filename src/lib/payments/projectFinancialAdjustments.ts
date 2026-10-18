@@ -113,7 +113,7 @@ export function projectFinancialAdjustments(
   };
   // Quarantined refund snapshots are omitted from reported totals, but their
   // potential exposure still counts toward the payment-level safety ceiling.
-  let quarantinedRefundExposure = 0n;
+  let quarantinedRefundExposure = BigInt(0);
   for (const refund of refunds.values()) {
     if (!disputedObjects.has(refund.objectId)) continue;
     const objectSnapshots = ordered.filter(snapshot =>
