@@ -200,6 +200,23 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+  it("isolates a thrown payment lookup error without skipping later records", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => [
+        { ...row, id: "00000000-0000-4000-8000-000000000911",
+          stripe_event_id: "evt_lookupthrow", stripe_payment_intent_id: "pi_lookupthrow" },
+        { ...row, id: "00000000-0000-4000-8000-000000000912",
+          stripe_event_id: "evt_afterthrow", stripe_payment_intent_id: null },
+      ] })
+      .mockRejectedValueOnce(new Error("network unavailable"));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 2, decisions: [
+        { state: "needs_review", errorCode: "payment_lookup_unavailable" },
+        { state: "needs_enrichment" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
   it("fails closed when inbox query is unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
     await expect(inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
