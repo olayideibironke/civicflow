@@ -17,7 +17,8 @@ export async function lookupOriginalInvoicePayments(
 ): Promise<VerifiedInvoicePayment[]> {
   if (!/^acct_[A-Za-z0-9]+$/.test(connectedAccountId) ||
       !/^pi_[A-Za-z0-9]+$/.test(paymentIntentId) ||
-      !supabaseUrl.startsWith("https://") || !serviceKey)
+      !supabaseUrl.startsWith("https://") || !serviceKey ||
+      typeof livemode !== "boolean")
     throw new Error("Invalid original payment lookup context");
 
   const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
