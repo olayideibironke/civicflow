@@ -42,9 +42,14 @@ export async function inspectFinancialInboxBatch(
   // Otherwise the first record could qualify for posting before its conflicting
   // counterpart is encountered later in the same batch.
   const eventCounts = new Map<string, number>();
+  const rowCounts = new Map<string, number>();
   for (const raw of rows) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
-    const eventId = (raw as Record<string, unknown>).stripe_event_id;
+    const fields = raw as Record<string, unknown>;
+    const rowId = fields.id;
+    if (typeof rowId === "string" && UUID.test(rowId))
+      rowCounts.set(rowId, (rowCounts.get(rowId) ?? 0) + 1);
+    const eventId = fields.stripe_event_id;
     if (typeof eventId === "string" && /^evt_[A-Za-z0-9]+$/.test(eventId))
       eventCounts.set(eventId, (eventCounts.get(eventId) ?? 0) + 1);
   }
@@ -56,6 +61,10 @@ export async function inspectFinancialInboxBatch(
         typeof row.connected_account_id !== "string" || !/^acct_[A-Za-z0-9]+$/.test(row.connected_account_id) ||
         typeof row.stripe_event_id !== "string" || !/^evt_[A-Za-z0-9]+$/.test(row.stripe_event_id)) {
       decisions.push({ state: "needs_review", errorCode: "invalid_inbox_row" });
+      continue;
+    }
+    if ((rowCounts.get(row.id) ?? 0) > 1) {
+      decisions.push({ state: "needs_review", errorCode: "duplicate_inbox_row" });
       continue;
     }
     // A repeated event ID in one batch is ambiguous evidence, even if the
