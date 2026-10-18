@@ -39,6 +39,38 @@ begin
  end if;
 end;
 $zero_refund$;
+-- Unknown and cross-category statuses must fail authorization without side effects.
+insert into public.client_payment_event_inbox
+ (id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,
+  stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at)
+values
+ ('bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc','11111111-1111-4111-8111-111111111111',
+  'acct_test1','evt_badstatus1','re_badstatus1','pi_test1',1000,'usd','under_review',
+  'refund.created',false,now()),
+ ('cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd','11111111-1111-4111-8111-111111111111',
+  'acct_test1','evt_badstatus2','dp_badstatus2','pi_test1',1000,'usd','succeeded',
+  'charge.dispute.created',false,now());
+do $status_guard$
+declare
+ item uuid;
+begin
+ foreach item in array array[
+  'bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc'::uuid,
+  'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd'::uuid
+ ] loop
+  begin
+   perform public.authorize_client_payment_adjustment_posting(
+    item,'44444444-4444-4444-8444-444444444444');
+   raise exception 'Cross-category status was authorized';
+  exception when sqlstate '23514' then null;
+  end;
+  if (select processing_state from public.client_payment_event_inbox where id=item) <> 'pending'
+     or (select matched_payment_id from public.client_payment_event_inbox where id=item) is not null then
+   raise exception 'Rejected status changed authorization state';
+  end if;
+ end loop;
+end;
+$status_guard$;
 do $regression$
 declare
  first_post uuid;
@@ -284,7 +316,11 @@ begin
  end;
  if (select count(*) from public.client_payment_adjustments) <> 1
     or (select count(*) from public.client_payment_event_inbox
-         where id <> 'abababab-abab-4bab-8bab-abababababab') <> 1
+         where id not in (
+           'abababab-abab-4bab-8bab-abababababab',
+           'bcbcbcbc-bcbc-4cbc-8cbc-bcbcbcbcbcbc',
+           'cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd'
+         )) <> 1
     or (select invoice_id from public.billing_payments
         where id='44444444-4444-4444-8444-444444444444')
         <> '33333333-3333-4333-8333-333333333333'::uuid then
