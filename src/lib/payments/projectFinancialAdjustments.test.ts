@@ -79,6 +79,18 @@ describe("financial adjustment projection", () => {
       expect(projectFinancialAdjustments(events, 5000).needsReview).toBe(true);
     }
   });
+  it("keeps quarantined refund exposure in the payment safety ceiling", () => {
+    const snapshots = [
+      row("evt_exposure1", "re_exposure", "refund.created", 3000, "pending"),
+      row("evt_exposure2", "re_exposure", "refund.updated", 3500, "succeeded", "2026-10-16T12:00:00Z"),
+      row("evt_exposure3", "re_cleanexposure", "refund.updated", 2000, "succeeded", "2026-10-16T13:00:00Z"),
+    ];
+    for (const events of [snapshots, [...snapshots].reverse()]) {
+      expect(projectFinancialAdjustments(events, 5000)).toMatchObject({
+        succeededRefundCents: 2000, pendingRefundCents: 0, needsReview: true,
+      });
+    }
+  });
   it("excludes contradictory dispute histories from won, lost and open totals", () => {
     const snapshots = [
       row("evt_disputebad1", "dp_bad", "charge.dispute.created", 1500, "needs_response"),
