@@ -87,6 +87,12 @@ export async function inspectFinancialInboxBatch(
       decisions.push({ state: "needs_review", errorCode: "invalid_adjustment_status" });
       continue;
     }
+    // An absent amount, currency, or lifecycle status is incomplete evidence,
+    // not a verified adjustment. Keep it in enrichment without payment lookup.
+    if (row.amount_cents === null || row.currency === null || row.stripe_status === null) {
+      decisions.push({ state: "needs_enrichment" });
+      continue;
+    }
     if (!row.stripe_payment_intent_id) {
       decisions.push({ state: "needs_enrichment" });
       continue;
