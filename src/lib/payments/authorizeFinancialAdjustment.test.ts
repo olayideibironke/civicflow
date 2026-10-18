@@ -46,6 +46,12 @@ describe("verified invoice adjustment authorization", () => {
     expect(authorizeFinancialAdjustment({ ...valid, type: "charge.refunded" as typeof valid.type }, payment)).toBeNull();
     expect(authorizeFinancialAdjustment({ ...valid, occurredAt: "not-a-date" }, payment)).toBeNull();
   });
+  it("requires recognized refund statuses", () => {
+    expect(authorizeFinancialAdjustment({ ...event(1200), status: "unknown" }, payment)).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...event(1200), status: null }, payment)).toBeNull();
+    expect(authorizeFinancialAdjustment({ ...event(1200), status: "pending" }, payment)).not.toBeNull();
+    expect(authorizeFinancialAdjustment({ ...event(1200), status: "succeeded" }, payment)).not.toBeNull();
+  });
   it("rejects zero-value financial adjustments before accounting", () => {
     expect(authorizeFinancialAdjustment(event(0), payment)).toBeNull();
     expect(authorizeFinancialAdjustment(event(1), payment)).not.toBeNull();
