@@ -82,6 +82,38 @@ describe("original Stripe invoice payment lookup", () => {
       .rejects.toThrow("Unexpected payment lookup result");
   });
 
+  it("rejects payments with a different processor reference or tenant", async () => {
+    for (const badPayment of [
+      { ...payment, processor_reference: "pi_other" },
+      { ...payment, organization_id: "44444444-4444-4444-8444-444444444444" },
+    ]) {
+      stubLookup([connection], [badPayment]);
+      await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+        .rejects.toThrow("Original payment has inconsistent invoice data");
+    }
+  });
+
+  it("rejects unsafe original payment amounts before matching", async () => {
+    for (const amount_cents of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, null]) {
+      stubLookup([connection], [{ ...payment, amount_cents }]);
+      await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+        .rejects.toThrow("Original payment has inconsistent invoice data");
+    }
+  });
+
+  it("rejects a connected account mapped to the wrong environment or provider", async () => {
+    for (const badConnection of [
+      { ...connection, mode: "live" },
+      { ...connection, provider: "other" },
+      { ...connection, mode: null },
+    ]) {
+      const fetchMock = stubLookup([badConnection], [payment]);
+      await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+        .rejects.toThrow("Connected account environment mismatch");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  });
+
   it("rejects ambiguous connected-account mappings", async () => {
     const fetchMock = stubLookup([connection, connection], [payment]);
     await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
