@@ -63,6 +63,17 @@ describe("original Stripe invoice payment lookup", () => {
     }
   });
 
+  it("requests the joined invoice ID and filters for succeeded Stripe payments", async () => {
+    const fetchMock = stubLookup([connection], [payment]);
+    await lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false);
+    const query = new URL(fetchMock.mock.calls[1][0]).searchParams;
+    expect(query.get("select")).toContain("billing_invoices!inner(id,currency,organization_id)");
+    expect(query.get("processor")).toBe("eq.stripe");
+    expect(query.get("status")).toBe("eq.succeeded");
+    expect(query.get("processor_reference")).toBe("eq.pi_payment1");
+    expect(query.get("organization_id")).toBe(`eq.${organizationId}`);
+  });
+
   it("rejects a joined invoice that differs from the payment invoice ID", async () => {
     stubLookup([connection], [{
       ...payment,
