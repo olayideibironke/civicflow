@@ -80,6 +80,17 @@ export function projectFinancialAdjustments(
         (Date.parse(previous.occurredAt) === Date.parse(snapshot.occurredAt) && previous.status !== snapshot.status))) {
       conflictingObjectAmounts = true;
     }
+    // A terminal outcome followed by an incompatible later snapshot must
+    // never be silently accepted as a routine lifecycle update.
+    if (previous && Date.parse(snapshot.occurredAt) > Date.parse(previous.occurredAt)) {
+      const refundTerminal = previous.type.startsWith("refund.") &&
+        ["succeeded", "failed", "canceled"].includes(previous.status);
+      const disputeTerminal = previous.type.startsWith("charge.dispute.") &&
+        ["won", "lost", "warning_closed"].includes(previous.status);
+      if ((refundTerminal || disputeTerminal) && snapshot.status !== previous.status) {
+        conflictingObjectAmounts = true;
+      }
+    }
     target.set(snapshot.objectId, snapshot);
   }
   const result: FinancialProjection = {
