@@ -66,6 +66,7 @@ export function authorizeFinancialAdjustment(
   if (!event.paymentIntentId || event.paymentIntentId !== payment.stripePaymentIntentId ||
       !/^pi_[A-Za-z0-9]+$/.test(event.paymentIntentId) ||
       event.connectedAccountId !== payment.stripeAccountId ||
+      typeof event.livemode !== "boolean" || typeof payment.livemode !== "boolean" ||
       event.livemode !== payment.livemode ||
       typeof payment.currency !== "string" || !/^[a-z]{3}$/.test(payment.currency) ||
       !event.currency || event.currency !== payment.currency ||
