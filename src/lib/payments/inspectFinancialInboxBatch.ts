@@ -38,7 +38,16 @@ export async function inspectFinancialInboxBatch(
   const rows: unknown = await response.json();
   if (!Array.isArray(rows) || rows.length > limit) throw new Error("Unexpected financial inbox response");
   const decisions: Decision[] = [];
-  const seenEventIds = new Set<string>();
+  // Quarantine every occurrence of a duplicate ID, including the first.
+  // Otherwise the first record could qualify for posting before its conflicting
+  // counterpart is encountered later in the same batch.
+  const eventCounts = new Map<string, number>();
+  for (const raw of rows) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
+    const eventId = (raw as Record<string, unknown>).stripe_event_id;
+    if (typeof eventId === "string" && /^evt_[A-Za-z0-9]+$/.test(eventId))
+      eventCounts.set(eventId, (eventCounts.get(eventId) ?? 0) + 1);
+  }
   for (const raw of rows) {
     const row = raw as InboxRow | null;
     if (!row || typeof row !== "object" ||
@@ -51,11 +60,10 @@ export async function inspectFinancialInboxBatch(
     }
     // A repeated event ID in one batch is ambiguous evidence, even if the
     // payloads look identical. Never perform multiple lookups for that event.
-    if (seenEventIds.has(row.stripe_event_id)) {
+    if ((eventCounts.get(row.stripe_event_id) ?? 0) > 1) {
       decisions.push({ state: "needs_review", errorCode: "duplicate_inbox_event" });
       continue;
     }
-    seenEventIds.add(row.stripe_event_id);
     if (typeof row.event_type !== "string" ||
         !CONNECT_FINANCIAL_EVENTS.some(known => known === row.event_type) ||
         (row.processing_state !== "pending" && row.processing_state !== "needs_enrichment" && row.processing_state !== "needs_payment_match") ||
