@@ -1,3 +1,4 @@
+import { validatedFinancialSupabaseBaseUrl, validateFinancialServiceKey } from "./validateFinancialServiceContext";
 import { CONNECT_FINANCIAL_EVENTS, type ClassifiedConnectEvent } from "./connectFinancialEvents";
 import { matchFinancialEventToPayment } from "./matchFinancialEventToPayment";
 import { lookupOriginalInvoicePayments } from "./lookupOriginalInvoicePayments";
@@ -25,13 +26,15 @@ export async function inspectFinancialInboxBatch(
   if (!supabaseUrl.startsWith("https://") || !serviceKey ||
       !Number.isSafeInteger(limit) || limit < 1 || limit > 100)
     throw new Error("Invalid financial inbox inspection context");
+  const baseUrl = validatedFinancialSupabaseBaseUrl(supabaseUrl);
+  validateFinancialServiceKey(serviceKey);
   const query = new URLSearchParams({
     select: "id,organization_id,connected_account_id,stripe_event_id,stripe_object_id,stripe_payment_intent_id,amount_cents,currency,stripe_status,event_type,livemode,occurred_at,processing_state",
     processing_state: "in.(pending,needs_enrichment,needs_payment_match)",
     order: "created_at.asc",
     limit: String(limit),
   });
-  const response = await fetch(`${supabaseUrl}/rest/v1/client_payment_event_inbox?${query}`, {
+  const response = await fetch(`${baseUrl}/rest/v1/client_payment_event_inbox?${query}`, {
     headers: headers(serviceKey), cache: "no-store",
   });
   if (!response.ok) throw new Error("Financial inbox inspection unavailable");

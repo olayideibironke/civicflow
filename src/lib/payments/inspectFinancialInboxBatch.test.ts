@@ -19,6 +19,17 @@ describe("read-only financial inbox inspection", () => {
       .rejects.toThrow("Invalid financial inbox inspection context");
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it("rejects unsafe URLs and credentials before querying the inbox", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    for (const badUrl of ["https://user:password@example.supabase.co/", "https://example.supabase.co/other", "https://example.supabase.co/?token=secret", "https://example.supabase.co/#fragment", "https://"]) {
+      await expect(inspectFinancialInboxBatch(badUrl, "service-key")).rejects.toThrow();
+    }
+    for (const key of ["", "  ", "bad\nkey"]) {
+      await expect(inspectFinancialInboxBatch("https://example.supabase.co", key)).rejects.toThrow();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it("holds events without payment intent for enrichment", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [row],

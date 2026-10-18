@@ -53,6 +53,14 @@ describe("original Stripe invoice payment lookup", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("rejects unsafe credentials without network access", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    for (const key of ["", "  ", "bad\nkey"]) {
+      await expect(lookupOriginalInvoicePayments(url, key, "acct_firm1", "pi_payment1", false)).rejects.toThrow();
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it("rejects malformed runtime Stripe environment before any network access", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

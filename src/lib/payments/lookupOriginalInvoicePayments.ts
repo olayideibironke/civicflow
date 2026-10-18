@@ -1,3 +1,4 @@
+import { validatedFinancialSupabaseBaseUrl, validateFinancialServiceKey } from "./validateFinancialServiceContext";
 import type { VerifiedInvoicePayment } from "./authorizeFinancialAdjustment";
 
 /**
@@ -21,17 +22,8 @@ export async function lookupOriginalInvoicePayments(
       typeof livemode !== "boolean")
     throw new Error("Invalid original payment lookup context");
 
-  // Credentials must never be sent to a URL containing embedded userinfo,
-  // query parameters or fragments. These are not valid Supabase base URLs.
-  let base: URL;
-  try {
-    base = new URL(supabaseUrl);
-  } catch {
-    throw new Error("Invalid original payment lookup context");
-  }
-  if (base.protocol !== "https:" || !base.hostname || base.username ||
-      base.password || base.search || base.hash || base.pathname !== "/")
-    throw new Error("Invalid original payment lookup context");
+  const baseUrl = validatedFinancialSupabaseBaseUrl(supabaseUrl);
+  validateFinancialServiceKey(serviceKey);
 
   const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
   const connectionQuery = new URLSearchParams({
@@ -40,7 +32,7 @@ export async function lookupOriginalInvoicePayments(
     limit: "2",
   });
   const connectionResponse = await fetch(
-    `${supabaseUrl}/rest/v1/organization_payment_connections?${connectionQuery}`,
+    `${baseUrl}/rest/v1/organization_payment_connections?${connectionQuery}`,
     { headers, cache: "no-store" }
   );
   if (!connectionResponse.ok) throw new Error("Connected account lookup unavailable");
@@ -63,7 +55,7 @@ export async function lookupOriginalInvoicePayments(
     limit: "3",
   });
   const paymentResponse = await fetch(
-    `${supabaseUrl}/rest/v1/billing_payments?${paymentQuery}`,
+    `${baseUrl}/rest/v1/billing_payments?${paymentQuery}`,
     { headers, cache: "no-store" }
   );
   if (!paymentResponse.ok) throw new Error("Original payment lookup unavailable");
