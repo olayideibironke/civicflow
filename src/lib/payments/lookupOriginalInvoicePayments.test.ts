@@ -12,7 +12,7 @@ const payment = {
   invoice_id: "33333333-3333-4333-8333-333333333333",
   amount_cents: 5000,
   processor_reference: "pi_payment1",
-  billing_invoices: { currency: "usd", organization_id: organizationId },
+  billing_invoices: { id: "33333333-3333-4333-8333-333333333333", currency: "usd", organization_id: organizationId },
 };
 
 function stubLookup(connections: unknown, payments: unknown) {
@@ -61,6 +61,18 @@ describe("original Stripe invoice payment lookup", () => {
       await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
         .rejects.toThrow("Original payment has inconsistent invoice data");
     }
+  });
+
+  it("rejects a joined invoice that differs from the payment invoice ID", async () => {
+    stubLookup([connection], [{
+      ...payment,
+      billing_invoices: {
+        ...payment.billing_invoices,
+        id: "44444444-4444-4444-8444-444444444444",
+      },
+    }]);
+    await expect(lookupOriginalInvoicePayments(url, "service-key", "acct_firm1", "pi_payment1", false))
+      .rejects.toThrow("Original payment has inconsistent invoice data");
   });
 
   it("rejects malformed invoice currency codes", async () => {
