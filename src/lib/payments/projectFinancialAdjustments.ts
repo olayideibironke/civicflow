@@ -118,6 +118,7 @@ export function projectFinancialAdjustments(
     else if (refund.status !== "failed" && refund.status !== "canceled") result.needsReview = true;
   }
   for (const dispute of disputes.values()) {
+    if (disputedObjects.has(dispute.objectId)) continue;
     if (lostDispute.has(dispute.status)) result.lostDisputeCents += dispute.amountCents;
     else if (wonDispute.has(dispute.status)) result.wonDisputeCents += dispute.amountCents;
     else if (dispute.status === "warning_closed") result.needsReview = true;
