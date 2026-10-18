@@ -71,7 +71,7 @@ describe("read-only financial inbox inspection", () => {
         { ...row, stripe_event_id: "evt_case02", stripe_status: 123 },
         { ...row, stripe_event_id: "evt_case03", processing_state: "processed" },
         { ...row, stripe_event_id: "evt_case04", stripe_object_id: "" },
-        { ...row, stripe_event_id: "evt_case05", stripe_event_id: null },
+        { ...row, stripe_event_id: null },
       ],
     });
     vi.stubGlobal("fetch", fetchMock);
