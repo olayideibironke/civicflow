@@ -64,7 +64,7 @@ export function authorizeFinancialAdjustment(
       typeof payment.currency !== "string" || !/^[a-z]{3}$/.test(payment.currency) ||
       !event.currency || event.currency !== payment.currency ||
       event.amountCents === null || !Number.isSafeInteger(event.amountCents) ||
-      event.amountCents < 0 || event.amountCents > payment.originalAmountCents ||
+      event.amountCents <= 0 || event.amountCents > payment.originalAmountCents ||
       !Number.isSafeInteger(payment.originalAmountCents) || payment.originalAmountCents <= 0 ||
       !UUID.test(payment.organizationId) ||
       !UUID.test(payment.invoiceId) ||
