@@ -36,6 +36,23 @@ describe("original Stripe invoice payment lookup", () => {
     expect(fetchMock.mock.calls[1][0]).toContain("organization_id=eq.");
   });
 
+  it("rejects unsafe Supabase base URLs before exposing the service key", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    for (const unsafe of [
+      "https://user:password@example.supabase.co/",
+      "https://example.supabase.co/other",
+      "https://example.supabase.co/?token=secret",
+      "https://example.supabase.co/#fragment",
+      "https://",
+    ]) {
+      await expect(lookupOriginalInvoicePayments(
+        unsafe, "service-key", "acct_firm1", "pi_payment1", false
+      )).rejects.toThrow("Invalid original payment lookup context");
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects malformed runtime Stripe environment before any network access", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
