@@ -33,7 +33,7 @@ export async function lookupOriginalInvoicePayments(
   });
   const connectionResponse = await fetch(
     `${baseUrl}/rest/v1/organization_payment_connections?${connectionQuery}`,
-    { headers, cache: "no-store" }
+    { headers, cache: "no-store", redirect: "error" }
   );
   if (!connectionResponse.ok) throw new Error("Connected account lookup unavailable");
   const connections: unknown = await connectionResponse.json();
@@ -56,7 +56,7 @@ export async function lookupOriginalInvoicePayments(
   });
   const paymentResponse = await fetch(
     `${baseUrl}/rest/v1/billing_payments?${paymentQuery}`,
-    { headers, cache: "no-store" }
+    { headers, cache: "no-store", redirect: "error" }
   );
   if (!paymentResponse.ok) throw new Error("Original payment lookup unavailable");
   const rows: unknown = await paymentResponse.json();

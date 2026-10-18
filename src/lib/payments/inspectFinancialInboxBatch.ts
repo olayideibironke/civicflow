@@ -35,7 +35,7 @@ export async function inspectFinancialInboxBatch(
     limit: String(limit),
   });
   const response = await fetch(`${baseUrl}/rest/v1/client_payment_event_inbox?${query}`, {
-    headers: headers(serviceKey), cache: "no-store",
+    headers: headers(serviceKey), cache: "no-store", redirect: "error",
   });
   if (!response.ok) throw new Error("Financial inbox inspection unavailable");
   const rows: unknown = await response.json();

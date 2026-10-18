@@ -33,6 +33,9 @@ describe("original Stripe invoice payment lookup", () => {
         currency: "usd", originalAmountCents: 5000, livemode: false,
       }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, options] of fetchMock.mock.calls) {
+      expect(options).toMatchObject({ redirect: "error", cache: "no-store" });
+    }
     expect(fetchMock.mock.calls[1][0]).toContain("organization_id=eq.");
   });
 

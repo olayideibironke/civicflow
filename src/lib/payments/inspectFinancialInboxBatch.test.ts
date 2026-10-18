@@ -30,6 +30,13 @@ describe("read-only financial inbox inspection", () => {
     }
     expect(fetchMock).not.toHaveBeenCalled();
   });
+  it("refuses redirect following on credential-bearing inbox requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => [] });
+    vi.stubGlobal("fetch", fetchMock);
+    await inspectFinancialInboxBatch("https://example.supabase.co", "service-key");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ redirect: "error", cache: "no-store" });
+  });
   it("holds events without payment intent for enrichment", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, json: async () => [row],
