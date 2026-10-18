@@ -183,6 +183,23 @@ describe("read-only financial inbox inspection", () => {
       ] });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+  it("quarantines a valid event when its duplicate has malformed row metadata", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, json: async () => [
+        { ...row, id: "00000000-0000-4000-8000-000000000921",
+          stripe_event_id: "evt_conflict", stripe_payment_intent_id: "pi_conflict" },
+        { ...row, id: "invalid-row-id", stripe_event_id: "evt_conflict",
+          stripe_payment_intent_id: "pi_conflict" },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await inspectFinancialInboxBatch("https://example.supabase.co", "service-key"))
+      .toEqual({ examined: 2, decisions: [
+        { state: "needs_review", errorCode: "duplicate_inbox_event" },
+        { state: "needs_review", errorCode: "invalid_inbox_row" },
+      ] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
   it("isolates payment lookup failures and continues inspecting later inbox rows", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [
