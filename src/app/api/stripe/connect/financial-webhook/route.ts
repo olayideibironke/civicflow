@@ -113,7 +113,9 @@ export async function POST(request: Request) {
         event_type: event.type,
         livemode: event.livemode,
         occurred_at: event.occurredAt,
-        // Database insert guard requires every new event to start pending.\n        // The classifier disposition is advisory until a separate worker acts.\n        processing_state: "pending",
+        // Database insert guard requires every new event to start pending.
+        // The classifier disposition is advisory until a separate worker acts.
+        processing_state: "pending",
       }),
       cache: "no-store",
       redirect: "error",
