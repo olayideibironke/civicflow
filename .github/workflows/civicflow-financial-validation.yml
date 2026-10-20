@@ -14,6 +14,7 @@ on:
       - supabase/tests/client_payment_unique_intent_preflight.sql
       - supabase/tests/client_payment_release_gate.sql
       - supabase/migrations/20261016_unique_succeeded_stripe_payment_draft.sql
+      - supabase/migrations/20261019205000_reconcile_signed_stripe_checkout_destinations.sql
       - supabase/migrations/20261015_client_payment_adjustment_ledger.sql
       - supabase/migrations/20261015_client_payment_event_inbox_draft.sql
       - supabase/migrations/20261015_client_payment_plans_draft.sql
@@ -49,6 +50,7 @@ jobs:
           from pathlib import Path
           from pglast import parse_sql
           files = (
+              "supabase/migrations/20261019205000_reconcile_signed_stripe_checkout_destinations.sql",
               "supabase/migrations/20261015_client_payment_adjustment_ledger.sql",
               "supabase/migrations/20261015_client_payment_event_inbox_draft.sql",
               "supabase/migrations/20261015_client_payment_plans_draft.sql",
