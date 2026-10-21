@@ -58,7 +58,7 @@ export async function POST(request:Request) {
    return error("Checkout session mode mismatch",403);
  if (live && (process.env.VERCEL_ENV!=="production" || process.env.CIVICFLOW_LIVE_INVOICES_ENABLED!=="true"))
    return error("Live invoice reconciliation is disabled",503);
- const directLiveKey=live && process.env.VERCEL_ENV==="production" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_") ? process.env.STRIPE_SECRET_KEY : "";
+ const directLiveKey=live && process.env.VERCEL_ENV==="production" && /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "") ? process.env.STRIPE_SECRET_KEY : "";
  const connector=live ? LIVE_CONNECTOR : SANDBOX_CONNECTOR;
  if (!directLiveKey && (!connector || !/^stripe\/[a-z0-9-]+$/.test(connector))) return error("Stripe connector unavailable",503);
  const oidc=request.headers.get("x-vercel-oidc-token")??process.env.VERCEL_OIDC_TOKEN??"";
@@ -68,7 +68,7 @@ export async function POST(request:Request) {
    body:JSON.stringify({subject:{type:"app"},scopes:["*"]}),cache:"no-store"
  });
  const tokenData=directLiveKey ? {token:directLiveKey} : await tokenResponse!.json().catch(()=>null) as {token?:string}|null;
- if ((!directLiveKey && !tokenResponse?.ok)||!tokenData?.token?.startsWith(live ? "sk_live_" : "sk_test_"))
+ if ((!directLiveKey && !tokenResponse?.ok)||!(live ? /^(sk|rk)_live_/.test(tokenData?.token ?? "") : /^(sk|rk)_test_/.test(tokenData?.token ?? "")))
    return error("Stripe verification unavailable",503);
  // First look up the session on the connected firm account. The account ID is
  // obtained from CivicFlow's authorization-scoped invoice context, not the caller.
