@@ -76,7 +76,7 @@ export async function POST(request:Request) {
  // Stripe Checkout's client_reference_id is read after finding its registered
  // account via the trusted RPC below.
  const stripeResponse=await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(input.sessionId)}`,{
-  headers:{Authorization:`Bearer ${tokenData.token}`,"Stripe-Account":context.connected_account_id},cache:"no-store"
+  headers:{Authorization:`Bearer ${tokenData?.token ?? ""}`,"Stripe-Account":context.connected_account_id},cache:"no-store"
  });
  if (!stripeResponse.ok) return error("Stripe could not verify this payment",409);
  const session=await stripeResponse.json() as StripeSession;
