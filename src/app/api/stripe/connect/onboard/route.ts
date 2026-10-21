@@ -23,8 +23,26 @@ async function stripeRequest(path: string, key: string, method = "GET", body?: U
 }
 
 export async function POST(request: Request) {
+  // Only CivicFlow's configured production apex and www domains may start
+  // Stripe onboarding. Preserve the canonical origin for Stripe return URLs.
   const origin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
-  if (!origin || new URL(request.url).origin !== origin || request.headers.get("origin") !== origin)
+  if (!origin) return failure("Payment origin unavailable.", 503);
+  let trustedOrigins: Set<string>;
+  try {
+    const canonical = new URL(origin);
+    if (canonical.protocol !== "https:") return failure("Payment origin unavailable.", 503);
+    const apexHost = canonical.hostname.startsWith("www.") ? canonical.hostname.slice(4) : canonical.hostname;
+    trustedOrigins = new Set([
+      canonical.origin,
+      `${canonical.protocol}//${apexHost}${canonical.port ? ":" + canonical.port : ""}`,
+      `${canonical.protocol}//www.${apexHost}${canonical.port ? ":" + canonical.port : ""}`,
+    ]);
+  } catch {
+    return failure("Payment origin unavailable.", 503);
+  }
+  const requestOrigin = request.headers.get("origin");
+  if (!requestOrigin || !trustedOrigins.has(requestOrigin) ||
+      !trustedOrigins.has(new URL(request.url).origin))
     return failure("Invalid origin.", 403);
   if (process.env.VERCEL_ENV !== "production")
     return failure("Live Stripe Connect onboarding is unavailable outside production.", 503);
