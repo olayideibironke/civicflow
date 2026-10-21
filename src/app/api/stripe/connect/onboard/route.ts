@@ -83,12 +83,10 @@ export async function POST(request: Request) {
     return failure("Firm administrator access required.", 403);
 
   const orgId: string = profile.organization_id;
-  const query = `${supabaseUrl}/rest/v1/organization_payment_connections?select=stripe_account_id,mode&organization_id=eq.${encodeURIComponent(orgId)}&limit=1`;
+  const query = `${supabaseUrl}/rest/v1/organization_payment_connections?select=stripe_account_id,mode&organization_id=eq.${encodeURIComponent(orgId)}&mode=eq.live&limit=1`;
   const existingResponse = await fetch(query, { headers: adminHeaders, cache: "no-store" });
   const existing = await existingResponse.json().catch(() => []);
   if (!existingResponse.ok || !Array.isArray(existing)) return failure("Connection lookup failed.", 503);
-  if (existing[0]?.mode && existing[0].mode !== "live")
-    return failure("Firm already has a sandbox connection. Migration requires administrator review.", 409);
 
   let accountId: string = existing[0]?.stripe_account_id ?? "";
   if (!accountId) {
@@ -125,13 +123,13 @@ export async function POST(request: Request) {
     account.data.payouts_enabled === true &&
     account.data.capabilities?.card_payments === "active";
   const updated = await fetch(
-    `${supabaseUrl}/rest/v1/organization_payment_connections?organization_id=eq.${encodeURIComponent(orgId)}&stripe_account_id=eq.${encodeURIComponent(accountId)}`,
+    `${supabaseUrl}/rest/v1/organization_payment_connections?organization_id=eq.${encodeURIComponent(orgId)}&mode=eq.live&stripe_account_id=eq.${encodeURIComponent(accountId)}`,
     {
       method: "PATCH",
       headers: { ...adminHeaders, Prefer: "return=minimal" },
       body: JSON.stringify({
         status: eligible ? "active" : "restricted",
-        operating_payments_enabled: eligible,
+        operating_payments_enabled: false, // Live invoice activation is a separate controlled release.
         updated_at: new Date().toISOString(),
       }),
       cache: "no-store",
