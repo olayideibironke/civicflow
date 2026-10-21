@@ -84,7 +84,7 @@ export default function ClientBillingPage() {
               },
               body: JSON.stringify({ sessionId }),
             });
-            setPaymentNotice(result.ok ? "Payment Successful" : "Payment confirmation is pending. Contact your firm if the balance remains due.");
+            setPaymentNotice(result.ok ? "Payment Successful" : "Payment confirmation is pending. Do not pay again. Contact your firm if the balance remains due.");
           } catch {
             setPaymentNotice("Payment confirmation is pending. Contact your firm if the balance remains due.");
           }
