@@ -69,13 +69,13 @@ export default function ClientBillingPage() {
       if (sessionId) {
         setPaymentNotice("Verifying payment...");
         void (async () => {
-          const { data: auth } = await supabase.auth.getSession();
-          if (!auth.session?.access_token) {
-            setPaymentNotice("Sign in to confirm your payment.");
-            await loadData();
-            return;
-          }
           try {
+            const { data: auth, error: authError } = await supabase.auth.getSession();
+            if (authError || !auth.session?.access_token) {
+              setPaymentNotice("Sign in to confirm your payment. Do not pay again.");
+              await loadData();
+              return;
+            }
             const result = await fetch("/api/stripe/reconcile", {
               method: "POST",
               headers: {
@@ -91,8 +91,9 @@ export default function ClientBillingPage() {
               const reason = typeof response?.error === "string" ? response.error : "Verification unavailable";
               setPaymentNotice(`Payment confirmation pending (${result.status}: ${reason}). Do not pay again. Contact your firm if the balance remains due.`);
             }
-          } catch {
-            setPaymentNotice("Payment confirmation is pending. Contact your firm if the balance remains due.");
+          } catch (cause) {
+            console.error("Invoice payment reconciliation request failed", cause);
+            setPaymentNotice("Payment confirmation unavailable (network or session error). Do not pay again. Contact your firm if the balance remains due.");
           }
           await loadData();
         })();
