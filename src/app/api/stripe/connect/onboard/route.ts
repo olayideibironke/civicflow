@@ -101,6 +101,8 @@ export async function POST(request: Request) {
     const created = await stripeRequest("/accounts", key, "POST", body);
     if (!created.response.ok || !created.data?.id || created.data?.livemode !== true) {
       const stripeCode = typeof created.data?.error?.code === "string" ? created.data.error.code : "";
+      const stripeParam = typeof created.data?.error?.param === "string" ? created.data.error.param.replace(/[^a-z0-9_\[\].]/gi, "").slice(0, 80) : "";
+      const stripeMessage = typeof created.data?.error?.message === "string" ? created.data.error.message.replace(/[\r\n]/g, " ").slice(0, 180) : "";
       const stripeType = typeof created.data?.error?.type === "string" ? created.data.error.type : "";
       const permissionFailure = created.response.status === 403 ||
         stripeCode === "permission_error" || stripeType === "permission_error";
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
           ? "Stripe rejected account creation: restricted key lacks Connect account creation permission."
           : authFailure
             ? "Stripe rejected the configured live API credential."
-            : `Stripe account creation failed (HTTP ${created.response.status}${stripeCode ? ", code " + stripeCode.replace(/[^a-z0-9_]/gi, "").slice(0, 48) : ""}).`,
+            : `Stripe account creation failed (HTTP ${created.response.status}${stripeCode ? ", code " + stripeCode.replace(/[^a-z0-9_]/gi, "").slice(0, 48) : ""}${stripeParam ? ", parameter " + stripeParam : ""}${stripeMessage ? ": " + stripeMessage : ""}).`,
         502
       );
     }
