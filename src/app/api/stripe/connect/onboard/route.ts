@@ -99,8 +99,21 @@ export async function POST(request: Request) {
       "metadata[civicflow_organization_id]": orgId,
     });
     const created = await stripeRequest("/accounts", key, "POST", body);
-    if (!created.response.ok || !created.data?.id || created.data?.livemode !== true)
-      return failure("Stripe could not create a verified firm onboarding account.", 502);
+    if (!created.response.ok || !created.data?.id || created.data?.livemode !== true) {
+      const stripeCode = typeof created.data?.error?.code === "string" ? created.data.error.code : "";
+      const stripeType = typeof created.data?.error?.type === "string" ? created.data.error.type : "";
+      const permissionFailure = created.response.status === 403 ||
+        stripeCode === "permission_error" || stripeType === "permission_error";
+      const authFailure = created.response.status === 401;
+      return failure(
+        permissionFailure
+          ? "Stripe rejected account creation: restricted key lacks Connect account creation permission."
+          : authFailure
+            ? "Stripe rejected the configured live API credential."
+            : `Stripe account creation failed (HTTP ${created.response.status}${stripeCode ? ", code " + stripeCode.replace(/[^a-z0-9_]/gi, "").slice(0, 48) : ""}).`,
+        502
+      );
+    }
     accountId = created.data.id;
     const inserted = await fetch(`${supabaseUrl}/rest/v1/organization_payment_connections`, {
       method: "POST",
