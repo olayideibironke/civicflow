@@ -49,8 +49,16 @@ export async function POST(request: Request) {
 
   const key = process.env.STRIPE_SECRET_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key?.startsWith("sk_live_") || !supabaseUrl || !anonKey || !serviceKey)
-    return failure("Payment onboarding is not configured.", 503);
+  // Report only the missing configuration *name*, never secret values.
+  // This helps administrators resolve deployment drift without weakening the gate.
+  if (!key?.startsWith("sk_live_"))
+    return failure("Payment onboarding is not configured (Stripe live credential).", 503);
+  if (!supabaseUrl)
+    return failure("Payment onboarding is not configured (Supabase URL).", 503);
+  if (!anonKey)
+    return failure("Payment onboarding is not configured (Supabase public key).", 503);
+  if (!serviceKey)
+    return failure("Payment onboarding is not configured (Supabase server credential).", 503);
 
   const bearer = request.headers.get("authorization");
   if (!bearer?.startsWith("Bearer ")) return failure("Authentication required.", 401);
