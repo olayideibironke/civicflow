@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   // Report only the missing configuration *name*, never secret values.
   // This helps administrators resolve deployment drift without weakening the gate.
-  if (!key?.startsWith("sk_live_"))
+  if (!key || !/^(sk|rk)_live_/.test(key))
     return failure("Payment onboarding is not configured (Stripe live credential).", 503);
   if (!supabaseUrl)
     return failure("Payment onboarding is not configured (Supabase URL).", 503);
