@@ -84,7 +84,13 @@ export default function ClientBillingPage() {
               },
               body: JSON.stringify({ sessionId }),
             });
-            setPaymentNotice(result.ok ? "Payment Successful" : "Payment confirmation is pending. Do not pay again. Contact your firm if the balance remains due.");
+            if (result.ok) {
+              setPaymentNotice("Payment Successful");
+            } else {
+              const response = (await result.json().catch(() => null)) as { error?: string } | null;
+              const reason = typeof response?.error === "string" ? response.error : "Verification unavailable";
+              setPaymentNotice(`Payment confirmation pending (${result.status}: ${reason}). Do not pay again. Contact your firm if the balance remains due.`);
+            }
           } catch {
             setPaymentNotice("Payment confirmation is pending. Contact your firm if the balance remains due.");
           }
