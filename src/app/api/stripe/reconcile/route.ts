@@ -16,8 +16,25 @@ type InvoiceContext = {
 function error(message:string,status:number) {return NextResponse.json({error:message},{status});}
 
 export async function POST(request:Request) {
- const origin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
- if (!origin || request.headers.get("origin") !== new URL(origin).origin)
+ // CivicFlow serves both apex and www. Accept only these two trusted
+ // first-party origins; never accept an arbitrary request Host or Origin.
+ const configuredOrigin = process.env.CIVICFLOW_PUBLIC_ORIGIN;
+ if (!configuredOrigin) return error("Payment origin unavailable",503);
+ let trustedOrigins: Set<string>;
+ try {
+   const canonical = new URL(configuredOrigin);
+   const apexHost = canonical.hostname.replace(/^www\\./, "");
+   trustedOrigins = new Set([
+     canonical.origin,
+     `${canonical.protocol}//${apexHost}${canonical.port ? ":" + canonical.port : ""}`,
+     `${canonical.protocol}//www.${apexHost}${canonical.port ? ":" + canonical.port : ""}`,
+   ]);
+ } catch {
+   return error("Payment origin unavailable",503);
+ }
+ const requestOrigin = request.headers.get("origin");
+ if (!requestOrigin || !trustedOrigins.has(requestOrigin) ||
+     !trustedOrigins.has(new URL(request.url).origin))
    return error("Origin not allowed",403);
  const bearer = request.headers.get("authorization");
  if (!bearer?.startsWith("Bearer ")) return error("Authentication required",401);
