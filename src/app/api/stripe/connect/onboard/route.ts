@@ -91,8 +91,9 @@ export async function POST(request: Request) {
   let accountId: string = existing[0]?.stripe_account_id ?? "";
   if (!accountId) {
     // Never accept a connected account ID from a browser. Create it on the platform.
+    // Standard accounts align with Stripe-managed risk and Stripe Dashboard access.
     const body = new URLSearchParams({
-      type: "express",
+      type: "standard",
       country: "US",
       "capabilities[card_payments][requested]": "true",
       "capabilities[transfers][requested]": "true",
