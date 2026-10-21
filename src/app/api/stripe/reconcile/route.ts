@@ -23,7 +23,7 @@ export async function POST(request:Request) {
  let trustedOrigins: Set<string>;
  try {
    const canonical = new URL(configuredOrigin);
-   const apexHost = canonical.hostname.replace(/^www\\./, "");
+   const apexHost = canonical.hostname.startsWith("www.") ? canonical.hostname.slice(4) : canonical.hostname;
    trustedOrigins = new Set([
      canonical.origin,
      `${canonical.protocol}//${apexHost}${canonical.port ? ":" + canonical.port : ""}`,
