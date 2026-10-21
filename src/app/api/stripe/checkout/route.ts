@@ -32,7 +32,7 @@ function responseError(message: string, status: number) {
 }
 
 async function getStripeCredential(request: Request, mode: "sandbox" | "live") {
-  if (mode === "live" && process.env.VERCEL_ENV === "production" && process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")) {
+  if (mode === "live" && process.env.VERCEL_ENV === "production" && /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "")) {
     return { token: process.env.STRIPE_SECRET_KEY, error: "" };
   }
   const connector = mode === "live" ? STRIPE_CONNECTOR_LIVE : STRIPE_CONNECTOR_SANDBOX;
@@ -193,7 +193,7 @@ export async function POST(request: Request) {
     return responseError(credential.error, 503);
   }
 
-  if (!credential.token.startsWith(context.connection_mode === "live" ? "sk_live_" : "sk_test_")) {
+  if (!(context.connection_mode === "live" ? /^(sk|rk)_live_/.test(credential.token) : /^(sk|rk)_test_/.test(credential.token))) {
     return responseError("Stripe credential does not match the payment mode.", 503);
   }
 
