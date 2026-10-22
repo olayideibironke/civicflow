@@ -8,11 +8,12 @@ function failure(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-async function stripeRequest(path: string, key: string, method = "GET", body?: URLSearchParams) {
+async function stripeRequest(path: string, key: string, method = "GET", body?: URLSearchParams, idempotencyKey?: string) {
   const response = await fetch(stripeApi + path, {
     method,
     headers: {
       Authorization: `Bearer ${key}`,
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
       ...(body ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
     },
     body: body?.toString(),
@@ -99,8 +100,8 @@ export async function POST(request: Request) {
       "capabilities[transfers][requested]": "true",
       "metadata[civicflow_organization_id]": orgId,
     });
-    const created = await stripeRequest("/accounts", key, "POST", body);
-    if (!created.response.ok || !created.data?.id || created.data?.livemode !== true) {
+    const created = await stripeRequest("/accounts", key, "POST", body, `civicflow-live-standard-${orgId}-v1`);
+    if (!created.response.ok || typeof created.data?.id !== "string" || !/^acct_[A-Za-z0-9]+$/.test(created.data.id)) {
       const stripeCode = typeof created.data?.error?.code === "string" ? created.data.error.code : "";
       const stripeParam = typeof created.data?.error?.param === "string" ? created.data.error.param.replace(/[^a-z0-9_\[\].]/gi, "").slice(0, 80) : "";
       const stripeMessage = typeof created.data?.error?.message === "string" ? created.data.error.message.replace(/[\r\n]/g, " ").slice(0, 180) : "";
@@ -117,6 +118,12 @@ export async function POST(request: Request) {
         502
       );
     }
+    // Stripe can return HTTP 200 without a livemode field in the creation payload.
+    // Retrieve the account and verify its live mode and organization ownership before saving.
+    const verifiedCreation = await stripeRequest(`/accounts/${encodeURIComponent(created.data.id)}`, key);
+    if (!verifiedCreation.response.ok || verifiedCreation.data?.livemode !== true ||
+        verifiedCreation.data?.metadata?.civicflow_organization_id !== orgId)
+      return failure("Stripe created an account but live ownership verification is incomplete. No database connection was registered.", 502);
     accountId = created.data.id;
     const inserted = await fetch(`${supabaseUrl}/rest/v1/organization_payment_connections`, {
       method: "POST",
