@@ -38,3 +38,5 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ## Production deployment verification
 
 CivicFlow production is deployed from the `civicflow-commercial-workflows` branch. After pushing a change, verify that Vercel creates a deployment for the exact new commit SHA before considering the change released. A successful GitHub commit alone does not establish that production has been updated.
+
+Deployment trigger diagnostic: 2026-10-22. This documentation-only commit tests automatic GitHub-to-Vercel production deployment after branch tracking was corrected.
