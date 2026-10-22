@@ -91,6 +91,40 @@ export async function POST(request: Request) {
 
   let accountId: string = existing[0]?.stripe_account_id ?? "";
   if (!accountId) {
+    // Reconcile an account already created by this platform before attempting creation.
+    // This avoids duplicates when an earlier successful Stripe response was not saved.
+    const listed = await stripeRequest("/accounts?limit=100", key);
+    if (!listed.response.ok || !Array.isArray(listed.data?.data) || listed.data?.has_more)
+      return failure("Unable to safely reconcile existing Stripe accounts.", 503);
+    const matches = listed.data.data.filter((item: any) =>
+      item?.type === "standard" &&
+      item?.metadata?.civicflow_organization_id === orgId &&
+      typeof item.id === "string" && /^acct_[A-Za-z0-9]+$/.test(item.id)
+    );
+    if (matches.length > 1)
+      return failure("Multiple Stripe accounts match this firm. Contact support.", 409);
+    if (matches.length === 1) {
+      const candidate = matches[0].id as string;
+      const verified = await stripeRequest(`/accounts/${encodeURIComponent(candidate)}`, key);
+      if (!verified.response.ok || verified.data?.livemode !== true ||
+          verified.data?.type !== "standard" ||
+          verified.data?.metadata?.civicflow_organization_id !== orgId)
+        return failure("Existing Stripe account verification failed.", 503);
+      const registered = await fetch(`${supabaseUrl}/rest/v1/organization_payment_connections`, {
+        method: "POST",
+        headers: { ...adminHeaders, Prefer: "return=minimal" },
+        body: JSON.stringify({
+          organization_id: orgId, provider: "stripe", mode: "live",
+          stripe_account_id: candidate, status: "restricted",
+          operating_payments_enabled: false,
+        }),
+        cache: "no-store",
+      });
+      if (!registered.ok) return failure("Could not register existing Stripe account.", 409);
+      accountId = candidate;
+    }
+  }
+  if (!accountId) {
     // Never accept a connected account ID from a browser. Create it on the platform.
     // Standard accounts align with Stripe-managed risk and Stripe Dashboard access.
     const body = new URLSearchParams({
