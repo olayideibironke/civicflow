@@ -34,3 +34,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Production deployment verification
+
+CivicFlow production is deployed from the `civicflow-commercial-workflows` branch. After pushing a change, verify that Vercel creates a deployment for the exact new commit SHA before considering the change released. A successful GitHub commit alone does not establish that production has been updated.
