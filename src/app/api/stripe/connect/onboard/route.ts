@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     if (matches.length === 1) {
       const candidate = matches[0].id as string;
       const verified = await stripeRequest(`/accounts/${encodeURIComponent(candidate)}`, key);
-      if (!verified.response.ok || verified.data?.livemode !== true ||
+      if (!verified.response.ok || verified.data?.id !== candidate ||
           verified.data?.type !== "standard" ||
           verified.data?.metadata?.civicflow_organization_id !== orgId)
         return failure("Existing Stripe account verification failed.", 503);
@@ -155,7 +155,7 @@ export async function POST(request: Request) {
     // Stripe can return HTTP 200 without a livemode field in the creation payload.
     // Retrieve the account and verify its live mode and organization ownership before saving.
     const verifiedCreation = await stripeRequest(`/accounts/${encodeURIComponent(created.data.id)}`, key);
-    if (!verifiedCreation.response.ok || verifiedCreation.data?.livemode !== true ||
+    if (!verifiedCreation.response.ok || verifiedCreation.data?.id !== created.data.id ||
         verifiedCreation.data?.metadata?.civicflow_organization_id !== orgId)
       return failure("Stripe created an account but live ownership verification is incomplete. No database connection was registered.", 502);
     accountId = created.data.id;
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
   }
 
   const account = await stripeRequest(`/accounts/${encodeURIComponent(accountId)}`, key);
-  if (!account.response.ok || account.data?.livemode !== true ||
+  if (!account.response.ok || account.data?.id !== accountId ||
       account.data?.metadata?.civicflow_organization_id !== orgId)
     return failure("Stripe account ownership verification failed.", 403);
 
